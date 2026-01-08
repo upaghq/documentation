@@ -1,0 +1,160 @@
+---
+title: 'Referência'
+description: 'Gerencie os métodos de pagamento dos seus clientes.'
+icon: 'book-open-cover'
+---
+
+Os métodos de pagamento permitem que seus clientes realizem transações através de cartão de crédito ou PIX.
+
+## <Icon icon="folder-tree" type="solid"/>  Estrutura
+
+Um método de pagamento é representado em nossa API pela seguinte estrutura:
+
+```json
+{
+  "id": "pm_abc123xyz",
+  "livemode": false,
+  "type": "credit_card",
+  "expiresIn": null,
+  "expiryMonth": "12",
+  "expiryYear": "2025",
+  "firstDigits": "4111",
+  "lastDigits": "1111",
+  "brand": "visa",
+  "holderName": "JOHN DOE",
+  "createdAt": 1731622178441,
+  "updatedAt": 1731622178441
+}
+```
+
+## Atributos
+
+<AccordionGroup>
+  <Accordion title="id:">
+    ```json {2}
+    {
+      "id": "pm_abc123xyz",
+    } 
+    ```
+
+    `id` : <u> string. </u> <br />
+    Identificador único do método de pagamento, começando com `pm_`
+  </Accordion>
+
+  <Accordion title="livemode:">
+    ```json {2}
+    {
+      "livemode": false,
+    }
+    ```
+    `livemode` : <u> boolean. </u> <br />
+    Indica se o método de pagamento está em modo de produção (`true`) ou teste (`false`)
+  </Accordion>
+
+  <Accordion title="type:">
+    ```json {2}
+    {
+      "type": "credit_card",
+    }
+    ```
+    `type` : <u> string. </u> <br />
+    Tipo do método de pagamento
+
+    <Info>
+      | Tipo | Descrição |
+      | ----------- | ------------------------------------- |
+      | `credit_card` | **Cartão de crédito** |
+      | `pix` | **PIX** |
+    </Info>
+  </Accordion>
+
+  <Accordion title="expiresIn:">
+    ```json {2}
+    {
+      "expiresIn": 600,
+    }
+    ```
+    `expiresIn` : <u> number | null. </u> <br />
+    Tempo de expiração em segundos (apenas para PIX). Pode ser `null` para cartões
+  </Accordion>
+
+  <Accordion title="expiryMonth:">
+    ```json {2}
+    {
+      "expiryMonth": "12",
+    }
+    ```
+    `expiryMonth` : <u> string | null. </u> <br />
+    Mês de expiração do cartão (MM). Pode ser `null` para PIX
+  </Accordion>
+
+  <Accordion title="expiryYear:">
+    ```json {2}
+    {
+      "expiryYear": "2025",
+    }
+    ```
+    `expiryYear` : <u> string | null. </u> <br />
+    Ano de expiração do cartão (YYYY). Pode ser `null` para PIX
+  </Accordion>
+
+  <Accordion title="firstDigits:">
+    ```json {2}
+    {
+      "firstDigits": "4111",
+    }
+    ```
+    `firstDigits` : <u> string | null. </u> <br />
+    Primeiros dígitos do cartão. Pode ser `null` para PIX
+  </Accordion>
+
+  <Accordion title="lastDigits:">
+    ```json {2}
+    {
+      "lastDigits": "1111",
+    }
+    ```
+    `lastDigits` : <u> string | null. </u> <br />
+    Últimos 4 dígitos do cartão. Pode ser `null` para PIX
+  </Accordion>
+
+  <Accordion title="brand:">
+    ```json {2}
+    {
+      "brand": "visa",
+    }
+    ```
+    `brand` : <u> string | null. </u> <br />
+    Bandeira do cartão (ex.: `visa`, `mastercard`). Pode ser `null` para PIX
+  </Accordion>
+
+  <Accordion title="holderName:">
+    ```json {2}
+    {
+      "holderName": "JOHN DOE",
+    }
+    ```
+    `holderName` : <u> string | null. </u> <br />
+    Nome do portador do cartão. Pode ser `null` para PIX
+  </Accordion>
+
+  <Accordion title="createdAt:">
+    ```json {2}
+    {
+      "createdAt": 1731622178441,
+    }
+    ```
+    `createdAt` : <u> number. </u> <br />
+    Timestamp Unix indicando quando o método de pagamento foi criado
+  </Accordion>
+
+  <Accordion title="updatedAt:">
+    ```json {2}
+    {
+      "updatedAt": 1731622178441,
+    }
+    ```
+    `updatedAt` : <u> number. </u> <br />
+    Timestamp Unix indicando quando o método de pagamento foi atualizado pela última vez
+  </Accordion>
+</AccordionGroup>

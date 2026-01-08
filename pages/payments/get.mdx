@@ -1,0 +1,63 @@
+---
+title: 'Buscar Pagamento por ID'
+description: 'Retorna os detalhes de um pagamento específico'
+openapi: 'GET /api/v1/payments/{paymentId}'
+---
+
+Retorna as informações completas de um pagamento específico pelo seu ID.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.io/api/v1/payments/pay_xyz789abc \
+  -H "Authorization: Bearer {token}"
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const payment = await upag.payments.retrieve('pay_xyz789abc');
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="paymentId" type="string" required>
+  ID único do pagamento, começando com `pay_`.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "id": "pay_xyz789abc",
+  "livemode": false,
+  "customer": {
+    "id": "cus_ahwDXrgYvur89iPs",
+    "name": "John Doe",
+    "email": "john.doe@example.com"
+  },
+  "paymentMethod": {
+    "id": "pm_abc123xyz",
+    "type": "credit_card",
+    "lastDigits": "1111",
+    "brand": "visa"
+  },
+  "amount": 10000,
+  "gross": 10000,
+  "mdr": 0,
+  "net": 10000,
+  "interest": 0,
+  "currency": "BRL",
+  "status": "paid",
+  "pixQrCode": null,
+  "refuseReason": null,
+  "installments": 1,
+  "createdAt": 1731622178441,
+  "updatedAt": 1731622178441,
+  "dueAt": null
+}
+```

@@ -1,0 +1,175 @@
+---
+title: 'Referência'
+description: 'Gerencie seus clientes, aqueles que pagam você.'
+icon: 'book-open-cover'
+---
+
+Um cliente é seu usuário final, aquele que você vai cobrar e pagar o seu produto.
+
+## <Icon icon="folder-tree" type="solid"/>  Estrutura
+
+Um cliente é representado em nossa API pela seguinte estrutura:
+
+```json
+{
+  "id": "cus_ahwDXrgYvur89iPs",
+  "livemode": false,
+  "name": "John Doe",
+  "email": "john.doe@example.com",
+  "phone": "+5511999999999",
+  "taxId": "12345678900",
+  "line1": "Rua Example, 123",
+  "line2": "Apto 45",
+  "city": "São Paulo",
+  "state": "SP",
+  "country": "BR",
+  "zipCode": "01234567",
+  "createdAt": 1731622178441,
+  "updatedAt": 1731622178441
+}
+```
+
+## Atributos
+
+<AccordionGroup>
+  <Accordion title="id:">
+    ```json {2}
+    {
+      "id": "cus_ahwDXrgYvur89iPs",
+    } 
+    ```
+
+    `id` : <u> string. </u> <br />
+    Identificador único do cliente, começando com `cus_`
+  </Accordion>
+
+  <Accordion title="livemode:">
+    ```json {2}
+    {
+      "livemode": false,
+    }
+    ```
+    `livemode` : <u> boolean. </u> <br />
+    Indica se o cliente está em modo de produção (`true`) ou teste (`false`)
+  </Accordion>
+
+  <Accordion title="name:">
+    ```json {2}
+    {
+      "name": "John Doe",
+    }
+    ```
+    `name` : <u> string. </u> <br />
+    Nome completo do cliente (obrigatório)
+  </Accordion>
+
+  <Accordion title="email:">
+    ```json {2}
+    {
+      "email": "john.doe@example.com",
+    }
+    ```
+    `email` : <u> string. </u> <br />
+    E-mail válido do cliente (obrigatório)
+  </Accordion>
+
+  <Accordion title="phone:">
+    ```json {2}
+    {
+      "phone": "+5511999999999",
+    }
+    ```
+    `phone` : <u> string | null. </u> <br />
+    Telefone do cliente (opcional)
+  </Accordion>
+
+  <Accordion title="taxId:">
+    ```json {2}
+    {
+      "taxId": "12345678900",
+    }
+    ```
+    `taxId` : <u> string | null. </u> <br />
+    CPF/CNPJ do cliente (opcional)
+  </Accordion>
+
+  <Accordion title="line1:">
+    ```json {2}
+    {
+      "line1": "Rua Example, 123",
+    }
+    ```
+    `line1` : <u> string | null. </u> <br />
+    Primeira linha do endereço (opcional)
+  </Accordion>
+
+  <Accordion title="line2:">
+    ```json {2}
+    {
+      "line2": "Apto 45",
+    }
+    ```
+    `line2` : <u> string | null. </u> <br />
+    Segunda linha do endereço/complemento (opcional)
+  </Accordion>
+
+  <Accordion title="city:">
+    ```json {2}
+    {
+      "city": "São Paulo",
+    }
+    ```
+    `city` : <u> string | null. </u> <br />
+    Cidade do endereço (opcional)
+  </Accordion>
+
+  <Accordion title="state:">
+    ```json {2}
+    {
+      "state": "SP",
+    }
+    ```
+    `state` : <u> string | null. </u> <br />
+    Estado do endereço (opcional)
+  </Accordion>
+
+  <Accordion title="country:">
+    ```json {2}
+    {
+      "country": "BR",
+    }
+    ```
+    `country` : <u> string | null. </u> <br />
+    País do endereço (opcional)
+  </Accordion>
+
+  <Accordion title="zipCode:">
+    ```json {2}
+    {
+      "zipCode": "01234567",
+    }
+    ```
+    `zipCode` : <u> string | null. </u> <br />
+    CEP do endereço (opcional)
+  </Accordion>
+
+  <Accordion title="createdAt:">
+    ```json {2}
+    {
+      "createdAt": 1731622178441,
+    }
+    ```
+    `createdAt` : <u> number. </u> <br />
+    Timestamp Unix indicando quando o cliente foi criado
+  </Accordion>
+
+  <Accordion title="updatedAt:">
+    ```json {2}
+    {
+      "updatedAt": 1731622178441,
+    }
+    ```
+    `updatedAt` : <u> number. </u> <br />
+    Timestamp Unix indicando quando o cliente foi atualizado pela última vez
+  </Accordion>
+</AccordionGroup>

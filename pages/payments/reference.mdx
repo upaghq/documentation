@@ -1,0 +1,235 @@
+---
+title: "Referência"
+description: "Crie e gerencie pagamentos dos seus clientes"
+icon: "book-open-cover"
+---
+
+Um pagamento representa uma transação financeira onde seu cliente paga por produtos ou serviços usando um método de pagamento cadastrado.
+
+## <Icon icon="folder-tree" type="solid"/> Estrutura
+
+Um pagamento é representado em nossa API pela seguinte estrutura:
+
+```json
+{
+  "id": "pay_xyz789abc",
+  "livemode": false,
+  "customer": {
+    "id": "cus_ahwDXrgYvur89iPs",
+    "name": "John Doe",
+    "email": "john.doe@example.com"
+  },
+  "paymentMethod": {
+    "id": "pm_abc123xyz",
+    "type": "credit_card",
+    "lastDigits": "1111",
+    "brand": "visa"
+  },
+  "amount": 10000,
+  "gross": 10000,
+  "mdr": 0,
+  "net": 10000,
+  "interest": 0,
+  "currency": "BRL",
+  "status": "paid",
+  "pixQrCode": null,
+  "refuseReason": null,
+  "installments": 1,
+  "createdAt": 1731622178441,
+  "updatedAt": 1731622178441,
+  "dueAt": null
+}
+```
+
+## Atributos:
+
+<AccordionGroup>
+  <Accordion title="id:">
+    ```json {2}
+    {
+      "id": "pay_xyz789abc",
+    } 
+    ```
+
+    `id` : <u> string. </u> <br />
+    Identificador único do pagamento, começando com `pay_`
+  </Accordion>
+
+  <Accordion title="livemode:">
+    ```json {2}
+    {
+      "livemode": false,
+    }
+    ```
+    `livemode` : <u> boolean. </u> <br />
+    Indica se o pagamento está em modo de produção (`true`) ou teste (`false`)
+  </Accordion>
+
+  <Accordion title="customer:">
+    ```json {2-6}
+    {
+      "customer": {
+        "id": "cus_ahwDXrgYvur89iPs",
+        "name": "John Doe",
+        "email": "john.doe@example.com"
+      }
+    }
+    ```
+    `customer` : <u> object </u> <br />
+    Objeto contendo informações do cliente. Veja a referência completa <a href="../customers/reference">aqui</a>
+  </Accordion>
+
+  <Accordion title="paymentMethod:">
+    ```json {2-7}
+    {
+      "paymentMethod": {
+        "id": "pm_abc123xyz",
+        "type": "credit_card",
+        "lastDigits": "1111",
+        "brand": "visa"
+      }
+    }
+    ```
+    `paymentMethod` : <u> object </u> <br />
+    Objeto contendo informações do método de pagamento. Veja a referência completa <a href="../payment-methods/reference">aqui</a>
+  </Accordion>
+
+  <Accordion title="amount:">
+    ```json {2}
+    {
+      "amount": 10000,
+    }
+    ```
+    `amount` : <u> number. </u> <br />
+    Valor do pagamento em centavos
+  </Accordion>
+
+  <Accordion title="gross:">
+    ```json {2}
+    {
+      "gross": 10000,
+    }
+    ```
+    `gross` : <u> number. </u> <br />
+    Valor bruto do pagamento em centavos (antes das taxas)
+  </Accordion>
+
+  <Accordion title="mdr:">
+    ```json {2}
+    {
+      "mdr": 0,
+    }
+    ```
+    `mdr` : <u> number. </u> <br />
+    Taxa MDR (Merchant Discount Rate) em centavos
+  </Accordion>
+
+  <Accordion title="net:">
+    ```json {2}
+    {
+      "net": 10000,
+    }
+    ```
+    `net` : <u> number. </u> <br />
+    Valor líquido do pagamento em centavos (após taxas)
+  </Accordion>
+
+  <Accordion title="interest:">
+    ```json {2}
+    {
+      "interest": 0,
+    }
+    ```
+    `interest` : <u> number. </u> <br />
+    Valor de juros em centavos (para parcelamentos)
+  </Accordion>
+
+  <Accordion title="currency:">
+    ```json {2}
+    {
+      "currency": "BRL",
+    }
+    ```
+    `currency` : <u> string. </u> <br />
+    Código da moeda (ex.: `BRL`)
+  </Accordion>
+
+  <Accordion title="status:">
+    ```json {2}
+    {
+      "status": "paid",
+    }
+    ```
+    `status` : <u> string. </u> <br />
+    Status atual do pagamento
+
+    <Info>
+      | Status | Descrição |
+      | ----------- | ------------------------------------- |
+      | `pending` | **O pagamento está pendente** |
+      | `paid` | **O pagamento foi realizado com sucesso** |
+      | `failed` | **O pagamento falhou** |
+      | `refunded` | **O valor foi devolvido ao cliente** |
+    </Info>
+  </Accordion>
+
+  <Accordion title="pixQrCode:">
+    ```json {2}
+    {
+      "pixQrCode": null,
+    }
+    ```
+    `pixQrCode` : <u> string | null. </u> <br />
+    Código QR do PIX para pagamento. Pode ser `null` se não for PIX
+  </Accordion>
+
+  <Accordion title="refuseReason:">
+    ```json {2}
+    {
+      "refuseReason": null,
+    }
+    ```
+    `refuseReason` : <u> string | null. </u> <br />
+    Motivo da recusa do pagamento. Pode ser `null` se não foi recusado
+  </Accordion>
+
+  <Accordion title="installments:">
+    ```json {2}
+    {
+      "installments": 1,
+    }
+    ```
+    `installments` : <u> number. </u> <br />
+    Número de parcelas. Padrão: `1`
+  </Accordion>
+
+  <Accordion title="createdAt:">
+    ```json {2}
+    {
+      "createdAt": 1731622178441,
+    }
+    ```
+    `createdAt` : <u> number. </u> <br />
+    Timestamp Unix indicando quando o pagamento foi criado
+  </Accordion>
+
+  <Accordion title="updatedAt:">
+    ```json {2}
+    {
+      "updatedAt": 1731622178441,
+    }
+    ```
+    `updatedAt` : <u> number. </u> <br />
+    Timestamp Unix indicando quando o pagamento foi atualizado pela última vez
+  </Accordion>
+
+  <Accordion title="dueAt:">
+    ```json {2}
+    {
+      "dueAt": null,
+    }
+    ```
+    `dueAt` : <u> number | null. </u> <br />
+    Timestamp Unix indicando a data de vencimento do pagamento. Pode ser `null`
+  </Accordion>
+</AccordionGroup>

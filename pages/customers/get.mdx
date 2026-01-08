@@ -1,0 +1,51 @@
+---
+title: 'Buscar Cliente por ID'
+description: 'Retorna os detalhes de um cliente específico'
+openapi: 'GET /api/v1/customers/{id}'
+---
+
+Retorna as informações completas de um cliente específico pelo seu ID.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.io/api/v1/customers/cus_ahwDXrgYvur89iPs \
+  -H "Authorization: Bearer {token}"
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const customer = await upag.customers.retrieve('cus_ahwDXrgYvur89iPs');
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="id" type="string" required>
+  ID único do cliente, começando com `cus_`.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "id": "cus_ahwDXrgYvur89iPs",
+  "livemode": false,
+  "name": "John Doe",
+  "email": "john.doe@example.com",
+  "phone": "+5511999999999",
+  "taxId": "12345678900",
+  "line1": "Rua Example, 123",
+  "line2": "Apto 45",
+  "city": "São Paulo",
+  "state": "SP",
+  "country": "BR",
+  "zipCode": "01234567",
+  "createdAt": 1731622178441,
+  "updatedAt": 1731622178441
+}
+```

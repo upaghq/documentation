@@ -1,0 +1,83 @@
+---
+title: 'Listar Pagamentos'
+description: 'Retorna uma lista de todos os pagamentos'
+openapi: 'GET /api/v1/payments'
+---
+
+Retorna uma lista paginada de todos os pagamentos. Pode ser filtrado por cliente.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -G https://api.upag.io/api/v1/payments \
+  -H "Authorization: Bearer {token}" \
+  -d page=1 \
+  -d limit=10 \
+  -d customer=cus_ahwDXrgYvur89iPs
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const payments = await upag.payments.list({
+  limit: 10,
+  offset: 0,
+  customerId: 'cus_ahwDXrgYvur89iPs'
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField query="limit" type="integer">
+  Limita o número de pagamentos retornados. Padrão: `10`, máximo: `100`.
+</ParamField>
+
+<ParamField query="page" type="integer">
+  Número da página a ser retornada. Padrão: `1`.
+</ParamField>
+
+<ParamField query="customer" type="string">
+  ID do cliente (UUID) para filtrar pagamentos de um cliente específico.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "data": [
+    {
+      "id": "pay_xyz789abc",
+      "livemode": false,
+      "customer": {
+        "id": "cus_ahwDXrgYvur89iPs",
+        "name": "John Doe",
+        "email": "john.doe@example.com"
+      },
+      "paymentMethod": {
+        "id": "pm_abc123xyz",
+        "type": "credit_card",
+        "lastDigits": "1111",
+        "brand": "visa"
+      },
+      "amount": 10000,
+      "gross": 10000,
+      "mdr": 0,
+      "net": 10000,
+      "interest": 0,
+      "currency": "BRL",
+      "status": "paid",
+      "pixQrCode": null,
+      "refuseReason": null,
+      "installments": 1,
+      "createdAt": 1731622178441,
+      "updatedAt": 1731622178441,
+      "dueAt": null
+    }
+  ],
+  "total": 1
+}
+```

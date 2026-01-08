@@ -1,0 +1,53 @@
+---
+title: 'Buscar Método de Pagamento por ID'
+description: 'Retorna os detalhes de um método de pagamento específico'
+openapi: 'GET /api/v1/customers/{customerId}/payment-methods/{paymentMethodId}'
+---
+
+Retorna as informações completas de um método de pagamento específico.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.io/api/v1/customers/cus_ahwDXrgYvur89iPs/payment-methods/pm_abc123xyz \
+  -H "Authorization: Bearer {token}"
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const paymentMethod = await upag.paymentMethods.retrieve('pm_abc123xyz');
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="customerId" type="string" required>
+  ID do cliente.
+</ParamField>
+
+<ParamField path="paymentMethodId" type="string" required>
+  ID único do método de pagamento, começando com `pm_`.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "id": "pm_abc123xyz",
+  "livemode": false,
+  "type": "credit_card",
+  "expiresIn": null,
+  "expiryMonth": "12",
+  "expiryYear": "2025",
+  "firstDigits": "4111",
+  "lastDigits": "1111",
+  "brand": "visa",
+  "holderName": "JOHN DOE",
+  "createdAt": 1731622178441,
+  "updatedAt": 1731622178441
+}
+```

@@ -1,0 +1,159 @@
+---
+title: 'Criar Método de Pagamento'
+description: 'Crie um método de pagamento (cartão ou PIX) para um cliente'
+openapi: 'POST /api/v1/customers/{customerId}/payment-methods'
+---
+
+Cria um novo método de pagamento de cartão de crédito ou PIX para um cliente.
+
+## Criar com Cartão de Crédito
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/api/v1/customers/cus_ahwDXrgYvur89iPs/payment-methods \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "credit_card",
+    "card": {
+      "number": "4111111111111111",
+      "expiryMonth": "12",
+      "expiryYear": "2025",
+      "cvv": "123",
+      "holderName": "JOHN DOE"
+    }
+  }'
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const paymentMethod = await upag.paymentMethods.create({
+  customerId: 'cus_ahwDXrgYvur89iPs',
+  type: 'credit_card',
+  card: {
+    number: '4111111111111111',
+    expMonth: 12,
+    expYear: 2025,
+    cvc: '123',
+    holderName: 'JOHN DOE'
+  }
+});
+```
+</CodeGroup>
+
+### Parâmetros para Cartão
+
+<ParamField path="customerId" type="string" required>
+  ID do cliente.
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  Tipo do método de pagamento. Deve ser `credit_card`.
+</ParamField>
+
+<ParamField body="card.number" type="string" required>
+  Número do cartão (13 a 19 dígitos).
+</ParamField>
+
+<ParamField body="card.expiryMonth" type="string" required>
+  Mês de expiração (1-2 dígitos).
+</ParamField>
+
+<ParamField body="card.expiryYear" type="string" required>
+  Ano de expiração (4 dígitos).
+</ParamField>
+
+<ParamField body="card.cvv" type="string" required>
+  Código de segurança (3-4 dígitos).
+</ParamField>
+
+<ParamField body="card.holderName" type="string" required>
+  Nome do portador do cartão (máximo 255 caracteres).
+</ParamField>
+
+### Resposta
+
+```json Response
+{
+  "id": "pm_abc123xyz",
+  "livemode": false,
+  "type": "credit_card",
+  "expiresIn": null,
+  "expiryMonth": "12",
+  "expiryYear": "2025",
+  "firstDigits": "4111",
+  "lastDigits": "1111",
+  "brand": "visa",
+  "holderName": "JOHN DOE",
+  "createdAt": 1731622178441,
+  "updatedAt": 1731622178441
+}
+```
+
+---
+
+## Criar com PIX
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/api/v1/customers/cus_ahwDXrgYvur89iPs/payment-methods \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "pix",
+    "pix": {
+      "expiresIn": 600
+    }
+  }'
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const paymentMethod = await upag.paymentMethods.create({
+  customerId: 'cus_ahwDXrgYvur89iPs',
+  type: 'pix',
+  pix: {
+    expiresIn: 600
+  }
+});
+```
+</CodeGroup>
+
+### Parâmetros para PIX
+
+<ParamField path="customerId" type="string" required>
+  ID do cliente.
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  Tipo do método de pagamento. Deve ser `pix`.
+</ParamField>
+
+<ParamField body="pix.expiresIn" type="number">
+  Tempo de expiração em segundos. Padrão: `600` (10 minutos). Mínimo: `60`, Máximo: `2592000` (30 dias).
+</ParamField>
+
+### Resposta
+
+```json Response
+{
+  "id": "pm_pix123xyz",
+  "livemode": false,
+  "type": "pix",
+  "expiresIn": 600,
+  "expiryMonth": null,
+  "expiryYear": null,
+  "firstDigits": null,
+  "lastDigits": null,
+  "brand": null,
+  "holderName": null,
+  "createdAt": 1731622178441,
+  "updatedAt": 1731622178441
+}
+```

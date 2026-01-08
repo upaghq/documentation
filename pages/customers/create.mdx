@@ -1,0 +1,111 @@
+---
+title: 'Criar um novo Cliente'
+description: 'Crie um cliente para poder cobrar e gerenciar seus pagamentos'
+openapi: 'POST /api/v1/customers'
+---
+
+Cria um novo cliente na sua conta.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/api/v1/customers \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "John Doe",
+    "email": "john.doe@example.com",
+    "phone": "+5511999999999",
+    "taxId": "12345678900",
+    "line1": "Rua Example, 123",
+    "line2": "Apto 45",
+    "city": "São Paulo",
+    "state": "SP",
+    "country": "BR",
+    "zipCode": "01234567"
+  }'
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const customer = await upag.customers.create({
+  name: 'John Doe',
+  email: 'john.doe@example.com',
+  phone: '+5511999999999',
+  taxId: '12345678900',
+  line1: 'Rua Example, 123',
+  line2: 'Apto 45',
+  city: 'São Paulo',
+  state: 'SP',
+  country: 'BR',
+  zipCode: '01234567'
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField body="name" type="string" required>
+  Nome completo do cliente.
+</ParamField>
+
+<ParamField body="email" type="string" required>
+  E-mail válido do cliente.
+</ParamField>
+
+<ParamField body="phone" type="string">
+  Telefone do cliente.
+</ParamField>
+
+<ParamField body="taxId" type="string">
+  CPF/CNPJ do cliente.
+</ParamField>
+
+<ParamField body="line1" type="string">
+  Primeira linha do endereço.
+</ParamField>
+
+<ParamField body="line2" type="string">
+  Segunda linha do endereço (complemento).
+</ParamField>
+
+<ParamField body="city" type="string">
+  Cidade do endereço.
+</ParamField>
+
+<ParamField body="state" type="string">
+  Estado do endereço.
+</ParamField>
+
+<ParamField body="country" type="string">
+  País do endereço.
+</ParamField>
+
+<ParamField body="zipCode" type="string">
+  CEP do endereço.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "id": "cus_ahwDXrgYvur89iPs",
+  "livemode": false,
+  "name": "John Doe",
+  "email": "john.doe@example.com",
+  "phone": "+5511999999999",
+  "taxId": "12345678900",
+  "line1": "Rua Example, 123",
+  "line2": "Apto 45",
+  "city": "São Paulo",
+  "state": "SP",
+  "country": "BR",
+  "zipCode": "01234567",
+  "createdAt": 1731622178441,
+  "updatedAt": 1731622178441
+}
+```

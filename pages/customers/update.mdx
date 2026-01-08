@@ -1,0 +1,101 @@
+---
+title: 'Atualizar Cliente'
+description: 'Atualiza os dados de um cliente existente'
+openapi: 'PUT /api/v1/customers/{id}'
+---
+
+Atualiza as informações de um cliente existente. Apenas os campos enviados serão atualizados.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X PUT https://api.upag.io/api/v1/customers/cus_ahwDXrgYvur89iPs \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Jane Doe",
+    "email": "jane.doe@example.com",
+    "phone": "+5511888888888"
+  }'
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const customer = await upag.customers.update('cus_ahwDXrgYvur89iPs', {
+  name: 'Jane Doe',
+  email: 'jane.doe@example.com',
+  phone: '+5511888888888'
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="id" type="string" required>
+  ID único do cliente a ser atualizado.
+</ParamField>
+
+<ParamField body="name" type="string">
+  Nome completo do cliente.
+</ParamField>
+
+<ParamField body="email" type="string">
+  E-mail válido do cliente.
+</ParamField>
+
+<ParamField body="phone" type="string">
+  Telefone do cliente.
+</ParamField>
+
+<ParamField body="taxId" type="string">
+  CPF/CNPJ do cliente.
+</ParamField>
+
+<ParamField body="line1" type="string">
+  Primeira linha do endereço.
+</ParamField>
+
+<ParamField body="line2" type="string">
+  Segunda linha do endereço (complemento).
+</ParamField>
+
+<ParamField body="city" type="string">
+  Cidade do endereço.
+</ParamField>
+
+<ParamField body="state" type="string">
+  Estado do endereço.
+</ParamField>
+
+<ParamField body="country" type="string">
+  País do endereço.
+</ParamField>
+
+<ParamField body="zipCode" type="string">
+  CEP do endereço.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "id": "cus_ahwDXrgYvur89iPs",
+  "livemode": false,
+  "name": "Jane Doe",
+  "email": "jane.doe@example.com",
+  "phone": "+5511888888888",
+  "taxId": "12345678900",
+  "line1": "Rua Example, 123",
+  "line2": "Apto 45",
+  "city": "São Paulo",
+  "state": "SP",
+  "country": "BR",
+  "zipCode": "01234567",
+  "createdAt": 1731622178441,
+  "updatedAt": 1731622179870
+}
+```

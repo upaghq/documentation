@@ -1,0 +1,81 @@
+---
+title: 'Listar Métodos de Pagamento'
+description: 'Retorna todos os métodos de pagamento de um cliente'
+openapi: 'GET /api/v1/customers/{customerId}/payment-methods'
+---
+
+Retorna uma lista de todos os métodos de pagamento cadastrados para um cliente específico.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -G https://api.upag.io/api/v1/customers/cus_ahwDXrgYvur89iPs/payment-methods \
+  -H "Authorization: Bearer {token}" \
+  -d page=1 \
+  -d limit=10
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const paymentMethods = await upag.paymentMethods.listByCustomer('cus_ahwDXrgYvur89iPs', {
+  limit: 10,
+  offset: 0
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="customerId" type="string" required>
+  ID do cliente.
+</ParamField>
+
+<ParamField query="limit" type="integer">
+  Limita o número de métodos de pagamento retornados. Padrão: `10`, máximo: `100`.
+</ParamField>
+
+<ParamField query="page" type="integer">
+  Número da página a ser retornada. Padrão: `1`.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "data": [
+    {
+      "id": "pm_abc123xyz",
+      "livemode": false,
+      "type": "credit_card",
+      "expiresIn": null,
+      "expiryMonth": "12",
+      "expiryYear": "2025",
+      "firstDigits": "4111",
+      "lastDigits": "1111",
+      "brand": "visa",
+      "holderName": "JOHN DOE",
+      "createdAt": 1731622178441,
+      "updatedAt": 1731622178441
+    },
+    {
+      "id": "pm_pix123xyz",
+      "livemode": false,
+      "type": "pix",
+      "expiresIn": 600,
+      "expiryMonth": null,
+      "expiryYear": null,
+      "firstDigits": null,
+      "lastDigits": null,
+      "brand": null,
+      "holderName": null,
+      "createdAt": 1731622178441,
+      "updatedAt": 1731622178441
+    }
+  ],
+  "total": 2
+}
+```

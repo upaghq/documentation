@@ -1,0 +1,65 @@
+---
+title: 'Listar Clientes'
+description: 'Retorna uma lista de todos os clientes cadastrados'
+openapi: 'GET /api/v1/customers'
+---
+
+Retorna uma lista paginada de todos os clientes cadastrados na sua conta.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -G https://api.upag.io/api/v1/customers \
+  -H "Authorization: Bearer {token}" \
+  -d page=1 \
+  -d limit=10
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const customers = await upag.customers.list({
+  limit: 10,
+  offset: 0
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField query="limit" type="integer">
+  Limita o número de clientes retornados. Padrão: `10`, máximo: `100`.
+</ParamField>
+
+<ParamField query="page" type="integer">
+  Número da página a ser retornada. Padrão: `1`.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "data": [
+    {
+      "id": "cus_ahwDXrgYvur89iPs",
+      "livemode": false,
+      "name": "John Doe",
+      "email": "john.doe@example.com",
+      "phone": "+5511999999999",
+      "taxId": "12345678900",
+      "line1": "Rua Example, 123",
+      "line2": "Apto 45",
+      "city": "São Paulo",
+      "state": "SP",
+      "country": "BR",
+      "zipCode": "01234567",
+      "createdAt": 1731622178441,
+      "updatedAt": 1731622178441
+    }
+  ],
+  "total": 1
+}
+```

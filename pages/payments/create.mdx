@@ -1,0 +1,93 @@
+---
+title: 'Criar um novo Pagamento'
+description: 'Crie um pagamento usando um método de pagamento do cliente'
+openapi: 'POST /api/v1/payments'
+---
+
+Cria um novo pagamento para um cliente usando um método de pagamento previamente cadastrado.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/api/v1/payments \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer": "cus_ahwDXrgYvur89iPs",
+    "paymentMethod": "pm_abc123xyz",
+    "amount": 10000,
+    "currency": "BRL",
+    "installments": 1
+  }'
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const payment = await upag.payments.create({
+  customerId: 'cus_ahwDXrgYvur89iPs',
+  paymentMethodId: 'pm_abc123xyz',
+  amount: 10000,
+  currency: 'brl',
+  installments: 1
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField body="customer" type="string" required>
+  ID do cliente (UUID).
+</ParamField>
+
+<ParamField body="paymentMethod" type="string" required>
+  ID do método de pagamento (UUID).
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Valor do pagamento em centavos (mínimo: 1).
+</ParamField>
+
+<ParamField body="currency" type="string" required>
+  Código da moeda (ex.: `BRL`).
+</ParamField>
+
+<ParamField body="installments" type="number">
+  Número de parcelas. Padrão: `1`, máximo: `12`.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "id": "pay_xyz789abc",
+  "livemode": false,
+  "customer": {
+    "id": "cus_ahwDXrgYvur89iPs",
+    "name": "John Doe",
+    "email": "john.doe@example.com"
+  },
+  "paymentMethod": {
+    "id": "pm_abc123xyz",
+    "type": "credit_card",
+    "lastDigits": "1111",
+    "brand": "visa"
+  },
+  "amount": 10000,
+  "gross": 10000,
+  "mdr": 0,
+  "net": 10000,
+  "interest": 0,
+  "currency": "BRL",
+  "status": "paid",
+  "pixQrCode": null,
+  "refuseReason": null,
+  "installments": 1,
+  "createdAt": 1731622178441,
+  "updatedAt": 1731622178441,
+  "dueAt": null
+}
+```
