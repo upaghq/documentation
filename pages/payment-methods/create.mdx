@@ -10,7 +10,7 @@ Cria um novo método de pagamento de cartão de crédito ou PIX para um cliente.
 
 <CodeGroup>
 ```bash cURL
-curl -X POST https://api.upag.io/api/v1/customers/cus_ahwDXrgYvur89iPs/payment-methods \
+curl -X POST https://api.upag.io/v1/customers/cus_ahwDXrgYvur89iPs/payment-methods \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -99,7 +99,7 @@ const paymentMethod = await upag.paymentMethods.create({
 
 <CodeGroup>
 ```bash cURL
-curl -X POST https://api.upag.io/api/v1/customers/cus_ahwDXrgYvur89iPs/payment-methods \
+curl -X POST https://api.upag.io/v1/customers/cus_ahwDXrgYvur89iPs/payment-methods \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
   -d '{
