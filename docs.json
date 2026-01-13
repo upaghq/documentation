@@ -42,39 +42,6 @@
             ]
           }
         ]
-      },
-      {
-        "tab": "API reference",
-        "groups": [
-          {
-            "group": "Clientes",
-            "pages": [
-              "pages/customers/reference",
-              "pages/customers/create",
-              "pages/customers/list",
-              "pages/customers/get",
-              "pages/customers/update"
-            ]
-          },
-          {
-            "group": "Métodos de Pagamento",
-            "pages": [
-              "pages/payment-methods/reference",
-              "pages/payment-methods/create",
-              "pages/payment-methods/list",
-              "pages/payment-methods/get"
-            ]
-          },
-          {
-            "group": "Pagamentos",
-            "pages": [
-              "pages/payments/reference",
-              "pages/payments/create",
-              "pages/payments/list",
-              "pages/payments/get"
-            ]
-          }
-        ]
       }
     ]
   },
