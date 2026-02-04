@@ -1,0 +1,146 @@
+---
+title: "Payload — Invoice"
+description: "Estrutura do objeto data nos webhooks de fatura"
+icon: "book-open-cover"
+---
+
+Quando o evento é do tipo `invoice.*`, o campo `data` da requisição de webhook contém um objeto fatura no formato abaixo.
+
+## <Icon icon="folder-tree" type="solid"/> Estrutura
+
+```json
+{
+  "id": "inv_xyz789abc",
+  "livemode": false,
+  "customer": "cus_ahwDXrgYvur89iPs",
+  "paymentMethod": "pm_abc123xyz",
+  "status": "open",
+  "currency": "BRL",
+  "createdAt": 1731622178441,
+  "updatedAt": 1731622178441,
+  "canceledAt": null,
+  "items": [
+    {
+      "id": "ii_abc123",
+      "product": "prod_xyz",
+      "price": "pri_xyz",
+      "name": "Plano Mensal",
+      "amount": 9900,
+      "quantity": 1
+    }
+  ]
+}
+```
+
+## Atributos
+
+<AccordionGroup>
+  <Accordion title="id:">
+    ```json {2}
+    {
+      "id": "inv_xyz789abc",
+    }
+    ```
+    `id` : <u> string. </u> <br />
+    Identificador único da fatura, começando com `inv_`
+  </Accordion>
+
+  <Accordion title="livemode:">
+    ```json {2}
+    {
+      "livemode": false,
+    }
+    ```
+    `livemode` : <u> boolean. </u> <br />
+    Indica se a fatura está em modo de produção (`true`) ou teste (`false`)
+  </Accordion>
+
+  <Accordion title="customer:">
+    ```json {2}
+    {
+      "customer": "cus_ahwDXrgYvur89iPs",
+    }
+    ```
+    `customer` : <u> string. </u> <br />
+    ID do cliente, começando com `cus_`
+  </Accordion>
+
+  <Accordion title="paymentMethod:">
+    ```json {2}
+    {
+      "paymentMethod": "pm_abc123xyz",
+    }
+    ```
+    `paymentMethod` : <u> string. </u> <br />
+    ID do método de pagamento, começando com `pm_`
+  </Accordion>
+
+  <Accordion title="status:">
+    ```json {2}
+    {
+      "status": "open",
+    }
+    ```
+    `status` : <u> string. </u> <br />
+    Status atual da fatura (ex.: `draft`, `open`, `paid`, `void`)
+  </Accordion>
+
+  <Accordion title="currency:">
+    ```json {2}
+    {
+      "currency": "BRL",
+    }
+    ```
+    `currency` : <u> string. </u> <br />
+    Código da moeda (ex.: `BRL`)
+  </Accordion>
+
+  <Accordion title="createdAt:">
+    ```json {2}
+    {
+      "createdAt": 1731622178441,
+    }
+    ```
+    `createdAt` : <u> number. </u> <br />
+    Timestamp Unix de criação da fatura
+  </Accordion>
+
+  <Accordion title="updatedAt:">
+    ```json {2}
+    {
+      "updatedAt": 1731622178441,
+    }
+    ```
+    `updatedAt` : <u> number. </u> <br />
+    Timestamp Unix da última atualização
+  </Accordion>
+
+  <Accordion title="canceledAt:">
+    ```json {2}
+    {
+      "canceledAt": null,
+    }
+    ```
+    `canceledAt` : <u> number | null. </u> <br />
+    Timestamp Unix do cancelamento da fatura. Pode ser `null`
+  </Accordion>
+
+  <Accordion title="items:">
+    ```json {2-12}
+    {
+      "items": [
+        {
+          "id": "ii_abc123",
+          "product": "prod_xyz",
+          "price": "pri_xyz",
+          "name": "Plano Mensal",
+          "amount": 9900,
+          "quantity": 1
+        }
+      ]
+    }
+    ```
+    `items` : <u> array. </u> <br />
+    Lista de itens da fatura. Cada item contém: `id` (string, prefixo `ii_`), `product` (ID do produto), `price` (ID do preço), `name`, `amount` (centavos), `quantity`
+  </Accordion>
+</AccordionGroup>

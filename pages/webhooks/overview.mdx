@@ -1,0 +1,67 @@
+---
+title: "Webhooks"
+description: "Configure e consuma webhooks para ser notificado sobre eventos da sua conta"
+icon: "bell"
+---
+
+Os webhooks permitem que sua aplicação seja notificada quando algo acontecer no Upag (assinatura criada, pagamento aprovado, fatura paga, etc.). Configure uma URL no painel e selecione os eventos que deseja receber.
+
+## <Icon icon="folder-tree" type="solid"/> Envelope da requisição
+
+Cada requisição de webhook enviada pelo Upag segue este formato:
+
+```json
+{
+  "event": "subscription.created",
+  "data": { }
+}
+```
+
+- **event** — Nome do evento (ex.: `subscription.created`, `payment.approved`). Use este valor para decidir como processar o payload.
+- **data** — Objeto com os dados do recurso. A estrutura de `data` depende do tipo de evento. Consulte as páginas de referência abaixo para cada payload.
+
+## Tipos de evento
+
+### Assinaturas (subscription)
+
+| Evento | Descrição |
+| ------ | --------- |
+| `subscription.created` | Nova assinatura criada |
+| `subscription.active` | Assinatura ativa |
+| `subscription.canceled` | Assinatura cancelada |
+| `subscription.past_due` | Assinatura em atraso |
+| `subscription.trialing` | Assinatura em período de trial |
+| `subscription.incomplete` | Assinatura incompleta |
+| `subscription.paused` | Assinatura pausada |
+| `subscription.void` | Assinatura anulada |
+
+Referência do objeto em `data`: <a href="payload-subscription">Payload Subscription</a>.
+
+### Pagamentos (payment)
+
+| Evento | Descrição |
+| ------ | --------- |
+| `payment.created` | Novo pagamento criado |
+| `payment.incomplete` | Pagamento incompleto |
+| `payment.pending` | Pagamento pendente |
+| `payment.approved` | Pagamento aprovado |
+| `payment.refunded` | Pagamento reembolsado |
+| `payment.refused` | Pagamento recusado |
+| `payment.failed` | Pagamento falhou |
+
+Referência do objeto em `data`: <a href="payload-payment">Payload Payment</a>.
+
+### Faturas (invoice)
+
+| Evento | Descrição |
+| ------ | --------- |
+| `invoice.created` | Nova fatura criada |
+| `invoice.opened` | Fatura aberta |
+| `invoice.paid` | Fatura paga |
+| `invoice.voided` | Fatura anulada |
+
+Referência do objeto em `data`: <a href="payload-invoice">Payload Invoice</a>.
+
+## Segurança
+
+Para garantir que a requisição foi enviada pelo Upag, verifique a assinatura usando o cabeçalho da requisição (por exemplo `x-Upag-signature` ou o nome configurado no painel) e sua chave secreta de webhook. A assinatura é um HMAC do corpo da requisição. Compare o hash que você calcular com o valor do cabeçalho; se forem iguais, a requisição é autêntica. Mantenha a chave secreta em segurança e nunca a exponha no código ou em repositórios públicos.

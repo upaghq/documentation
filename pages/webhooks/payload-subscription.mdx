@@ -1,0 +1,249 @@
+---
+title: "Payload — Subscription"
+description: "Estrutura do objeto data nos webhooks de assinatura"
+icon: "book-open-cover"
+---
+
+Quando o evento é do tipo `subscription.*`, o campo `data` da requisição de webhook contém um objeto assinatura no formato abaixo.
+
+## <Icon icon="folder-tree" type="solid"/> Estrutura
+
+```json
+{
+  "id": "sub_xyz789abc",
+  "livemode": false,
+  "customer": "cus_ahwDXrgYvur89iPs",
+  "paymentMethod": "pm_abc123xyz",
+  "status": "active",
+  "currency": "BRL",
+  "interval": "month",
+  "intervalCount": 1,
+  "cancelAtPeriodEnd": false,
+  "startDate": 1731622178441,
+  "endDate": null,
+  "trialStartDate": null,
+  "trialEndDate": null,
+  "currentPeriodStart": 1731622178441,
+  "currentPeriodEnd": 1734300578441,
+  "createdAt": 1731622178441,
+  "updatedAt": 1731622178441,
+  "canceledAt": null,
+  "items": [
+    {
+      "id": "si_abc123",
+      "product": "prod_xyz",
+      "price": "pri_xyz",
+      "name": "Plano Mensal",
+      "amount": 9900,
+      "quantity": 1,
+      "createdAt": 1731622178441,
+      "updatedAt": 1731622178441
+    }
+  ]
+}
+```
+
+## Atributos
+
+<AccordionGroup>
+  <Accordion title="id:">
+    ```json {2}
+    {
+      "id": "sub_xyz789abc",
+    }
+    ```
+    `id` : <u> string. </u> <br />
+    Identificador único da assinatura, começando com `sub_`
+  </Accordion>
+
+  <Accordion title="livemode:">
+    ```json {2}
+    {
+      "livemode": false,
+    }
+    ```
+    `livemode` : <u> boolean. </u> <br />
+    Indica se a assinatura está em modo de produção (`true`) ou teste (`false`)
+  </Accordion>
+
+  <Accordion title="customer:">
+    ```json {2}
+    {
+      "customer": "cus_ahwDXrgYvur89iPs",
+    }
+    ```
+    `customer` : <u> string. </u> <br />
+    ID do cliente, começando com `cus_`
+  </Accordion>
+
+  <Accordion title="paymentMethod:">
+    ```json {2}
+    {
+      "paymentMethod": "pm_abc123xyz",
+    }
+    ```
+    `paymentMethod` : <u> string. </u> <br />
+    ID do método de pagamento, começando com `pm_`
+  </Accordion>
+
+  <Accordion title="status:">
+    ```json {2}
+    {
+      "status": "active",
+    }
+    ```
+    `status` : <u> string. </u> <br />
+    Status atual da assinatura (ex.: `active`, `canceled`, `past_due`, `trialing`, `incomplete`, `paused`, `void`)
+  </Accordion>
+
+  <Accordion title="currency:">
+    ```json {2}
+    {
+      "currency": "BRL",
+    }
+    ```
+    `currency` : <u> string. </u> <br />
+    Código da moeda (ex.: `BRL`)
+  </Accordion>
+
+  <Accordion title="interval:">
+    ```json {2}
+    {
+      "interval": "month",
+    }
+    ```
+    `interval` : <u> string. </u> <br />
+    Intervalo de cobrança (ex.: `day`, `month`, `year`)
+  </Accordion>
+
+  <Accordion title="intervalCount:">
+    ```json {2}
+    {
+      "intervalCount": 1,
+    }
+    ```
+    `intervalCount` : <u> number. </u> <br />
+    Quantidade de intervalos entre cada cobrança
+  </Accordion>
+
+  <Accordion title="cancelAtPeriodEnd:">
+    ```json {2}
+    {
+      "cancelAtPeriodEnd": false,
+    }
+    ```
+    `cancelAtPeriodEnd` : <u> boolean. </u> <br />
+    Se a assinatura será cancelada ao final do período atual
+  </Accordion>
+
+  <Accordion title="startDate:">
+    ```json {2}
+    {
+      "startDate": 1731622178441,
+    }
+    ```
+    `startDate` : <u> number. </u> <br />
+    Timestamp Unix de início da assinatura
+  </Accordion>
+
+  <Accordion title="endDate:">
+    ```json {2}
+    {
+      "endDate": null,
+    }
+    ```
+    `endDate` : <u> number | null. </u> <br />
+    Timestamp Unix de fim da assinatura. Pode ser `null`
+  </Accordion>
+
+  <Accordion title="trialStartDate:">
+    ```json {2}
+    {
+      "trialStartDate": null,
+    }
+    ```
+    `trialStartDate` : <u> number | null. </u> <br />
+    Início do período de trial. Pode ser `null`
+  </Accordion>
+
+  <Accordion title="trialEndDate:">
+    ```json {2}
+    {
+      "trialEndDate": null,
+    }
+    ```
+    `trialEndDate` : <u> number | null. </u> <br />
+    Fim do período de trial. Pode ser `null`
+  </Accordion>
+
+  <Accordion title="currentPeriodStart:">
+    ```json {2}
+    {
+      "currentPeriodStart": 1731622178441,
+    }
+    ```
+    `currentPeriodStart` : <u> number. </u> <br />
+    Início do período atual de cobrança (timestamp Unix)
+  </Accordion>
+
+  <Accordion title="currentPeriodEnd:">
+    ```json {2}
+    {
+      "currentPeriodEnd": 1734300578441,
+    }
+    ```
+    `currentPeriodEnd` : <u> number. </u> <br />
+    Fim do período atual de cobrança (timestamp Unix)
+  </Accordion>
+
+  <Accordion title="createdAt:">
+    ```json {2}
+    {
+      "createdAt": 1731622178441,
+    }
+    ```
+    `createdAt` : <u> number. </u> <br />
+    Timestamp Unix de criação
+  </Accordion>
+
+  <Accordion title="updatedAt:">
+    ```json {2}
+    {
+      "updatedAt": 1731622178441,
+    }
+    ```
+    `updatedAt` : <u> number. </u> <br />
+    Timestamp Unix da última atualização
+  </Accordion>
+
+  <Accordion title="canceledAt:">
+    ```json {2}
+    {
+      "canceledAt": null,
+    }
+    ```
+    `canceledAt` : <u> number | null. </u> <br />
+    Timestamp Unix do cancelamento. Pode ser `null`
+  </Accordion>
+
+  <Accordion title="items:">
+    ```json {2-13}
+    {
+      "items": [
+        {
+          "id": "si_abc123",
+          "product": "prod_xyz",
+          "price": "pri_xyz",
+          "name": "Plano Mensal",
+          "amount": 9900,
+          "quantity": 1,
+          "createdAt": 1731622178441,
+          "updatedAt": 1731622178441
+        }
+      ]
+    }
+    ```
+    `items` : <u> array. </u> <br />
+    Lista de itens da assinatura. Cada item contém: `id` (string, prefixo `si_`), `product` (ID do produto), `price` (ID do preço), `name`, `amount` (centavos), `quantity`, `createdAt`, `updatedAt`
+  </Accordion>
+</AccordionGroup>

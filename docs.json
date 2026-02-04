@@ -40,6 +40,15 @@
               "pages/payments/list",
               "pages/payments/get"
             ]
+          },
+          {
+            "group": "Webhooks",
+            "pages": [
+              "pages/webhooks/overview",
+              "pages/webhooks/payload-subscription",
+              "pages/webhooks/payload-payment",
+              "pages/webhooks/payload-invoice"
+            ]
           }
         ]
       }
