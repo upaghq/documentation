@@ -18,65 +18,7 @@ sequenceDiagram
 ```
 
 ## Exemplo
-
 <CodeGroup>
-```javascript Node
-const API_KEY = 'sua_api_key_aqui';
-const BASE_URL = 'https://api.upag.io/v1';
-
-const headers = {
-  'Content-Type': 'application/json',
-  'Authorization': `Bearer ${API_KEY}`,
-};
-
-async function client(path, body) {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body)
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
-}
-
-async function main() {
-  // 1. Criar cliente
-  const customerData = await client('/customers', {
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+1234567890'
-  });
-
-  // 2. Cadastrar método de pagamento (cartão)
-  const paymentMethodData = await client(
-    `/customers/${customerData.id}/payment-methods`,
-    {
-      type: 'credit_card',
-      card: {
-        number: '4242424242424242',
-        expiryMonth: '12',
-        expiryYear: '2032',
-        cvv: '123',
-        holderName: 'JOHN DOE'
-      }
-    }
-  );
-
-  // 3. Criar pagamento
-  const paymentResult = await client('/payments', {
-    customer: customerData.id,
-    paymentMethod: paymentMethodData.id,
-    amount: 1000, // R$ 10
-    currency: 'brl',
-    installments: 1
-  });
-
-  console.log('Pagamento criado:', paymentResult);
-}
-
-main();
-```
-
 ```javascript SDK
 import { Upag } from 'upag';
 
