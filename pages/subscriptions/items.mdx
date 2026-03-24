@@ -40,13 +40,14 @@ curl -X POST https://api.upag.io/v1/subscriptions/sub_abc123xyz/items \
 ```json Response
 {
   "id": "si_def456ghi",
-  "product": "prod_xyz789abc",
-  "price": "price_def456ghi",
+  "subscriptionId": "sub_abc123xyz",
+  "productId": "prod_xyz789abc",
+  "priceId": "price_def456ghi",
   "name": "Add-on Premium",
   "amount": 4900,
   "quantity": 1,
-  "createdAt": 1731622178441,
-  "updatedAt": 1731622178441
+  "createdAt": "2024-11-15T10:00:00.000Z",
+  "updatedAt": "2024-11-15T10:00:00.000Z"
 }
 ```
 
@@ -86,13 +87,14 @@ curl -X PUT https://api.upag.io/v1/subscriptions/sub_abc123xyz/items/si_abc123xy
 ```json Response
 {
   "id": "si_abc123xyz",
-  "product": "prod_xyz789abc",
-  "price": "price_def456ghi",
+  "subscriptionId": "sub_abc123xyz",
+  "productId": "prod_xyz789abc",
+  "priceId": "price_def456ghi",
   "name": "Plano Pro",
   "amount": 9900,
   "quantity": 2,
-  "createdAt": 1731622178441,
-  "updatedAt": 1731625778441
+  "createdAt": "2024-11-15T10:00:00.000Z",
+  "updatedAt": "2024-11-15T11:00:00.000Z"
 }
 ```
 

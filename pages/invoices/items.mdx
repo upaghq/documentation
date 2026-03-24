@@ -44,11 +44,9 @@ curl -X POST https://api.upag.io/v1/invoices/inv_abc123xyz/items \
 ```json Response
 {
   "id": "ii_abc123xyz",
-  "product": "prod_xyz789abc",
-  "price": "price_def456ghi",
-  "name": "Plano Pro",
-  "amount": 9900,
-  "quantity": 1
+  "priceId": "price_def456ghi",
+  "quantity": 1,
+  "amount": 9900
 }
 ```
 
@@ -92,11 +90,9 @@ curl -X PUT https://api.upag.io/v1/invoices/inv_abc123xyz/items/ii_abc123xyz \
 ```json Response
 {
   "id": "ii_abc123xyz",
-  "product": "prod_xyz789abc",
-  "price": "price_def456ghi",
-  "name": "Plano Pro",
-  "amount": 9900,
-  "quantity": 2
+  "priceId": "price_def456ghi",
+  "quantity": 2,
+  "amount": 9900
 }
 ```
 

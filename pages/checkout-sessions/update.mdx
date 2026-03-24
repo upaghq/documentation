@@ -53,16 +53,20 @@ curl -X PUT https://api.upag.io/v1/checkout-sessions/cs_abc123xyz \
 ```json Response
 {
   "id": "cs_abc123xyz",
-  "livemode": false,
-  "customerId": "cus_ahwDXrgYvur89iPs",
-  "checkoutLayoutId": null,
-  "paymentLinkId": "pl_def456ghi",
-  "paymentMethods": ["credit_card", "pix", "boleto"],
-  "couponEnabled": false,
   "status": "open",
+  "customerId": "cus_ahwDXrgYvur89iPs",
   "url": "https://checkout.upag.io/cs_abc123xyz",
-  "expiresAt": 1731708578441,
-  "createdAt": 1731622178441,
-  "updatedAt": 1731625778441
+  "billingAddressCollection": false,
+  "successUrl": "https://example.com/success",
+  "cancelUrl": "https://example.com/cancel",
+  "latitude": null,
+  "longitude": null,
+  "country": null,
+  "region": null,
+  "city": null,
+  "expiresAt": "2024-11-16T10:00:00.000Z",
+  "createdAt": "2024-11-15T10:00:00.000Z",
+  "updatedAt": "2024-11-15T11:00:00.000Z",
+  "items": []
 }
 ```

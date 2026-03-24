@@ -13,24 +13,30 @@ Uma fatura é representada em nossa API pela seguinte estrutura:
 ```json
 {
   "id": "inv_abc123xyz",
-  "livemode": false,
-  "customer": "cus_ahwDXrgYvur89iPs",
-  "paymentMethod": "pm_abc123xyz",
-  "status": "open",
+  "customerId": "cus_ahwDXrgYvur89iPs",
+  "paymentMethodId": "pm_abc123xyz",
   "currency": "BRL",
-  "createdAt": 1731622178441,
-  "updatedAt": 1731622178441,
-  "canceledAt": null,
+  "status": "open",
+  "livemode": false,
+  "number": "INV-001",
+  "description": null,
+  "dueDate": "2024-12-15T00:00:00.000Z",
+  "paidAt": null,
+  "amountDue": 9900,
+  "amountPaid": 0,
+  "attemptCount": 0,
+  "subscriptionId": null,
   "items": [
     {
       "id": "ii_abc123xyz",
-      "product": "prod_xyz789abc",
-      "price": "price_def456ghi",
-      "name": "Plano Pro",
-      "amount": 9900,
-      "quantity": 1
+      "priceId": "price_def456ghi",
+      "quantity": 1,
+      "amount": 9900
     }
-  ]
+  ],
+  "payments": [],
+  "createdAt": "2024-11-15T10:00:00.000Z",
+  "updatedAt": "2024-11-15T10:00:00.000Z"
 }
 ```
 
@@ -58,23 +64,23 @@ Uma fatura é representada em nossa API pela seguinte estrutura:
     Indica se a fatura está em modo de produção (`true`) ou teste (`false`)
   </Accordion>
 
-  <Accordion title="customer:">
+  <Accordion title="customerId:">
     ```json {2}
     {
-      "customer": "cus_ahwDXrgYvur89iPs",
+      "customerId": "cus_ahwDXrgYvur89iPs",
     }
     ```
-    `customer` : <u> string. </u> <br />
+    `customerId` : <u> string. </u> <br />
     ID do cliente associado à fatura. Veja a referência completa <a href="../customers/reference">aqui</a>
   </Accordion>
 
-  <Accordion title="paymentMethod:">
+  <Accordion title="paymentMethodId:">
     ```json {2}
     {
-      "paymentMethod": "pm_abc123xyz",
+      "paymentMethodId": "pm_abc123xyz",
     }
     ```
-    `paymentMethod` : <u> string | null. </u> <br />
+    `paymentMethodId` : <u> string | null. </u> <br />
     ID do método de pagamento utilizado. Veja a referência completa <a href="../payment-methods/reference">aqui</a>
   </Accordion>
 
@@ -108,52 +114,130 @@ Uma fatura é representada em nossa API pela seguinte estrutura:
     Código da moeda (ex.: `BRL`)
   </Accordion>
 
+  <Accordion title="number:">
+    ```json {2}
+    {
+      "number": "INV-001",
+    }
+    ```
+    `number` : <u> string | null. </u> <br />
+    Número sequencial da fatura gerado automaticamente ao ser emitida
+  </Accordion>
+
+  <Accordion title="description:">
+    ```json {2}
+    {
+      "description": null,
+    }
+    ```
+    `description` : <u> string | null. </u> <br />
+    Descrição interna da fatura
+  </Accordion>
+
+  <Accordion title="dueDate:">
+    ```json {2}
+    {
+      "dueDate": "2024-12-15T00:00:00.000Z",
+    }
+    ```
+    `dueDate` : <u> string | null. </u> <br />
+    Data de vencimento da fatura em formato ISO 8601
+  </Accordion>
+
+  <Accordion title="paidAt:">
+    ```json {2}
+    {
+      "paidAt": null,
+    }
+    ```
+    `paidAt` : <u> string | null. </u> <br />
+    Data em que a fatura foi paga. `null` se ainda não paga
+  </Accordion>
+
+  <Accordion title="amountDue:">
+    ```json {2}
+    {
+      "amountDue": 9900,
+    }
+    ```
+    `amountDue` : <u> number. </u> <br />
+    Valor total a ser cobrado em centavos
+  </Accordion>
+
+  <Accordion title="amountPaid:">
+    ```json {2}
+    {
+      "amountPaid": 0,
+    }
+    ```
+    `amountPaid` : <u> number. </u> <br />
+    Valor já pago em centavos
+  </Accordion>
+
+  <Accordion title="attemptCount:">
+    ```json {2}
+    {
+      "attemptCount": 0,
+    }
+    ```
+    `attemptCount` : <u> number. </u> <br />
+    Número de tentativas de cobrança realizadas
+  </Accordion>
+
+  <Accordion title="subscriptionId:">
+    ```json {2}
+    {
+      "subscriptionId": null,
+    }
+    ```
+    `subscriptionId` : <u> string | null. </u> <br />
+    ID da assinatura que gerou esta fatura. `null` para faturas criadas manualmente
+  </Accordion>
+
   <Accordion title="items:">
-    ```json {2-9}
+    ```json {2-7}
     {
       "items": [
         {
           "id": "ii_abc123xyz",
-          "product": "prod_xyz789abc",
-          "price": "price_def456ghi",
-          "name": "Plano Pro",
-          "amount": 9900,
-          "quantity": 1
+          "priceId": "price_def456ghi",
+          "quantity": 1,
+          "amount": 9900
         }
       ]
     }
     ```
     `items` : <u> array. </u> <br />
-    Lista de itens da fatura. Cada item contém `id`, `product`, `price`, `name`, `amount` (em centavos) e `quantity`
+    Lista de itens da fatura. Cada item contém `id`, `priceId`, `quantity` e `amount` (em centavos)
   </Accordion>
 
-  <Accordion title="canceledAt:">
+  <Accordion title="payments:">
     ```json {2}
     {
-      "canceledAt": null,
+      "payments": [],
     }
     ```
-    `canceledAt` : <u> number | null. </u> <br />
-    Timestamp Unix indicando quando a fatura foi cancelada. `null` se não cancelada
+    `payments` : <u> array. </u> <br />
+    Lista de pagamentos associados a esta fatura
   </Accordion>
 
   <Accordion title="createdAt:">
     ```json {2}
     {
-      "createdAt": 1731622178441,
+      "createdAt": "2024-11-15T10:00:00.000Z",
     }
     ```
-    `createdAt` : <u> number. </u> <br />
-    Timestamp Unix indicando quando a fatura foi criada
+    `createdAt` : <u> string. </u> <br />
+    Data de criação da fatura em formato ISO 8601
   </Accordion>
 
   <Accordion title="updatedAt:">
     ```json {2}
     {
-      "updatedAt": 1731622178441,
+      "updatedAt": "2024-11-15T10:00:00.000Z",
     }
     ```
-    `updatedAt` : <u> number. </u> <br />
-    Timestamp Unix indicando quando a fatura foi atualizada pela última vez
+    `updatedAt` : <u> string. </u> <br />
+    Data da última atualização da fatura em formato ISO 8601
   </Accordion>
 </AccordionGroup>

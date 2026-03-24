@@ -14,34 +14,36 @@ Uma assinatura é representada em nossa API pela seguinte estrutura:
 {
   "id": "sub_abc123xyz",
   "livemode": false,
-  "customer": "cus_ahwDXrgYvur89iPs",
-  "paymentMethod": "pm_abc123xyz",
+  "customerId": "cus_ahwDXrgYvur89iPs",
+  "paymentMethodId": "pm_abc123xyz",
   "status": "active",
   "currency": "BRL",
   "interval": "month",
   "intervalCount": 1,
   "cancelAtPeriodEnd": false,
-  "startDate": 1731622178441,
+  "startDate": "2024-11-15T10:00:00.000Z",
   "endDate": null,
   "trialStartDate": null,
   "trialEndDate": null,
-  "currentPeriodStart": 1731622178441,
-  "currentPeriodEnd": 1734214178441,
-  "createdAt": 1731622178441,
-  "updatedAt": 1731622178441,
+  "currentPeriodStart": "2024-11-15T10:00:00.000Z",
+  "currentPeriodEnd": "2024-12-15T10:00:00.000Z",
   "canceledAt": null,
+  "cancellationReason": null,
   "items": [
     {
       "id": "si_abc123xyz",
-      "product": "prod_xyz789abc",
-      "price": "price_def456ghi",
+      "subscriptionId": "sub_abc123xyz",
+      "productId": "prod_xyz789abc",
+      "priceId": "price_def456ghi",
       "name": "Plano Pro",
       "amount": 9900,
       "quantity": 1,
-      "createdAt": 1731622178441,
-      "updatedAt": 1731622178441
+      "createdAt": "2024-11-15T10:00:00.000Z",
+      "updatedAt": "2024-11-15T10:00:00.000Z"
     }
-  ]
+  ],
+  "createdAt": "2024-11-15T10:00:00.000Z",
+  "updatedAt": "2024-11-15T10:00:00.000Z"
 }
 ```
 
@@ -69,23 +71,23 @@ Uma assinatura é representada em nossa API pela seguinte estrutura:
     Indica se a assinatura está em modo de produção (`true`) ou teste (`false`)
   </Accordion>
 
-  <Accordion title="customer:">
+  <Accordion title="customerId:">
     ```json {2}
     {
-      "customer": "cus_ahwDXrgYvur89iPs",
+      "customerId": "cus_ahwDXrgYvur89iPs",
     }
     ```
-    `customer` : <u> string. </u> <br />
+    `customerId` : <u> string. </u> <br />
     ID do cliente associado à assinatura. Veja a referência completa <a href="../customers/reference">aqui</a>
   </Accordion>
 
-  <Accordion title="paymentMethod:">
+  <Accordion title="paymentMethodId:">
     ```json {2}
     {
-      "paymentMethod": "pm_abc123xyz",
+      "paymentMethodId": "pm_abc123xyz",
     }
     ```
-    `paymentMethod` : <u> string | null. </u> <br />
+    `paymentMethodId` : <u> string | null. </u> <br />
     ID do método de pagamento utilizado para as cobranças recorrentes. Veja a referência completa <a href="../payment-methods/reference">aqui</a>
   </Accordion>
 
@@ -143,12 +145,12 @@ Uma assinatura é representada em nossa API pela seguinte estrutura:
   <Accordion title="currentPeriodStart / currentPeriodEnd:">
     ```json {2-3}
     {
-      "currentPeriodStart": 1731622178441,
-      "currentPeriodEnd": 1734214178441,
+      "currentPeriodStart": "2024-11-15T10:00:00.000Z",
+      "currentPeriodEnd": "2024-12-15T10:00:00.000Z",
     }
     ```
-    `currentPeriodStart` / `currentPeriodEnd` : <u> number. </u> <br />
-    Timestamps Unix indicando o início e o fim do período de cobrança atual
+    `currentPeriodStart` / `currentPeriodEnd` : <u> string | null. </u> <br />
+    Datas de início e fim do período de cobrança atual em formato ISO 8601
   </Accordion>
 
   <Accordion title="trialStartDate / trialEndDate:">
@@ -158,27 +160,40 @@ Uma assinatura é representada em nossa API pela seguinte estrutura:
       "trialEndDate": null,
     }
     ```
-    `trialStartDate` / `trialEndDate` : <u> number | null. </u> <br />
-    Timestamps Unix do período de teste. `null` se não há período de teste
+    `trialStartDate` / `trialEndDate` : <u> string | null. </u> <br />
+    Datas do período de teste em formato ISO 8601. `null` se não há período de teste
+  </Accordion>
+
+  <Accordion title="cancellationReason:">
+    ```json {2}
+    {
+      "cancellationReason": null,
+    }
+    ```
+    `cancellationReason` : <u> string | null. </u> <br />
+    Motivo do cancelamento. Valores: `low_quality`, `missing_features`, `other`, `switched_service`, `too_complex`, `too_expensive`, `unused`
   </Accordion>
 
   <Accordion title="items:">
-    ```json {2-10}
+    ```json {2-12}
     {
       "items": [
         {
           "id": "si_abc123xyz",
-          "product": "prod_xyz789abc",
-          "price": "price_def456ghi",
+          "subscriptionId": "sub_abc123xyz",
+          "productId": "prod_xyz789abc",
+          "priceId": "price_def456ghi",
           "name": "Plano Pro",
           "amount": 9900,
-          "quantity": 1
+          "quantity": 1,
+          "createdAt": "2024-11-15T10:00:00.000Z",
+          "updatedAt": "2024-11-15T10:00:00.000Z"
         }
       ]
     }
     ```
     `items` : <u> array. </u> <br />
-    Lista de itens da assinatura. Cada item contém `id`, `product`, `price`, `name`, `amount` (em centavos), `quantity`, `createdAt` e `updatedAt`
+    Lista de itens da assinatura. Cada item contém `id`, `subscriptionId`, `productId`, `priceId`, `name`, `amount` (em centavos), `quantity`, `createdAt` e `updatedAt`
   </Accordion>
 
   <Accordion title="canceledAt:">
@@ -187,27 +202,27 @@ Uma assinatura é representada em nossa API pela seguinte estrutura:
       "canceledAt": null,
     }
     ```
-    `canceledAt` : <u> number | null. </u> <br />
-    Timestamp Unix indicando quando a assinatura foi cancelada. `null` se ativa
+    `canceledAt` : <u> string | null. </u> <br />
+    Data em que a assinatura foi cancelada em formato ISO 8601. `null` se ativa
   </Accordion>
 
   <Accordion title="createdAt:">
     ```json {2}
     {
-      "createdAt": 1731622178441,
+      "createdAt": "2024-11-15T10:00:00.000Z",
     }
     ```
-    `createdAt` : <u> number. </u> <br />
-    Timestamp Unix indicando quando a assinatura foi criada
+    `createdAt` : <u> string. </u> <br />
+    Data de criação da assinatura em formato ISO 8601
   </Accordion>
 
   <Accordion title="updatedAt:">
     ```json {2}
     {
-      "updatedAt": 1731622178441,
+      "updatedAt": "2024-11-15T10:00:00.000Z",
     }
     ```
-    `updatedAt` : <u> number. </u> <br />
-    Timestamp Unix indicando quando a assinatura foi atualizada pela última vez
+    `updatedAt` : <u> string. </u> <br />
+    Data da última atualização da assinatura em formato ISO 8601
   </Accordion>
 </AccordionGroup>

@@ -47,14 +47,22 @@ curl -X POST https://api.upag.io/v1/invoices \
 ```json Response
 {
   "id": "inv_abc123xyz",
-  "livemode": false,
-  "customer": "cus_ahwDXrgYvur89iPs",
-  "paymentMethod": "pm_abc123xyz",
-  "status": "draft",
+  "customerId": "cus_ahwDXrgYvur89iPs",
+  "paymentMethodId": "pm_abc123xyz",
   "currency": "BRL",
-  "createdAt": 1731622178441,
-  "updatedAt": 1731622178441,
-  "canceledAt": null,
-  "items": []
+  "status": "draft",
+  "livemode": false,
+  "number": null,
+  "description": null,
+  "dueDate": "2024-12-15T00:00:00.000Z",
+  "paidAt": null,
+  "amountDue": 0,
+  "amountPaid": 0,
+  "attemptCount": 0,
+  "subscriptionId": null,
+  "items": [],
+  "payments": [],
+  "createdAt": "2024-11-15T10:00:00.000Z",
+  "updatedAt": "2024-11-15T10:00:00.000Z"
 }
 ```

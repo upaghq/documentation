@@ -57,33 +57,35 @@ curl -X POST https://api.upag.io/v1/subscriptions \
 {
   "id": "sub_abc123xyz",
   "livemode": false,
-  "customer": "cus_ahwDXrgYvur89iPs",
-  "paymentMethod": "pm_abc123xyz",
+  "customerId": "cus_ahwDXrgYvur89iPs",
+  "paymentMethodId": "pm_abc123xyz",
   "status": "active",
   "currency": "BRL",
   "interval": "month",
   "intervalCount": 1,
   "cancelAtPeriodEnd": false,
-  "startDate": 1731622178441,
+  "startDate": "2024-11-15T10:00:00.000Z",
   "endDate": null,
   "trialStartDate": null,
   "trialEndDate": null,
-  "currentPeriodStart": 1731622178441,
-  "currentPeriodEnd": 1734214178441,
-  "createdAt": 1731622178441,
-  "updatedAt": 1731622178441,
+  "currentPeriodStart": "2024-11-15T10:00:00.000Z",
+  "currentPeriodEnd": "2024-12-15T10:00:00.000Z",
   "canceledAt": null,
+  "cancellationReason": null,
   "items": [
     {
       "id": "si_abc123xyz",
-      "product": "prod_xyz789abc",
-      "price": "price_def456ghi",
+      "subscriptionId": "sub_abc123xyz",
+      "productId": "prod_xyz789abc",
+      "priceId": "price_def456ghi",
       "name": "Plano Pro",
       "amount": 9900,
       "quantity": 1,
-      "createdAt": 1731622178441,
-      "updatedAt": 1731622178441
+      "createdAt": "2024-11-15T10:00:00.000Z",
+      "updatedAt": "2024-11-15T10:00:00.000Z"
     }
-  ]
+  ],
+  "createdAt": "2024-11-15T10:00:00.000Z",
+  "updatedAt": "2024-11-15T10:00:00.000Z"
 }
 ```

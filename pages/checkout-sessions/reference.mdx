@@ -13,17 +13,42 @@ Uma sessão de checkout é representada em nossa API pela seguinte estrutura:
 ```json
 {
   "id": "cs_abc123xyz",
-  "livemode": false,
-  "customerId": "cus_ahwDXrgYvur89iPs",
-  "checkoutLayoutId": "cl_xyz789abc",
-  "paymentLinkId": "pl_def456ghi",
-  "paymentMethods": ["credit_card", "pix"],
-  "couponEnabled": true,
   "status": "open",
+  "customerId": "cus_ahwDXrgYvur89iPs",
   "url": "https://checkout.upag.io/cs_abc123xyz",
-  "expiresAt": 1731708578441,
-  "createdAt": 1731622178441,
-  "updatedAt": 1731622178441
+  "billingAddressCollection": false,
+  "successUrl": "https://example.com/success",
+  "cancelUrl": "https://example.com/cancel",
+  "latitude": null,
+  "longitude": null,
+  "country": null,
+  "region": null,
+  "city": null,
+  "expiresAt": "2024-11-16T10:00:00.000Z",
+  "createdAt": "2024-11-15T10:00:00.000Z",
+  "updatedAt": "2024-11-15T10:00:00.000Z",
+  "items": [
+    {
+      "id": "csi_abc123xyz",
+      "priceId": "price_def456ghi",
+      "quantity": 1,
+      "price": {
+        "id": "price_def456ghi",
+        "name": "Plano Pro Mensal",
+        "billingType": "recurring",
+        "interval": "month",
+        "intervalCount": 1,
+        "currency": "BRL",
+        "amount": 9900,
+        "product": {
+          "id": "prod_xyz789abc",
+          "name": "Plano Pro",
+          "description": null,
+          "image": null
+        }
+      }
+    }
+  ]
 }
 ```
 
@@ -39,66 +64,6 @@ Uma sessão de checkout é representada em nossa API pela seguinte estrutura:
 
     `id` : <u> string. </u> <br />
     Identificador único da sessão de checkout, começando com `cs_`
-  </Accordion>
-
-  <Accordion title="livemode:">
-    ```json {2}
-    {
-      "livemode": false,
-    }
-    ```
-    `livemode` : <u> boolean. </u> <br />
-    Indica se a sessão está em modo de produção (`true`) ou teste (`false`)
-  </Accordion>
-
-  <Accordion title="customerId:">
-    ```json {2}
-    {
-      "customerId": "cus_ahwDXrgYvur89iPs",
-    }
-    ```
-    `customerId` : <u> string | null. </u> <br />
-    ID do cliente associado à sessão. Veja a referência completa <a href="../customers/reference">aqui</a>
-  </Accordion>
-
-  <Accordion title="checkoutLayoutId:">
-    ```json {2}
-    {
-      "checkoutLayoutId": "cl_xyz789abc",
-    }
-    ```
-    `checkoutLayoutId` : <u> string | null. </u> <br />
-    ID do layout de checkout utilizado para personalizar a aparência da página
-  </Accordion>
-
-  <Accordion title="paymentLinkId:">
-    ```json {2}
-    {
-      "paymentLinkId": "pl_def456ghi",
-    }
-    ```
-    `paymentLinkId` : <u> string | null. </u> <br />
-    ID do link de pagamento associado à sessão
-  </Accordion>
-
-  <Accordion title="paymentMethods:">
-    ```json {2}
-    {
-      "paymentMethods": ["credit_card", "pix"],
-    }
-    ```
-    `paymentMethods` : <u> string[]. </u> <br />
-    Lista de métodos de pagamento habilitados para esta sessão. Valores possíveis: `credit_card`, `pix`, `boleto`
-  </Accordion>
-
-  <Accordion title="couponEnabled:">
-    ```json {2}
-    {
-      "couponEnabled": true,
-    }
-    ```
-    `couponEnabled` : <u> boolean. </u> <br />
-    Indica se o campo de cupom de desconto está habilitado na sessão
   </Accordion>
 
   <Accordion title="status:">
@@ -119,6 +84,16 @@ Uma sessão de checkout é representada em nossa API pela seguinte estrutura:
     </Info>
   </Accordion>
 
+  <Accordion title="customerId:">
+    ```json {2}
+    {
+      "customerId": "cus_ahwDXrgYvur89iPs",
+    }
+    ```
+    `customerId` : <u> string | null. </u> <br />
+    ID do cliente associado à sessão. Veja a referência completa <a href="../customers/reference">aqui</a>
+  </Accordion>
+
   <Accordion title="url:">
     ```json {2}
     {
@@ -129,33 +104,111 @@ Uma sessão de checkout é representada em nossa API pela seguinte estrutura:
     URL da página de checkout para redirecionar o cliente
   </Accordion>
 
+  <Accordion title="billingAddressCollection:">
+    ```json {2}
+    {
+      "billingAddressCollection": false,
+    }
+    ```
+    `billingAddressCollection` : <u> boolean. </u> <br />
+    Indica se o endereço de cobrança deve ser coletado durante o checkout
+  </Accordion>
+
+  <Accordion title="successUrl:">
+    ```json {2}
+    {
+      "successUrl": "https://example.com/success",
+    }
+    ```
+    `successUrl` : <u> string | null. </u> <br />
+    URL para redirecionar o cliente após a conclusão bem-sucedida do pagamento
+  </Accordion>
+
+  <Accordion title="cancelUrl:">
+    ```json {2}
+    {
+      "cancelUrl": "https://example.com/cancel",
+    }
+    ```
+    `cancelUrl` : <u> string | null. </u> <br />
+    URL para redirecionar o cliente ao cancelar ou abandonar o checkout
+  </Accordion>
+
+  <Accordion title="latitude / longitude:">
+    ```json {2-3}
+    {
+      "latitude": null,
+      "longitude": null,
+    }
+    ```
+    `latitude` / `longitude` : <u> string | null. </u> <br />
+    Coordenadas geográficas detectadas do cliente durante o checkout
+  </Accordion>
+
+  <Accordion title="country / region / city:">
+    ```json {2-4}
+    {
+      "country": null,
+      "region": null,
+      "city": null,
+    }
+    ```
+    `country` / `region` / `city` : <u> string | null. </u> <br />
+    Localização geográfica detectada do cliente durante o checkout
+  </Accordion>
+
   <Accordion title="expiresAt:">
     ```json {2}
     {
-      "expiresAt": 1731708578441,
+      "expiresAt": "2024-11-16T10:00:00.000Z",
     }
     ```
-    `expiresAt` : <u> number | null. </u> <br />
-    Timestamp Unix indicando quando a sessão expira
+    `expiresAt` : <u> string | null. </u> <br />
+    Data de expiração da sessão em formato ISO 8601
+  </Accordion>
+
+  <Accordion title="items:">
+    ```json {2-14}
+    {
+      "items": [
+        {
+          "id": "csi_abc123xyz",
+          "priceId": "price_def456ghi",
+          "quantity": 1,
+          "price": {
+            "id": "price_def456ghi",
+            "name": "Plano Pro Mensal",
+            "billingType": "recurring",
+            "interval": "month",
+            "intervalCount": 1,
+            "currency": "BRL",
+            "amount": 9900
+          }
+        }
+      ]
+    }
+    ```
+    `items` : <u> array. </u> <br />
+    Lista de itens da sessão de checkout. Cada item contém `id`, `priceId`, `quantity` e o objeto `price` expandido com detalhes do preço e produto
   </Accordion>
 
   <Accordion title="createdAt:">
     ```json {2}
     {
-      "createdAt": 1731622178441,
+      "createdAt": "2024-11-15T10:00:00.000Z",
     }
     ```
-    `createdAt` : <u> number. </u> <br />
-    Timestamp Unix indicando quando a sessão foi criada
+    `createdAt` : <u> string. </u> <br />
+    Data de criação da sessão em formato ISO 8601
   </Accordion>
 
   <Accordion title="updatedAt:">
     ```json {2}
     {
-      "updatedAt": 1731622178441,
+      "updatedAt": "2024-11-15T10:00:00.000Z",
     }
     ```
-    `updatedAt` : <u> number. </u> <br />
-    Timestamp Unix indicando quando a sessão foi atualizada pela última vez
+    `updatedAt` : <u> string. </u> <br />
+    Data da última atualização da sessão em formato ISO 8601
   </Accordion>
 </AccordionGroup>
