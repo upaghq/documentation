@@ -1,0 +1,164 @@
+---
+title: 'Itens da Fatura'
+description: 'Gerencie os itens de uma fatura'
+---
+
+Os itens de uma fatura representam os produtos ou serviços cobrados. Você pode adicionar, atualizar e remover itens em faturas com status `draft`.
+
+## Adicionar Item
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/v1/invoices/inv_abc123xyz/items \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "price": "price_def456ghi",
+    "quantity": 1
+  }'
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const item = await upag.invoices.items.create('inv_abc123xyz', {
+  price: 'price_def456ghi',
+  quantity: 1
+});
+```
+</CodeGroup>
+
+### Parâmetros — Adicionar Item
+
+<ParamField path="invoiceId" type="string" required>
+  ID único da fatura, começando com `inv_`.
+</ParamField>
+
+<ParamField body="price" type="string" required>
+  ID do preço do produto a ser adicionado.
+</ParamField>
+
+<ParamField body="quantity" type="integer" required>
+  Quantidade do item. Mínimo: `1`.
+</ParamField>
+
+<ParamField body="name" type="string">
+  Nome personalizado para o item. Se não informado, usa o nome do produto.
+</ParamField>
+
+<ParamField body="amount" type="number">
+  Valor personalizado em centavos. Se não informado, usa o valor do preço.
+</ParamField>
+
+### Resposta — Adicionar Item
+
+```json Response
+{
+  "id": "ii_abc123xyz",
+  "product": "prod_xyz789abc",
+  "price": "price_def456ghi",
+  "name": "Plano Pro",
+  "amount": 9900,
+  "quantity": 1
+}
+```
+
+---
+
+## Atualizar Item
+
+<CodeGroup>
+```bash cURL
+curl -X PUT https://api.upag.io/v1/invoices/inv_abc123xyz/items/ii_abc123xyz \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "quantity": 2
+  }'
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const item = await upag.invoices.items.update('inv_abc123xyz', 'ii_abc123xyz', {
+  quantity: 2
+});
+```
+</CodeGroup>
+
+### Parâmetros — Atualizar Item
+
+<ParamField path="invoiceId" type="string" required>
+  ID único da fatura, começando com `inv_`.
+</ParamField>
+
+<ParamField path="itemId" type="string" required>
+  ID único do item da fatura, começando com `ii_`.
+</ParamField>
+
+<ParamField body="quantity" type="integer">
+  Nova quantidade do item.
+</ParamField>
+
+<ParamField body="name" type="string">
+  Novo nome para o item.
+</ParamField>
+
+<ParamField body="amount" type="number">
+  Novo valor em centavos.
+</ParamField>
+
+### Resposta — Atualizar Item
+
+```json Response
+{
+  "id": "ii_abc123xyz",
+  "product": "prod_xyz789abc",
+  "price": "price_def456ghi",
+  "name": "Plano Pro",
+  "amount": 9900,
+  "quantity": 2
+}
+```
+
+---
+
+## Remover Item
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE https://api.upag.io/v1/invoices/inv_abc123xyz/items/ii_abc123xyz \
+  -H "Authorization: Bearer {token}"
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+await upag.invoices.items.delete('inv_abc123xyz', 'ii_abc123xyz');
+```
+</CodeGroup>
+
+### Parâmetros — Remover Item
+
+<ParamField path="invoiceId" type="string" required>
+  ID único da fatura, começando com `inv_`.
+</ParamField>
+
+<ParamField path="itemId" type="string" required>
+  ID único do item da fatura, começando com `ii_`.
+</ParamField>
+
+### Resposta — Remover Item
+
+```json Response
+{
+  "id": "ii_abc123xyz",
+  "deleted": true
+}
+```

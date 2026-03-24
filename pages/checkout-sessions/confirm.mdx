@@ -1,0 +1,63 @@
+---
+title: 'Confirmar Sessão de Checkout'
+description: 'Confirma e processa o pagamento de uma sessão de checkout'
+openapi: 'POST /api/v1/checkout-sessions/{checkoutSessionId}/confirm'
+---
+
+Confirma uma sessão de checkout e processa o pagamento. Após a confirmação, a sessão muda para o status `complete` e um pagamento é gerado.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/v1/checkout-sessions/cs_abc123xyz/confirm \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "paymentMethod": "pm_abc123xyz"
+  }'
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const result = await upag.checkoutSessions.confirm('cs_abc123xyz', {
+  paymentMethod: 'pm_abc123xyz'
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="checkoutSessionId" type="string" required>
+  ID único da sessão de checkout, começando com `cs_`.
+</ParamField>
+
+<ParamField body="paymentMethod" type="string" required>
+  ID do método de pagamento a ser utilizado para processar o pagamento.
+</ParamField>
+
+<ParamField body="couponCode" type="string">
+  Código de cupom de desconto a ser aplicado ao pagamento.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "id": "cs_abc123xyz",
+  "livemode": false,
+  "customerId": "cus_ahwDXrgYvur89iPs",
+  "checkoutLayoutId": null,
+  "paymentLinkId": "pl_def456ghi",
+  "paymentMethods": ["credit_card", "pix"],
+  "couponEnabled": true,
+  "status": "complete",
+  "url": "https://checkout.upag.io/cs_abc123xyz",
+  "expiresAt": 1731708578441,
+  "createdAt": 1731622178441,
+  "updatedAt": 1731625778441
+}
+```

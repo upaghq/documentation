@@ -1,0 +1,160 @@
+---
+title: 'Itens da Assinatura'
+description: 'Gerencie os itens de uma assinatura'
+---
+
+Os itens de uma assinatura representam os produtos ou serviços cobrados recorrentemente. Alterações nos itens podem gerar mudanças agendadas para o próximo período de cobrança.
+
+## Adicionar Item
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/v1/subscriptions/sub_abc123xyz/items \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "price": "price_def456ghi",
+    "quantity": 1
+  }'
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const item = await upag.subscriptions.items.create('sub_abc123xyz', {
+  price: 'price_def456ghi',
+  quantity: 1
+});
+```
+</CodeGroup>
+
+### Parâmetros — Adicionar Item
+
+<ParamField path="subscriptionId" type="string" required>
+  ID único da assinatura, começando com `sub_`.
+</ParamField>
+
+<ParamField body="price" type="string" required>
+  ID do preço do produto a ser adicionado.
+</ParamField>
+
+<ParamField body="quantity" type="integer" required>
+  Quantidade do item. Mínimo: `1`.
+</ParamField>
+
+<ParamField body="name" type="string">
+  Nome personalizado para o item. Se não informado, usa o nome do produto.
+</ParamField>
+
+### Resposta — Adicionar Item
+
+```json Response
+{
+  "id": "si_def456ghi",
+  "product": "prod_xyz789abc",
+  "price": "price_def456ghi",
+  "name": "Add-on Premium",
+  "amount": 4900,
+  "quantity": 1,
+  "createdAt": 1731622178441,
+  "updatedAt": 1731622178441
+}
+```
+
+---
+
+## Atualizar Item
+
+<CodeGroup>
+```bash cURL
+curl -X PUT https://api.upag.io/v1/subscriptions/sub_abc123xyz/items/si_abc123xyz \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "quantity": 2
+  }'
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const item = await upag.subscriptions.items.update('sub_abc123xyz', 'si_abc123xyz', {
+  quantity: 2
+});
+```
+</CodeGroup>
+
+### Parâmetros — Atualizar Item
+
+<ParamField path="subscriptionId" type="string" required>
+  ID único da assinatura, começando com `sub_`.
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  ID único do item da assinatura, começando com `si_`.
+</ParamField>
+
+<ParamField body="quantity" type="integer">
+  Nova quantidade do item.
+</ParamField>
+
+<ParamField body="price" type="string">
+  Novo ID do preço. A alteração pode ser agendada para o próximo período.
+</ParamField>
+
+### Resposta — Atualizar Item
+
+```json Response
+{
+  "id": "si_abc123xyz",
+  "product": "prod_xyz789abc",
+  "price": "price_def456ghi",
+  "name": "Plano Pro",
+  "amount": 9900,
+  "quantity": 2,
+  "createdAt": 1731622178441,
+  "updatedAt": 1731625778441
+}
+```
+
+---
+
+## Remover Item
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE https://api.upag.io/v1/subscriptions/sub_abc123xyz/items/si_abc123xyz \
+  -H "Authorization: Bearer {token}"
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+await upag.subscriptions.items.delete('sub_abc123xyz', 'si_abc123xyz');
+```
+</CodeGroup>
+
+### Parâmetros — Remover Item
+
+<ParamField path="subscriptionId" type="string" required>
+  ID único da assinatura, começando com `sub_`.
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  ID único do item da assinatura, começando com `si_`.
+</ParamField>
+
+### Resposta — Remover Item
+
+```json Response
+{
+  "id": "si_abc123xyz",
+  "deleted": true
+}
+```

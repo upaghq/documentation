@@ -1,0 +1,161 @@
+---
+title: "Referência"
+description: "Crie e gerencie sessões de checkout para seus clientes"
+icon: "book-open-cover"
+---
+
+Uma sessão de checkout representa uma instância de uma página de pagamento criada para um cliente. Ela contém todas as informações necessárias para concluir uma compra.
+
+## <Icon icon="folder-tree" type="solid"/> Estrutura
+
+Uma sessão de checkout é representada em nossa API pela seguinte estrutura:
+
+```json
+{
+  "id": "cs_abc123xyz",
+  "livemode": false,
+  "customerId": "cus_ahwDXrgYvur89iPs",
+  "checkoutLayoutId": "cl_xyz789abc",
+  "paymentLinkId": "pl_def456ghi",
+  "paymentMethods": ["credit_card", "pix"],
+  "couponEnabled": true,
+  "status": "open",
+  "url": "https://checkout.upag.io/cs_abc123xyz",
+  "expiresAt": 1731708578441,
+  "createdAt": 1731622178441,
+  "updatedAt": 1731622178441
+}
+```
+
+## Atributos:
+
+<AccordionGroup>
+  <Accordion title="id:">
+    ```json {2}
+    {
+      "id": "cs_abc123xyz",
+    }
+    ```
+
+    `id` : <u> string. </u> <br />
+    Identificador único da sessão de checkout, começando com `cs_`
+  </Accordion>
+
+  <Accordion title="livemode:">
+    ```json {2}
+    {
+      "livemode": false,
+    }
+    ```
+    `livemode` : <u> boolean. </u> <br />
+    Indica se a sessão está em modo de produção (`true`) ou teste (`false`)
+  </Accordion>
+
+  <Accordion title="customerId:">
+    ```json {2}
+    {
+      "customerId": "cus_ahwDXrgYvur89iPs",
+    }
+    ```
+    `customerId` : <u> string | null. </u> <br />
+    ID do cliente associado à sessão. Veja a referência completa <a href="../customers/reference">aqui</a>
+  </Accordion>
+
+  <Accordion title="checkoutLayoutId:">
+    ```json {2}
+    {
+      "checkoutLayoutId": "cl_xyz789abc",
+    }
+    ```
+    `checkoutLayoutId` : <u> string | null. </u> <br />
+    ID do layout de checkout utilizado para personalizar a aparência da página
+  </Accordion>
+
+  <Accordion title="paymentLinkId:">
+    ```json {2}
+    {
+      "paymentLinkId": "pl_def456ghi",
+    }
+    ```
+    `paymentLinkId` : <u> string | null. </u> <br />
+    ID do link de pagamento associado à sessão
+  </Accordion>
+
+  <Accordion title="paymentMethods:">
+    ```json {2}
+    {
+      "paymentMethods": ["credit_card", "pix"],
+    }
+    ```
+    `paymentMethods` : <u> string[]. </u> <br />
+    Lista de métodos de pagamento habilitados para esta sessão. Valores possíveis: `credit_card`, `pix`, `boleto`
+  </Accordion>
+
+  <Accordion title="couponEnabled:">
+    ```json {2}
+    {
+      "couponEnabled": true,
+    }
+    ```
+    `couponEnabled` : <u> boolean. </u> <br />
+    Indica se o campo de cupom de desconto está habilitado na sessão
+  </Accordion>
+
+  <Accordion title="status:">
+    ```json {2}
+    {
+      "status": "open",
+    }
+    ```
+    `status` : <u> string. </u> <br />
+    Status atual da sessão de checkout
+
+    <Info>
+      | Status | Descrição |
+      | ----------- | ------------------------------------- |
+      | `open` | **A sessão está aberta e aguardando pagamento** |
+      | `complete` | **A sessão foi concluída com sucesso** |
+      | `expired` | **A sessão expirou sem pagamento** |
+    </Info>
+  </Accordion>
+
+  <Accordion title="url:">
+    ```json {2}
+    {
+      "url": "https://checkout.upag.io/cs_abc123xyz",
+    }
+    ```
+    `url` : <u> string. </u> <br />
+    URL da página de checkout para redirecionar o cliente
+  </Accordion>
+
+  <Accordion title="expiresAt:">
+    ```json {2}
+    {
+      "expiresAt": 1731708578441,
+    }
+    ```
+    `expiresAt` : <u> number | null. </u> <br />
+    Timestamp Unix indicando quando a sessão expira
+  </Accordion>
+
+  <Accordion title="createdAt:">
+    ```json {2}
+    {
+      "createdAt": 1731622178441,
+    }
+    ```
+    `createdAt` : <u> number. </u> <br />
+    Timestamp Unix indicando quando a sessão foi criada
+  </Accordion>
+
+  <Accordion title="updatedAt:">
+    ```json {2}
+    {
+      "updatedAt": 1731622178441,
+    }
+    ```
+    `updatedAt` : <u> number. </u> <br />
+    Timestamp Unix indicando quando a sessão foi atualizada pela última vez
+  </Accordion>
+</AccordionGroup>

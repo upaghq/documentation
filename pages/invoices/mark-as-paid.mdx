@@ -1,0 +1,57 @@
+---
+title: 'Marcar Fatura como Paga'
+description: 'Marca manualmente uma fatura como paga'
+openapi: 'POST /api/v1/invoices/{id}/mark-as-paid'
+---
+
+Marca uma fatura como paga manualmente, sem processar um pagamento pelo gateway. Útil para registrar pagamentos realizados fora da plataforma (ex.: transferência bancária).
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/v1/invoices/inv_abc123xyz/mark-as-paid \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json"
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const invoice = await upag.invoices.markAsPaid('inv_abc123xyz');
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="id" type="string" required>
+  ID único da fatura, começando com `inv_`.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "id": "inv_abc123xyz",
+  "livemode": false,
+  "customer": "cus_ahwDXrgYvur89iPs",
+  "paymentMethod": "pm_abc123xyz",
+  "status": "paid",
+  "currency": "BRL",
+  "createdAt": 1731622178441,
+  "updatedAt": 1731625778441,
+  "canceledAt": null,
+  "items": [
+    {
+      "id": "ii_abc123xyz",
+      "product": "prod_xyz789abc",
+      "price": "price_def456ghi",
+      "name": "Plano Pro",
+      "amount": 9900,
+      "quantity": 1
+    }
+  ]
+}
+```

@@ -1,0 +1,57 @@
+---
+title: 'Pagar Fatura'
+description: 'Processa o pagamento de uma fatura'
+openapi: 'POST /api/v1/invoices/{id}/pay'
+---
+
+Processa o pagamento de uma fatura utilizando o método de pagamento associado. A fatura deve estar com status `open`.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/v1/invoices/inv_abc123xyz/pay \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json"
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const invoice = await upag.invoices.pay('inv_abc123xyz');
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="id" type="string" required>
+  ID único da fatura, começando com `inv_`.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "id": "inv_abc123xyz",
+  "livemode": false,
+  "customer": "cus_ahwDXrgYvur89iPs",
+  "paymentMethod": "pm_abc123xyz",
+  "status": "paid",
+  "currency": "BRL",
+  "createdAt": 1731622178441,
+  "updatedAt": 1731625778441,
+  "canceledAt": null,
+  "items": [
+    {
+      "id": "ii_abc123xyz",
+      "product": "prod_xyz789abc",
+      "price": "price_def456ghi",
+      "name": "Plano Pro",
+      "amount": 9900,
+      "quantity": 1
+    }
+  ]
+}
+```

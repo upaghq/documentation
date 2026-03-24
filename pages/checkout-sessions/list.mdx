@@ -1,0 +1,67 @@
+---
+title: 'Listar Sessões de Checkout'
+description: 'Retorna uma lista de todas as sessões de checkout'
+openapi: 'GET /api/v1/checkout-sessions'
+---
+
+Retorna uma lista paginada de todas as sessões de checkout.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -G https://api.upag.io/v1/checkout-sessions \
+  -H "Authorization: Bearer {token}" \
+  -d page=1 \
+  -d limit=10
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const sessions = await upag.checkoutSessions.list({
+  limit: 10,
+  page: 1
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField query="limit" type="integer">
+  Limita o número de sessões retornadas. Padrão: `10`, máximo: `100`.
+</ParamField>
+
+<ParamField query="page" type="integer">
+  Número da página a ser retornada. Padrão: `1`.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filtra sessões por status: `open`, `complete`, `expired`.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "data": [
+    {
+      "id": "cs_abc123xyz",
+      "livemode": false,
+      "customerId": "cus_ahwDXrgYvur89iPs",
+      "checkoutLayoutId": null,
+      "paymentLinkId": "pl_def456ghi",
+      "paymentMethods": ["credit_card", "pix"],
+      "couponEnabled": true,
+      "status": "open",
+      "url": "https://checkout.upag.io/cs_abc123xyz",
+      "expiresAt": 1731708578441,
+      "createdAt": 1731622178441,
+      "updatedAt": 1731622178441
+    }
+  ],
+  "total": 1
+}
+```

@@ -48,6 +48,45 @@
                         ]
                     },
                     {
+                        "group": "Sessões de Checkout",
+                        "pages": [
+                            "pages/checkout-sessions/reference",
+                            "pages/checkout-sessions/create",
+                            "pages/checkout-sessions/list",
+                            "pages/checkout-sessions/get",
+                            "pages/checkout-sessions/update",
+                            "pages/checkout-sessions/delete",
+                            "pages/checkout-sessions/confirm"
+                        ]
+                    },
+                    {
+                        "group": "Faturas",
+                        "pages": [
+                            "pages/invoices/reference",
+                            "pages/invoices/create",
+                            "pages/invoices/list",
+                            "pages/invoices/get",
+                            "pages/invoices/update",
+                            "pages/invoices/pay",
+                            "pages/invoices/mark-as-paid",
+                            "pages/invoices/upcoming",
+                            "pages/invoices/items"
+                        ]
+                    },
+                    {
+                        "group": "Assinaturas",
+                        "pages": [
+                            "pages/subscriptions/reference",
+                            "pages/subscriptions/create",
+                            "pages/subscriptions/list",
+                            "pages/subscriptions/get",
+                            "pages/subscriptions/update",
+                            "pages/subscriptions/cancel",
+                            "pages/subscriptions/items",
+                            "pages/subscriptions/scheduled-changes"
+                        ]
+                    },
+                    {
                         "group": "Webhooks",
                         "pages": [
                             "pages/webhooks/overview",

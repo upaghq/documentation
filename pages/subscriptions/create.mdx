@@ -1,0 +1,109 @@
+---
+title: 'Criar uma Assinatura'
+description: 'Crie uma nova assinatura recorrente para um cliente'
+openapi: 'POST /api/v1/subscriptions'
+---
+
+Cria uma nova assinatura recorrente para um cliente. A cobrança é processada imediatamente e as faturas subsequentes são geradas automaticamente a cada período.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/v1/subscriptions \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer": "cus_ahwDXrgYvur89iPs",
+    "paymentMethod": "pm_abc123xyz",
+    "currency": "BRL",
+    "items": [
+      {
+        "price": "price_def456ghi",
+        "quantity": 1
+      }
+    ]
+  }'
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const subscription = await upag.subscriptions.create({
+  customer: 'cus_ahwDXrgYvur89iPs',
+  paymentMethod: 'pm_abc123xyz',
+  currency: 'BRL',
+  items: [
+    {
+      price: 'price_def456ghi',
+      quantity: 1
+    }
+  ]
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField body="customer" type="string" required>
+  ID do cliente (UUID) para quem a assinatura será criada.
+</ParamField>
+
+<ParamField body="items" type="array" required>
+  Lista de itens da assinatura. Cada item deve conter `price` (ID do preço) e `quantity`.
+</ParamField>
+
+<ParamField body="currency" type="string" required>
+  Código da moeda (ex.: `BRL`).
+</ParamField>
+
+<ParamField body="paymentMethod" type="string">
+  ID do método de pagamento a ser utilizado nas cobranças.
+</ParamField>
+
+<ParamField body="trialEndDate" type="number">
+  Timestamp Unix definindo o fim do período de teste. Durante o trial, nenhuma cobrança é realizada.
+</ParamField>
+
+<ParamField body="cancelAtPeriodEnd" type="boolean">
+  Se `true`, a assinatura será cancelada ao final do primeiro período. Padrão: `false`.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "id": "sub_abc123xyz",
+  "livemode": false,
+  "customer": "cus_ahwDXrgYvur89iPs",
+  "paymentMethod": "pm_abc123xyz",
+  "status": "active",
+  "currency": "BRL",
+  "interval": "month",
+  "intervalCount": 1,
+  "cancelAtPeriodEnd": false,
+  "startDate": 1731622178441,
+  "endDate": null,
+  "trialStartDate": null,
+  "trialEndDate": null,
+  "currentPeriodStart": 1731622178441,
+  "currentPeriodEnd": 1734214178441,
+  "createdAt": 1731622178441,
+  "updatedAt": 1731622178441,
+  "canceledAt": null,
+  "items": [
+    {
+      "id": "si_abc123xyz",
+      "product": "prod_xyz789abc",
+      "price": "price_def456ghi",
+      "name": "Plano Pro",
+      "amount": 9900,
+      "quantity": 1,
+      "createdAt": 1731622178441,
+      "updatedAt": 1731622178441
+    }
+  ]
+}
+```

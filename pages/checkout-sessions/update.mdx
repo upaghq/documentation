@@ -1,0 +1,81 @@
+---
+title: 'Atualizar Sessão de Checkout'
+description: 'Atualiza os dados de uma sessão de checkout existente'
+openapi: 'PUT /api/v1/checkout-sessions/{id}'
+---
+
+Atualiza os dados de uma sessão de checkout. Somente sessões com status `open` podem ser atualizadas.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X PUT https://api.upag.io/v1/checkout-sessions/cs_abc123xyz \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "paymentMethods": ["credit_card", "pix", "boleto"],
+    "couponEnabled": false
+  }'
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const session = await upag.checkoutSessions.update('cs_abc123xyz', {
+  paymentMethods: ['credit_card', 'pix', 'boleto'],
+  couponEnabled: false
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="id" type="string" required>
+  ID único da sessão de checkout, começando com `cs_`.
+</ParamField>
+
+<ParamField body="paymentMethods" type="string[]">
+  Lista de métodos de pagamento habilitados. Valores: `credit_card`, `pix`, `boleto`.
+</ParamField>
+
+<ParamField body="couponEnabled" type="boolean">
+  Habilita ou desabilita o campo de cupom de desconto.
+</ParamField>
+
+<ParamField body="checkoutLayoutId" type="string">
+  ID do layout de checkout para personalizar a aparência.
+</ParamField>
+
+<ParamField body="successUrl" type="string">
+  URL de redirecionamento após pagamento bem-sucedido.
+</ParamField>
+
+<ParamField body="cancelUrl" type="string">
+  URL de redirecionamento caso o cliente cancele.
+</ParamField>
+
+<ParamField body="expiresAt" type="number">
+  Timestamp Unix definindo quando a sessão expira.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "id": "cs_abc123xyz",
+  "livemode": false,
+  "customerId": "cus_ahwDXrgYvur89iPs",
+  "checkoutLayoutId": null,
+  "paymentLinkId": "pl_def456ghi",
+  "paymentMethods": ["credit_card", "pix", "boleto"],
+  "couponEnabled": false,
+  "status": "open",
+  "url": "https://checkout.upag.io/cs_abc123xyz",
+  "expiresAt": 1731708578441,
+  "createdAt": 1731622178441,
+  "updatedAt": 1731625778441
+}
+```

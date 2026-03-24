@@ -1,0 +1,91 @@
+---
+title: 'Mudanças Agendadas'
+description: 'Consulte e cancele mudanças agendadas de uma assinatura'
+---
+
+Mudanças agendadas representam alterações em itens de uma assinatura que entrarão em vigor no próximo período de cobrança. Por exemplo, ao atualizar o plano de um cliente, a mudança pode ser agendada para não interromper o ciclo atual.
+
+## Listar Mudanças Agendadas
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.io/v1/subscriptions/sub_abc123xyz/scheduled-changes \
+  -H "Authorization: Bearer {token}"
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const changes = await upag.subscriptions.scheduledChanges.list('sub_abc123xyz');
+```
+</CodeGroup>
+
+### Parâmetros — Listar
+
+<ParamField path="subscriptionId" type="string" required>
+  ID único da assinatura, começando com `sub_`.
+</ParamField>
+
+### Resposta — Listar
+
+```json Response
+{
+  "data": [
+    {
+      "id": "sc_abc123xyz",
+      "subscriptionId": "sub_abc123xyz",
+      "type": "update_item",
+      "scheduledAt": 1734214178441,
+      "payload": {
+        "itemId": "si_abc123xyz",
+        "price": "price_ghi789jkl",
+        "quantity": 1
+      },
+      "createdAt": 1731622178441
+    }
+  ],
+  "total": 1
+}
+```
+
+---
+
+## Cancelar Mudança Agendada
+
+Remove uma mudança agendada antes que ela entre em vigor.
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE https://api.upag.io/v1/subscriptions/sub_abc123xyz/scheduled-changes/sc_abc123xyz \
+  -H "Authorization: Bearer {token}"
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+await upag.subscriptions.scheduledChanges.delete('sub_abc123xyz', 'sc_abc123xyz');
+```
+</CodeGroup>
+
+### Parâmetros — Cancelar
+
+<ParamField path="subscriptionId" type="string" required>
+  ID único da assinatura, começando com `sub_`.
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  ID único da mudança agendada, começando com `sc_`.
+</ParamField>
+
+### Resposta — Cancelar
+
+```json Response
+{
+  "id": "sc_abc123xyz",
+  "deleted": true
+}
+```

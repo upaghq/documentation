@@ -1,0 +1,67 @@
+---
+title: 'Cancelar Assinatura'
+description: 'Cancela uma assinatura imediatamente'
+openapi: 'DELETE /api/v1/subscriptions/{id}'
+---
+
+Cancela uma assinatura imediatamente. O acesso ao serviço é encerrado no momento do cancelamento. Para cancelar ao final do período atual, utilize a opção `cancelAtPeriodEnd` na atualização da assinatura.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE https://api.upag.io/v1/subscriptions/sub_abc123xyz \
+  -H "Authorization: Bearer {token}"
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const subscription = await upag.subscriptions.cancel('sub_abc123xyz');
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="id" type="string" required>
+  ID único da assinatura, começando com `sub_`.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "id": "sub_abc123xyz",
+  "livemode": false,
+  "customer": "cus_ahwDXrgYvur89iPs",
+  "paymentMethod": "pm_abc123xyz",
+  "status": "canceled",
+  "currency": "BRL",
+  "interval": "month",
+  "intervalCount": 1,
+  "cancelAtPeriodEnd": false,
+  "startDate": 1731622178441,
+  "endDate": 1731625778441,
+  "trialStartDate": null,
+  "trialEndDate": null,
+  "currentPeriodStart": 1731622178441,
+  "currentPeriodEnd": 1734214178441,
+  "createdAt": 1731622178441,
+  "updatedAt": 1731625778441,
+  "canceledAt": 1731625778441,
+  "items": [
+    {
+      "id": "si_abc123xyz",
+      "product": "prod_xyz789abc",
+      "price": "price_def456ghi",
+      "name": "Plano Pro",
+      "amount": 9900,
+      "quantity": 1,
+      "createdAt": 1731622178441,
+      "updatedAt": 1731622178441
+    }
+  ]
+}
+```

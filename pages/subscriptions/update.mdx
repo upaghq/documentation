@@ -1,0 +1,87 @@
+---
+title: 'Atualizar Assinatura'
+description: 'Atualiza os dados de uma assinatura existente'
+openapi: 'PUT /api/v1/subscriptions/{id}'
+---
+
+Atualiza os dados de uma assinatura ativa. Alterações no método de pagamento e configurações de cancelamento entram em vigor imediatamente. Alterações nos itens podem gerar uma mudança agendada para o próximo período.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X PUT https://api.upag.io/v1/subscriptions/sub_abc123xyz \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "paymentMethod": "pm_def456ghi",
+    "cancelAtPeriodEnd": true
+  }'
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const subscription = await upag.subscriptions.update('sub_abc123xyz', {
+  paymentMethod: 'pm_def456ghi',
+  cancelAtPeriodEnd: true
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="id" type="string" required>
+  ID único da assinatura, começando com `sub_`.
+</ParamField>
+
+<ParamField body="paymentMethod" type="string">
+  Novo ID do método de pagamento a ser utilizado nas cobranças.
+</ParamField>
+
+<ParamField body="cancelAtPeriodEnd" type="boolean">
+  Se `true`, a assinatura será cancelada ao final do período atual em vez de renovar.
+</ParamField>
+
+<ParamField body="trialEndDate" type="number">
+  Timestamp Unix para encerrar antecipadamente o período de teste.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "id": "sub_abc123xyz",
+  "livemode": false,
+  "customer": "cus_ahwDXrgYvur89iPs",
+  "paymentMethod": "pm_def456ghi",
+  "status": "active",
+  "currency": "BRL",
+  "interval": "month",
+  "intervalCount": 1,
+  "cancelAtPeriodEnd": true,
+  "startDate": 1731622178441,
+  "endDate": null,
+  "trialStartDate": null,
+  "trialEndDate": null,
+  "currentPeriodStart": 1731622178441,
+  "currentPeriodEnd": 1734214178441,
+  "createdAt": 1731622178441,
+  "updatedAt": 1731625778441,
+  "canceledAt": null,
+  "items": [
+    {
+      "id": "si_abc123xyz",
+      "product": "prod_xyz789abc",
+      "price": "price_def456ghi",
+      "name": "Plano Pro",
+      "amount": 9900,
+      "quantity": 1,
+      "createdAt": 1731622178441,
+      "updatedAt": 1731622178441
+    }
+  ]
+}
+```

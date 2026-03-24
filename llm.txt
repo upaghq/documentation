@@ -11,6 +11,9 @@
 - **Clientes** — `pages/customers/` (reference, create, list, get, update)
 - **Métodos de pagamento** — `pages/payment-methods/` (reference, create, list, get)
 - **Pagamentos** — `pages/payments/` (reference, create, list, get)
+- **Sessões de Checkout** — `pages/checkout-sessions/` (reference, create, list, get, update, delete, confirm)
+- **Faturas** — `pages/invoices/` (reference, create, list, get, update, pay, mark-as-paid, upcoming, items)
+- **Assinaturas** — `pages/subscriptions/` (reference, create, list, get, update, cancel, items, scheduled-changes)
 - **Webhooks** — `pages/webhooks/` (overview, payloads de subscription, payment, invoice)
 
 ## Convenções

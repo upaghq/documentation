@@ -1,0 +1,93 @@
+---
+title: 'Criar uma Sessão de Checkout'
+description: 'Crie uma nova sessão de checkout para um cliente'
+openapi: 'POST /api/v1/checkout-sessions'
+---
+
+Cria uma nova sessão de checkout. Retorna a URL da página de pagamento para redirecionar o cliente.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/v1/checkout-sessions \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "paymentLinkId": "pl_def456ghi",
+    "customerId": "cus_ahwDXrgYvur89iPs",
+    "paymentMethods": ["credit_card", "pix"],
+    "couponEnabled": true,
+    "successUrl": "https://seusite.com/sucesso",
+    "cancelUrl": "https://seusite.com/cancelado"
+  }'
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const session = await upag.checkoutSessions.create({
+  paymentLinkId: 'pl_def456ghi',
+  customerId: 'cus_ahwDXrgYvur89iPs',
+  paymentMethods: ['credit_card', 'pix'],
+  couponEnabled: true,
+  successUrl: 'https://seusite.com/sucesso',
+  cancelUrl: 'https://seusite.com/cancelado'
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField body="paymentLinkId" type="string">
+  ID do link de pagamento associado à sessão.
+</ParamField>
+
+<ParamField body="customerId" type="string">
+  ID do cliente (UUID) para pré-preencher informações na sessão.
+</ParamField>
+
+<ParamField body="checkoutLayoutId" type="string">
+  ID do layout de checkout para personalizar a aparência da página.
+</ParamField>
+
+<ParamField body="paymentMethods" type="string[]">
+  Lista de métodos de pagamento habilitados. Valores: `credit_card`, `pix`, `boleto`.
+</ParamField>
+
+<ParamField body="couponEnabled" type="boolean">
+  Habilita o campo de cupom de desconto na sessão. Padrão: `false`.
+</ParamField>
+
+<ParamField body="successUrl" type="string">
+  URL para redirecionar o cliente após o pagamento bem-sucedido.
+</ParamField>
+
+<ParamField body="cancelUrl" type="string">
+  URL para redirecionar o cliente caso cancele o pagamento.
+</ParamField>
+
+<ParamField body="expiresAt" type="number">
+  Timestamp Unix definindo quando a sessão expira.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "id": "cs_abc123xyz",
+  "livemode": false,
+  "customerId": "cus_ahwDXrgYvur89iPs",
+  "checkoutLayoutId": null,
+  "paymentLinkId": "pl_def456ghi",
+  "paymentMethods": ["credit_card", "pix"],
+  "couponEnabled": true,
+  "status": "open",
+  "url": "https://checkout.upag.io/cs_abc123xyz",
+  "expiresAt": 1731708578441,
+  "createdAt": 1731622178441,
+  "updatedAt": 1731622178441
+}
+```

@@ -1,0 +1,75 @@
+---
+title: 'Criar uma Fatura'
+description: 'Crie uma nova fatura para um cliente'
+openapi: 'POST /api/v1/invoices'
+---
+
+Cria uma nova fatura para um cliente. A fatura é criada com status `draft` e pode ser editada antes de ser emitida.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/v1/invoices \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer": "cus_ahwDXrgYvur89iPs",
+    "paymentMethod": "pm_abc123xyz",
+    "currency": "BRL",
+    "dueDate": 1731708578441
+  }'
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const invoice = await upag.invoices.create({
+  customer: 'cus_ahwDXrgYvur89iPs',
+  paymentMethod: 'pm_abc123xyz',
+  currency: 'BRL',
+  dueDate: 1731708578441
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField body="customer" type="string" required>
+  ID do cliente (UUID) para quem a fatura será emitida.
+</ParamField>
+
+<ParamField body="currency" type="string" required>
+  Código da moeda (ex.: `BRL`).
+</ParamField>
+
+<ParamField body="paymentMethod" type="string">
+  ID do método de pagamento a ser utilizado.
+</ParamField>
+
+<ParamField body="dueDate" type="number">
+  Timestamp Unix indicando a data de vencimento da fatura.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Descrição interna da fatura.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "id": "inv_abc123xyz",
+  "livemode": false,
+  "customer": "cus_ahwDXrgYvur89iPs",
+  "paymentMethod": "pm_abc123xyz",
+  "status": "draft",
+  "currency": "BRL",
+  "createdAt": 1731622178441,
+  "updatedAt": 1731622178441,
+  "canceledAt": null,
+  "items": []
+}
+```

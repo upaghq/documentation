@@ -1,0 +1,91 @@
+---
+title: 'Listar Assinaturas'
+description: 'Retorna uma lista de todas as assinaturas'
+openapi: 'GET /api/v1/subscriptions'
+---
+
+Retorna uma lista paginada de todas as assinaturas. Pode ser filtrada por cliente ou status.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -G https://api.upag.io/v1/subscriptions \
+  -H "Authorization: Bearer {token}" \
+  -d page=1 \
+  -d limit=10 \
+  -d customer=cus_ahwDXrgYvur89iPs
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const subscriptions = await upag.subscriptions.list({
+  limit: 10,
+  page: 1,
+  customer: 'cus_ahwDXrgYvur89iPs'
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField query="limit" type="integer">
+  Limita o número de assinaturas retornadas. Padrão: `10`, máximo: `100`.
+</ParamField>
+
+<ParamField query="page" type="integer">
+  Número da página a ser retornada. Padrão: `1`.
+</ParamField>
+
+<ParamField query="customer" type="string">
+  ID do cliente para filtrar assinaturas de um cliente específico.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filtra assinaturas por status: `active`, `trialing`, `past_due`, `canceled`, `unpaid`, `incomplete`.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "data": [
+    {
+      "id": "sub_abc123xyz",
+      "livemode": false,
+      "customer": "cus_ahwDXrgYvur89iPs",
+      "paymentMethod": "pm_abc123xyz",
+      "status": "active",
+      "currency": "BRL",
+      "interval": "month",
+      "intervalCount": 1,
+      "cancelAtPeriodEnd": false,
+      "startDate": 1731622178441,
+      "endDate": null,
+      "trialStartDate": null,
+      "trialEndDate": null,
+      "currentPeriodStart": 1731622178441,
+      "currentPeriodEnd": 1734214178441,
+      "createdAt": 1731622178441,
+      "updatedAt": 1731622178441,
+      "canceledAt": null,
+      "items": [
+        {
+          "id": "si_abc123xyz",
+          "product": "prod_xyz789abc",
+          "price": "price_def456ghi",
+          "name": "Plano Pro",
+          "amount": 9900,
+          "quantity": 1,
+          "createdAt": 1731622178441,
+          "updatedAt": 1731622178441
+        }
+      ]
+    }
+  ],
+  "total": 1
+}
+```

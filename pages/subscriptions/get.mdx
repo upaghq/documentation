@@ -1,0 +1,67 @@
+---
+title: 'Buscar Assinatura por ID'
+description: 'Retorna os detalhes de uma assinatura específica'
+openapi: 'GET /api/v1/subscriptions/{id}'
+---
+
+Retorna as informações completas de uma assinatura específica pelo seu ID.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.io/v1/subscriptions/sub_abc123xyz \
+  -H "Authorization: Bearer {token}"
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const subscription = await upag.subscriptions.retrieve('sub_abc123xyz');
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="id" type="string" required>
+  ID único da assinatura, começando com `sub_`.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "id": "sub_abc123xyz",
+  "livemode": false,
+  "customer": "cus_ahwDXrgYvur89iPs",
+  "paymentMethod": "pm_abc123xyz",
+  "status": "active",
+  "currency": "BRL",
+  "interval": "month",
+  "intervalCount": 1,
+  "cancelAtPeriodEnd": false,
+  "startDate": 1731622178441,
+  "endDate": null,
+  "trialStartDate": null,
+  "trialEndDate": null,
+  "currentPeriodStart": 1731622178441,
+  "currentPeriodEnd": 1734214178441,
+  "createdAt": 1731622178441,
+  "updatedAt": 1731622178441,
+  "canceledAt": null,
+  "items": [
+    {
+      "id": "si_abc123xyz",
+      "product": "prod_xyz789abc",
+      "price": "price_def456ghi",
+      "name": "Plano Pro",
+      "amount": 9900,
+      "quantity": 1,
+      "createdAt": 1731622178441,
+      "updatedAt": 1731622178441
+    }
+  ]
+}
+```

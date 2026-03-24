@@ -1,0 +1,76 @@
+---
+title: 'Atualizar Fatura'
+description: 'Atualiza os dados de uma fatura existente'
+openapi: 'PATCH /api/v1/invoices/{id}'
+---
+
+Atualiza os dados de uma fatura. Somente faturas com status `draft` podem ser atualizadas.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X PATCH https://api.upag.io/v1/invoices/inv_abc123xyz \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "paymentMethod": "pm_def456ghi",
+    "dueDate": 1731795000000
+  }'
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const invoice = await upag.invoices.update('inv_abc123xyz', {
+  paymentMethod: 'pm_def456ghi',
+  dueDate: 1731795000000
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="id" type="string" required>
+  ID único da fatura, começando com `inv_`.
+</ParamField>
+
+<ParamField body="paymentMethod" type="string">
+  ID do método de pagamento a ser utilizado.
+</ParamField>
+
+<ParamField body="dueDate" type="number">
+  Timestamp Unix da nova data de vencimento.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Descrição interna da fatura.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "id": "inv_abc123xyz",
+  "livemode": false,
+  "customer": "cus_ahwDXrgYvur89iPs",
+  "paymentMethod": "pm_def456ghi",
+  "status": "draft",
+  "currency": "BRL",
+  "createdAt": 1731622178441,
+  "updatedAt": 1731625778441,
+  "canceledAt": null,
+  "items": [
+    {
+      "id": "ii_abc123xyz",
+      "product": "prod_xyz789abc",
+      "price": "price_def456ghi",
+      "name": "Plano Pro",
+      "amount": 9900,
+      "quantity": 1
+    }
+  ]
+}
+```

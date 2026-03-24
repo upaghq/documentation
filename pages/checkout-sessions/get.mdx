@@ -1,0 +1,49 @@
+---
+title: 'Buscar Sessão de Checkout por ID'
+description: 'Retorna os detalhes de uma sessão de checkout específica'
+openapi: 'GET /api/v1/checkout-sessions/{id}'
+---
+
+Retorna as informações completas de uma sessão de checkout específica pelo seu ID.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.io/v1/checkout-sessions/cs_abc123xyz \
+  -H "Authorization: Bearer {token}"
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const session = await upag.checkoutSessions.retrieve('cs_abc123xyz');
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="id" type="string" required>
+  ID único da sessão de checkout, começando com `cs_`.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "id": "cs_abc123xyz",
+  "livemode": false,
+  "customerId": "cus_ahwDXrgYvur89iPs",
+  "checkoutLayoutId": null,
+  "paymentLinkId": "pl_def456ghi",
+  "paymentMethods": ["credit_card", "pix"],
+  "couponEnabled": true,
+  "status": "open",
+  "url": "https://checkout.upag.io/cs_abc123xyz",
+  "expiresAt": 1731708578441,
+  "createdAt": 1731622178441,
+  "updatedAt": 1731622178441
+}
+```
