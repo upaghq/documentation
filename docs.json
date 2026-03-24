@@ -66,7 +66,6 @@
                             "pages/invoices/create",
                             "pages/invoices/list",
                             "pages/invoices/get",
-                            "pages/invoices/update",
                             "pages/invoices/pay",
                             "pages/invoices/mark-as-paid",
                             "pages/invoices/upcoming",
