@@ -8,7 +8,6 @@ Atualiza os dados de uma fatura. Somente faturas com status `draft` podem ser at
 
 ## Endpoint
 
-<CodeGroup>
 ```bash cURL
 curl -X PATCH https://api.upag.io/v1/invoices/inv_abc123xyz \
   -H "Authorization: Bearer {token}" \
@@ -18,18 +17,6 @@ curl -X PATCH https://api.upag.io/v1/invoices/inv_abc123xyz \
     "dueDate": 1731795000000
   }'
 ```
-
-```javascript SDK
-import { Upag } from 'upag';
-
-const upag = new Upag('sk_test_your_api_key');
-
-const invoice = await upag.invoices.update('inv_abc123xyz', {
-  paymentMethod: 'pm_def456ghi',
-  dueDate: 1731795000000
-});
-```
-</CodeGroup>
 
 ## Parâmetros
 

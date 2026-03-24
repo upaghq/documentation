@@ -8,7 +8,6 @@ Atualiza os dados de uma sessão de checkout. Somente sessões com status `open`
 
 ## Endpoint
 
-<CodeGroup>
 ```bash cURL
 curl -X PUT https://api.upag.io/v1/checkout-sessions/cs_abc123xyz \
   -H "Authorization: Bearer {token}" \
@@ -18,18 +17,6 @@ curl -X PUT https://api.upag.io/v1/checkout-sessions/cs_abc123xyz \
     "couponEnabled": false
   }'
 ```
-
-```javascript SDK
-import { Upag } from 'upag';
-
-const upag = new Upag('sk_test_your_api_key');
-
-const session = await upag.checkoutSessions.update('cs_abc123xyz', {
-  paymentMethods: ['credit_card', 'pix', 'boleto'],
-  couponEnabled: false
-});
-```
-</CodeGroup>
 
 ## Parâmetros
 

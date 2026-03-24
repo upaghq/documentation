@@ -8,7 +8,6 @@ Cria uma nova sessão de checkout. Retorna a URL da página de pagamento para re
 
 ## Endpoint
 
-<CodeGroup>
 ```bash cURL
 curl -X POST https://api.upag.io/v1/checkout-sessions \
   -H "Authorization: Bearer {token}" \
@@ -22,22 +21,6 @@ curl -X POST https://api.upag.io/v1/checkout-sessions \
     "cancelUrl": "https://seusite.com/cancelado"
   }'
 ```
-
-```javascript SDK
-import { Upag } from 'upag';
-
-const upag = new Upag('sk_test_your_api_key');
-
-const session = await upag.checkoutSessions.create({
-  paymentLinkId: 'pl_def456ghi',
-  customerId: 'cus_ahwDXrgYvur89iPs',
-  paymentMethods: ['credit_card', 'pix'],
-  couponEnabled: true,
-  successUrl: 'https://seusite.com/sucesso',
-  cancelUrl: 'https://seusite.com/cancelado'
-});
-```
-</CodeGroup>
 
 ## Parâmetros
 

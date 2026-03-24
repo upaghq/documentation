@@ -8,7 +8,6 @@ Confirma uma sessão de checkout e processa o pagamento. Após a confirmação, 
 
 ## Endpoint
 
-<CodeGroup>
 ```bash cURL
 curl -X POST https://api.upag.io/v1/checkout-sessions/cs_abc123xyz/confirm \
   -H "Authorization: Bearer {token}" \
@@ -17,17 +16,6 @@ curl -X POST https://api.upag.io/v1/checkout-sessions/cs_abc123xyz/confirm \
     "paymentMethod": "pm_abc123xyz"
   }'
 ```
-
-```javascript SDK
-import { Upag } from 'upag';
-
-const upag = new Upag('sk_test_your_api_key');
-
-const result = await upag.checkoutSessions.confirm('cs_abc123xyz', {
-  paymentMethod: 'pm_abc123xyz'
-});
-```
-</CodeGroup>
 
 ## Parâmetros
 

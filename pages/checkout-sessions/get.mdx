@@ -8,20 +8,10 @@ Retorna as informações completas de uma sessão de checkout específica pelo s
 
 ## Endpoint
 
-<CodeGroup>
 ```bash cURL
 curl https://api.upag.io/v1/checkout-sessions/cs_abc123xyz \
   -H "Authorization: Bearer {token}"
 ```
-
-```javascript SDK
-import { Upag } from 'upag';
-
-const upag = new Upag('sk_test_your_api_key');
-
-const session = await upag.checkoutSessions.retrieve('cs_abc123xyz');
-```
-</CodeGroup>
 
 ## Parâmetros
 

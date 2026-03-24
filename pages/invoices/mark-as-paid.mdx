@@ -8,21 +8,10 @@ Marca uma fatura como paga manualmente, sem processar um pagamento pelo gateway.
 
 ## Endpoint
 
-<CodeGroup>
 ```bash cURL
 curl -X POST https://api.upag.io/v1/invoices/inv_abc123xyz/mark-as-paid \
-  -H "Authorization: Bearer {token}" \
-  -H "Content-Type: application/json"
+  -H "Authorization: Bearer {token}"
 ```
-
-```javascript SDK
-import { Upag } from 'upag';
-
-const upag = new Upag('sk_test_your_api_key');
-
-const invoice = await upag.invoices.markAsPaid('inv_abc123xyz');
-```
-</CodeGroup>
 
 ## Parâmetros
 

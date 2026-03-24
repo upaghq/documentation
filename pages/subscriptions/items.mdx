@@ -7,7 +7,6 @@ Os itens de uma assinatura representam os produtos ou serviços cobrados recorre
 
 ## Adicionar Item
 
-<CodeGroup>
 ```bash cURL
 curl -X POST https://api.upag.io/v1/subscriptions/sub_abc123xyz/items \
   -H "Authorization: Bearer {token}" \
@@ -17,18 +16,6 @@ curl -X POST https://api.upag.io/v1/subscriptions/sub_abc123xyz/items \
     "quantity": 1
   }'
 ```
-
-```javascript SDK
-import { Upag } from 'upag';
-
-const upag = new Upag('sk_test_your_api_key');
-
-const item = await upag.subscriptions.items.create('sub_abc123xyz', {
-  price: 'price_def456ghi',
-  quantity: 1
-});
-```
-</CodeGroup>
 
 ### Parâmetros — Adicionar Item
 
@@ -67,7 +54,6 @@ const item = await upag.subscriptions.items.create('sub_abc123xyz', {
 
 ## Atualizar Item
 
-<CodeGroup>
 ```bash cURL
 curl -X PUT https://api.upag.io/v1/subscriptions/sub_abc123xyz/items/si_abc123xyz \
   -H "Authorization: Bearer {token}" \
@@ -76,17 +62,6 @@ curl -X PUT https://api.upag.io/v1/subscriptions/sub_abc123xyz/items/si_abc123xy
     "quantity": 2
   }'
 ```
-
-```javascript SDK
-import { Upag } from 'upag';
-
-const upag = new Upag('sk_test_your_api_key');
-
-const item = await upag.subscriptions.items.update('sub_abc123xyz', 'si_abc123xyz', {
-  quantity: 2
-});
-```
-</CodeGroup>
 
 ### Parâmetros — Atualizar Item
 
@@ -125,20 +100,10 @@ const item = await upag.subscriptions.items.update('sub_abc123xyz', 'si_abc123xy
 
 ## Remover Item
 
-<CodeGroup>
 ```bash cURL
 curl -X DELETE https://api.upag.io/v1/subscriptions/sub_abc123xyz/items/si_abc123xyz \
   -H "Authorization: Bearer {token}"
 ```
-
-```javascript SDK
-import { Upag } from 'upag';
-
-const upag = new Upag('sk_test_your_api_key');
-
-await upag.subscriptions.items.delete('sub_abc123xyz', 'si_abc123xyz');
-```
-</CodeGroup>
 
 ### Parâmetros — Remover Item
 

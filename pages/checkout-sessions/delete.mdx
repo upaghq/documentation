@@ -8,20 +8,10 @@ Exclui uma sessão de checkout. Somente sessões com status `open` podem ser exc
 
 ## Endpoint
 
-<CodeGroup>
 ```bash cURL
 curl -X DELETE https://api.upag.io/v1/checkout-sessions/cs_abc123xyz \
   -H "Authorization: Bearer {token}"
 ```
-
-```javascript SDK
-import { Upag } from 'upag';
-
-const upag = new Upag('sk_test_your_api_key');
-
-await upag.checkoutSessions.delete('cs_abc123xyz');
-```
-</CodeGroup>
 
 ## Parâmetros
 

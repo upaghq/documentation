@@ -7,20 +7,10 @@ Mudanças agendadas representam alterações em itens de uma assinatura que entr
 
 ## Listar Mudanças Agendadas
 
-<CodeGroup>
 ```bash cURL
 curl https://api.upag.io/v1/subscriptions/sub_abc123xyz/scheduled-changes \
   -H "Authorization: Bearer {token}"
 ```
-
-```javascript SDK
-import { Upag } from 'upag';
-
-const upag = new Upag('sk_test_your_api_key');
-
-const changes = await upag.subscriptions.scheduledChanges.list('sub_abc123xyz');
-```
-</CodeGroup>
 
 ### Parâmetros — Listar
 
@@ -56,20 +46,10 @@ const changes = await upag.subscriptions.scheduledChanges.list('sub_abc123xyz');
 
 Remove uma mudança agendada antes que ela entre em vigor.
 
-<CodeGroup>
 ```bash cURL
 curl -X DELETE https://api.upag.io/v1/subscriptions/sub_abc123xyz/scheduled-changes/sc_abc123xyz \
   -H "Authorization: Bearer {token}"
 ```
-
-```javascript SDK
-import { Upag } from 'upag';
-
-const upag = new Upag('sk_test_your_api_key');
-
-await upag.subscriptions.scheduledChanges.delete('sub_abc123xyz', 'sc_abc123xyz');
-```
-</CodeGroup>
 
 ### Parâmetros — Cancelar
 

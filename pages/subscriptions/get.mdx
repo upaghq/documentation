@@ -8,20 +8,10 @@ Retorna as informações completas de uma assinatura específica pelo seu ID.
 
 ## Endpoint
 
-<CodeGroup>
 ```bash cURL
 curl https://api.upag.io/v1/subscriptions/sub_abc123xyz \
   -H "Authorization: Bearer {token}"
 ```
-
-```javascript SDK
-import { Upag } from 'upag';
-
-const upag = new Upag('sk_test_your_api_key');
-
-const subscription = await upag.subscriptions.retrieve('sub_abc123xyz');
-```
-</CodeGroup>
 
 ## Parâmetros
 

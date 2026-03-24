@@ -8,7 +8,6 @@ Retorna uma lista paginada de todas as assinaturas. Pode ser filtrada por client
 
 ## Endpoint
 
-<CodeGroup>
 ```bash cURL
 curl -G https://api.upag.io/v1/subscriptions \
   -H "Authorization: Bearer {token}" \
@@ -16,19 +15,6 @@ curl -G https://api.upag.io/v1/subscriptions \
   -d limit=10 \
   -d customer=cus_ahwDXrgYvur89iPs
 ```
-
-```javascript SDK
-import { Upag } from 'upag';
-
-const upag = new Upag('sk_test_your_api_key');
-
-const subscriptions = await upag.subscriptions.list({
-  limit: 10,
-  page: 1,
-  customer: 'cus_ahwDXrgYvur89iPs'
-});
-```
-</CodeGroup>
 
 ## Parâmetros
 

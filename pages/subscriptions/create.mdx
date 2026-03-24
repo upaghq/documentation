@@ -8,7 +8,6 @@ Cria uma nova assinatura recorrente para um cliente. A cobrança é processada i
 
 ## Endpoint
 
-<CodeGroup>
 ```bash cURL
 curl -X POST https://api.upag.io/v1/subscriptions \
   -H "Authorization: Bearer {token}" \
@@ -25,25 +24,6 @@ curl -X POST https://api.upag.io/v1/subscriptions \
     ]
   }'
 ```
-
-```javascript SDK
-import { Upag } from 'upag';
-
-const upag = new Upag('sk_test_your_api_key');
-
-const subscription = await upag.subscriptions.create({
-  customer: 'cus_ahwDXrgYvur89iPs',
-  paymentMethod: 'pm_abc123xyz',
-  currency: 'BRL',
-  items: [
-    {
-      price: 'price_def456ghi',
-      quantity: 1
-    }
-  ]
-});
-```
-</CodeGroup>
 
 ## Parâmetros
 

@@ -8,20 +8,10 @@ Retorna as informações completas de uma fatura específica pelo seu ID.
 
 ## Endpoint
 
-<CodeGroup>
 ```bash cURL
 curl https://api.upag.io/v1/invoices/inv_abc123xyz \
   -H "Authorization: Bearer {token}"
 ```
-
-```javascript SDK
-import { Upag } from 'upag';
-
-const upag = new Upag('sk_test_your_api_key');
-
-const invoice = await upag.invoices.retrieve('inv_abc123xyz');
-```
-</CodeGroup>
 
 ## Parâmetros
 

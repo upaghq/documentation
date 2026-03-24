@@ -8,7 +8,6 @@ Atualiza os dados de uma assinatura ativa. Alterações no método de pagamento 
 
 ## Endpoint
 
-<CodeGroup>
 ```bash cURL
 curl -X PUT https://api.upag.io/v1/subscriptions/sub_abc123xyz \
   -H "Authorization: Bearer {token}" \
@@ -18,18 +17,6 @@ curl -X PUT https://api.upag.io/v1/subscriptions/sub_abc123xyz \
     "cancelAtPeriodEnd": true
   }'
 ```
-
-```javascript SDK
-import { Upag } from 'upag';
-
-const upag = new Upag('sk_test_your_api_key');
-
-const subscription = await upag.subscriptions.update('sub_abc123xyz', {
-  paymentMethod: 'pm_def456ghi',
-  cancelAtPeriodEnd: true
-});
-```
-</CodeGroup>
 
 ## Parâmetros
 
