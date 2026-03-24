@@ -4,7 +4,7 @@ description: 'Crie uma nova fatura para um cliente'
 openapi: 'POST /api/v1/invoices'
 ---
 
-Cria uma nova fatura para um cliente. A fatura é criada com status `draft` e pode ser editada antes de ser emitida.
+Cria uma nova fatura para um cliente. A fatura é criada com status `draft` e pode ser editada antes de ser emitida. A moeda da fatura é definida automaticamente a partir dos preços dos itens (todos os itens devem usar a mesma moeda).
 
 ## Endpoint
 
@@ -13,33 +13,29 @@ curl -X POST https://api.upag.io/v1/invoices \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
   -d '{
-    "customer": "cus_ahwDXrgYvur89iPs",
-    "paymentMethod": "pm_abc123xyz",
-    "currency": "BRL",
-    "dueDate": 1731708578441
+    "customerId": "cus_ahwDXrgYvur89iPs",
+    "paymentMethodId": "pm_abc123xyz",
+    "items": [
+      {
+        "priceId": "price_def456ghi",
+        "quantity": 1
+      }
+    ]
   }'
 ```
 
 ## Parâmetros
 
-<ParamField body="customer" type="string" required>
-  ID do cliente (UUID) para quem a fatura será emitida.
+<ParamField body="customerId" type="string" required>
+  ID do cliente para quem a fatura será emitida.
 </ParamField>
 
-<ParamField body="currency" type="string" required>
-  Código da moeda (ex.: `BRL`).
+<ParamField body="paymentMethodId" type="string" required>
+  ID do método de pagamento associado ao cliente.
 </ParamField>
 
-<ParamField body="paymentMethod" type="string">
-  ID do método de pagamento a ser utilizado.
-</ParamField>
-
-<ParamField body="dueDate" type="number">
-  Timestamp Unix indicando a data de vencimento da fatura.
-</ParamField>
-
-<ParamField body="description" type="string">
-  Descrição interna da fatura.
+<ParamField body="items" type="array" required>
+  Lista de itens. Cada item deve conter `priceId` e `quantity` (mínimo 1). É obrigatório pelo menos um item.
 </ParamField>
 
 ## Resposta
@@ -54,13 +50,20 @@ curl -X POST https://api.upag.io/v1/invoices \
   "livemode": false,
   "number": null,
   "description": null,
-  "dueDate": "2024-12-15T00:00:00.000Z",
+  "dueDate": null,
   "paidAt": null,
-  "amountDue": 0,
+  "amountDue": 9900,
   "amountPaid": 0,
   "attemptCount": 0,
   "subscriptionId": null,
-  "items": [],
+  "items": [
+    {
+      "id": "ii_abc123xyz",
+      "priceId": "price_def456ghi",
+      "quantity": 1,
+      "amount": 9900
+    }
+  ],
   "payments": [],
   "createdAt": "2024-11-15T10:00:00.000Z",
   "updatedAt": "2024-11-15T10:00:00.000Z"

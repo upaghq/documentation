@@ -4,7 +4,7 @@ description: 'Crie uma nova assinatura recorrente para um cliente'
 openapi: 'POST /api/v1/subscriptions'
 ---
 
-Cria uma nova assinatura recorrente para um cliente. A cobrança é processada imediatamente e as faturas subsequentes são geradas automaticamente a cada período.
+Cria uma nova assinatura recorrente para um cliente. Moeda e intervalo de cobrança vêm dos preços dos itens (todos os preços devem ser recorrentes e compartilhar o mesmo intervalo e moeda). Se `trialEnd` for informado, a assinatura entra em `trialing` e a cobrança inicial não é processada; caso contrário, a primeira fatura é gerada e o pagamento é tentado na hora.
 
 ## Endpoint
 
@@ -15,7 +15,6 @@ curl -X POST https://api.upag.io/v1/subscriptions \
   -d '{
     "customer": "cus_ahwDXrgYvur89iPs",
     "paymentMethod": "pm_abc123xyz",
-    "currency": "BRL",
     "items": [
       {
         "price": "price_def456ghi",
@@ -28,27 +27,19 @@ curl -X POST https://api.upag.io/v1/subscriptions \
 ## Parâmetros
 
 <ParamField body="customer" type="string" required>
-  ID do cliente (UUID) para quem a assinatura será criada.
+  ID do cliente (`cus_...`) para quem a assinatura será criada.
+</ParamField>
+
+<ParamField body="paymentMethod" type="string" required>
+  ID do método de pagamento (`pm_...`) usado nas cobranças.
 </ParamField>
 
 <ParamField body="items" type="array" required>
-  Lista de itens da assinatura. Cada item deve conter `price` (ID do preço) e `quantity`.
+  Lista de itens. Cada item deve conter `price` (ID do preço recorrente) e `quantity` (inteiro, mínimo `1`).
 </ParamField>
 
-<ParamField body="currency" type="string" required>
-  Código da moeda (ex.: `BRL`).
-</ParamField>
-
-<ParamField body="paymentMethod" type="string">
-  ID do método de pagamento a ser utilizado nas cobranças.
-</ParamField>
-
-<ParamField body="trialEndDate" type="number">
-  Timestamp Unix definindo o fim do período de teste. Durante o trial, nenhuma cobrança é realizada.
-</ParamField>
-
-<ParamField body="cancelAtPeriodEnd" type="boolean">
-  Se `true`, a assinatura será cancelada ao final do primeiro período. Padrão: `false`.
+<ParamField body="trialEnd" type="integer">
+  Opcional. Timestamp numérico inteiro positivo indicando o fim do período de teste. Quando presente, a assinatura é criada como `trialing` e não há cobrança inicial neste request.
 </ParamField>
 
 ## Resposta

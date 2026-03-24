@@ -4,7 +4,7 @@ description: 'Crie uma nova sessão de checkout para um cliente'
 openapi: 'POST /api/v1/checkout-sessions'
 ---
 
-Cria uma nova sessão de checkout. Retorna a URL da página de pagamento para redirecionar o cliente.
+Cria uma nova sessão de checkout com pelo menos um item (preço + quantidade). Retorna a URL da página de pagamento para redirecionar o cliente.
 
 ## Endpoint
 
@@ -13,10 +13,15 @@ curl -X POST https://api.upag.io/v1/checkout-sessions \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
   -d '{
-    "paymentLinkId": "pl_def456ghi",
     "customerId": "cus_ahwDXrgYvur89iPs",
+    "items": [
+      {
+        "priceId": "price_def456ghi",
+        "quantity": 1
+      }
+    ],
     "paymentMethods": ["credit_card", "pix"],
-    "couponEnabled": true,
+    "billingAddressCollection": "auto",
     "successUrl": "https://seusite.com/sucesso",
     "cancelUrl": "https://seusite.com/cancelado"
   }'
@@ -24,36 +29,28 @@ curl -X POST https://api.upag.io/v1/checkout-sessions \
 
 ## Parâmetros
 
-<ParamField body="paymentLinkId" type="string">
-  ID do link de pagamento associado à sessão.
+<ParamField body="items" type="array" required>
+  Lista de linhas do checkout. Cada item precisa de `priceId` (string) e `quantity` (número, mínimo `1`). É obrigatório pelo menos um item.
 </ParamField>
 
 <ParamField body="customerId" type="string">
-  ID do cliente (UUID) para pré-preencher informações na sessão.
-</ParamField>
-
-<ParamField body="checkoutLayoutId" type="string">
-  ID do layout de checkout para personalizar a aparência da página.
+  Opcional. ID do cliente (`cus_...`) para associar à sessão.
 </ParamField>
 
 <ParamField body="paymentMethods" type="string[]">
-  Lista de métodos de pagamento habilitados. Valores: `credit_card`, `pix`, `boleto`.
+  Opcional. Métodos aceitos na sessão. Valores do enum da API: `credit_card`, `pix`.
 </ParamField>
 
-<ParamField body="couponEnabled" type="boolean">
-  Habilita o campo de cupom de desconto na sessão. Padrão: `false`.
+<ParamField body="billingAddressCollection" type="string">
+  Opcional. Um de: `auto`, `required`, `none`.
 </ParamField>
 
 <ParamField body="successUrl" type="string">
-  URL para redirecionar o cliente após o pagamento bem-sucedido.
+  Opcional. URL válida para redirecionar após pagamento bem-sucedido.
 </ParamField>
 
 <ParamField body="cancelUrl" type="string">
-  URL para redirecionar o cliente caso cancele o pagamento.
-</ParamField>
-
-<ParamField body="expiresAt" type="number">
-  Timestamp Unix definindo quando a sessão expira.
+  Opcional. URL válida se o cliente cancelar o fluxo.
 </ParamField>
 
 ## Resposta

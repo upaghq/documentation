@@ -26,8 +26,12 @@ curl -G https://api.upag.io/v1/invoices \
   Número da página a ser retornada. Padrão: `1`.
 </ParamField>
 
+<ParamField query="id" type="string">
+  Filtra por ID da fatura (`inv_...`).
+</ParamField>
+
 <ParamField query="customer" type="string">
-  ID do cliente para filtrar faturas de um cliente específico.
+  ID do cliente (`cus_...`) para filtrar faturas desse cliente. O parâmetro na query é `customer`, não `customerId`.
 </ParamField>
 
 <ParamField query="status" type="string">

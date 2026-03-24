@@ -1,10 +1,16 @@
 ---
 title: 'Atualizar Fatura'
-description: 'Atualiza os dados de uma fatura existente'
+description: 'Atualiza uma fatura existente'
 openapi: 'PATCH /api/v1/invoices/{id}'
 ---
 
-Atualiza os dados de uma fatura. Somente faturas com status `draft` podem ser atualizadas.
+Envia uma atualização para a fatura identificada por `id`. Na implementação atual, o corpo da requisição **não é lido nem aplicado** — campos como método de pagamento, vencimento ou descrição **não são alterados** por este endpoint. A resposta devolve a fatura após a operação interna (equivalente a recarregar o registro).
+
+Para alterar itens em rascunho, use os endpoints de [itens da fatura](./items).
+
+<Info>
+  Comportamento sujeito a evolução futura da API. Enquanto isso, não dependa de `PATCH /v1/invoices/:id` para mudar dados da fatura.
+</Info>
 
 ## Endpoint
 
@@ -12,10 +18,7 @@ Atualiza os dados de uma fatura. Somente faturas com status `draft` podem ser at
 curl -X PATCH https://api.upag.io/v1/invoices/inv_abc123xyz \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "paymentMethod": "pm_def456ghi",
-    "dueDate": 1731795000000
-  }'
+  -d '{}'
 ```
 
 ## Parâmetros
@@ -24,31 +27,19 @@ curl -X PATCH https://api.upag.io/v1/invoices/inv_abc123xyz \
   ID único da fatura, começando com `inv_`.
 </ParamField>
 
-<ParamField body="paymentMethod" type="string">
-  ID do método de pagamento a ser utilizado.
-</ParamField>
-
-<ParamField body="dueDate" type="number">
-  Timestamp Unix da nova data de vencimento.
-</ParamField>
-
-<ParamField body="description" type="string">
-  Descrição interna da fatura.
-</ParamField>
-
 ## Resposta
 
 ```json Response
 {
   "id": "inv_abc123xyz",
   "customerId": "cus_ahwDXrgYvur89iPs",
-  "paymentMethodId": "pm_def456ghi",
+  "paymentMethodId": "pm_abc123xyz",
   "currency": "BRL",
   "status": "draft",
   "livemode": false,
   "number": null,
   "description": null,
-  "dueDate": "2024-12-20T00:00:00.000Z",
+  "dueDate": null,
   "paidAt": null,
   "amountDue": 9900,
   "amountPaid": 0,
@@ -64,6 +55,6 @@ curl -X PATCH https://api.upag.io/v1/invoices/inv_abc123xyz \
   ],
   "payments": [],
   "createdAt": "2024-11-15T10:00:00.000Z",
-  "updatedAt": "2024-11-15T11:00:00.000Z"
+  "updatedAt": "2024-11-15T10:00:00.000Z"
 }
 ```

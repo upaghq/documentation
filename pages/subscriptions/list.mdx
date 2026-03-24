@@ -26,12 +26,20 @@ curl -G https://api.upag.io/v1/subscriptions \
   Número da página a ser retornada. Padrão: `1`.
 </ParamField>
 
+<ParamField query="id" type="string">
+  Filtra por ID da assinatura (`sub_...`).
+</ParamField>
+
 <ParamField query="customer" type="string">
-  ID do cliente para filtrar assinaturas de um cliente específico.
+  ID do cliente (`cus_...`) para filtrar assinaturas desse cliente. O nome do parâmetro na query é `customer`.
 </ParamField>
 
 <ParamField query="status" type="string">
   Filtra assinaturas por status: `active`, `trialing`, `past_due`, `canceled`, `unpaid`, `incomplete`.
+</ParamField>
+
+<ParamField query="cancelAtPeriodEnd" type="boolean">
+  Quando `true` ou `false`, filtra assinaturas com esse valor de `cancelAtPeriodEnd`. Envie como string `true` ou `false` na query.
 </ParamField>
 
 ## Resposta

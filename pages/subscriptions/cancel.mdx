@@ -4,19 +4,32 @@ description: 'Cancela uma assinatura imediatamente'
 openapi: 'DELETE /api/v1/subscriptions/{id}'
 ---
 
-Cancela uma assinatura imediatamente. O acesso ao serviço é encerrado no momento do cancelamento. Para cancelar ao final do período atual, utilize a opção `cancelAtPeriodEnd` na atualização da assinatura.
+Cancela uma assinatura. O comportamento depende do body opcional: com `cancelAtPeriodEnd: false` (padrão), o cancelamento é imediato; com `cancelAtPeriodEnd: true`, a assinatura segue até o fim do período atual. Também é possível definir `cancelAtPeriodEnd` via [atualização da assinatura](./update) sem chamar delete.
 
 ## Endpoint
 
 ```bash cURL
 curl -X DELETE https://api.upag.io/v1/subscriptions/sub_abc123xyz \
-  -H "Authorization: Bearer {token}"
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cancelAtPeriodEnd": false,
+    "cancellationReason": "other"
+  }'
 ```
 
 ## Parâmetros
 
 <ParamField path="id" type="string" required>
   ID único da assinatura, começando com `sub_`.
+</ParamField>
+
+<ParamField body="cancelAtPeriodEnd" type="boolean">
+  Padrão `false`. Se `true`, agenda cancelamento ao fim do período de cobrança atual.
+</ParamField>
+
+<ParamField body="cancellationReason" type="string">
+  Opcional. Valores alinhados ao enum da API, por exemplo: `low_quality`, `missing_features`, `other`, `switched_service`, `too_complex`, `too_expensive`, `unused`.
 </ParamField>
 
 ## Resposta
