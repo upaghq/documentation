@@ -1,0 +1,23 @@
+# Upag Documentation
+
+> Documentação da API Upag: clientes, métodos de pagamento, pagamentos e webhooks. Site gerado com Mintlify; fontes em MDX sob `pages/`.
+
+## Onde começar
+
+- Fluxo completo (cliente → método de pagamento → pagamento): `pages/quickstart.mdx`
+
+## Conteúdo por área
+
+- **Clientes** — `pages/customers/` (reference, create, list, get, update)
+- **Métodos de pagamento** — `pages/payment-methods/` (reference, create, list, get)
+- **Pagamentos** — `pages/payments/` (reference, create, list, get)
+- **Webhooks** — `pages/webhooks/` (overview, payloads de subscription, payment, invoice)
+
+## Convenções
+
+- Exemplos usam chaves de teste (`sk_test_...`) quando aplicável.
+- Há exemplos com SDK JavaScript (`upag`) e padrões REST.
+
+## Uso para assistentes
+
+Para integração ponta a ponta, priorize o quickstart. Para campos, parâmetros e contratos, use as páginas `reference` e os guias por operação (create, get, list, update).
