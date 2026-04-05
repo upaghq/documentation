@@ -95,6 +95,17 @@
                         ]
                     }
                 ]
+            },
+            {
+                "tab": "Simulador",
+                "groups": [
+                    {
+                        "group": "Ambiente de testes",
+                        "pages": [
+                            "pages/simulator"
+                        ]
+                    }
+                ]
             }
         ]
     },
