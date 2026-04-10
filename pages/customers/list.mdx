@@ -23,7 +23,7 @@ const upag = new Upag('sk_test_your_api_key');
 
 const customers = await upag.customers.list({
   limit: 10,
-  offset: 0
+  page: 1
 });
 ```
 </CodeGroup>

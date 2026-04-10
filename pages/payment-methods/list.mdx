@@ -23,7 +23,7 @@ const upag = new Upag('sk_test_your_api_key');
 
 const paymentMethods = await upag.paymentMethods.listByCustomer('cus_ahwDXrgYvur89iPs', {
   limit: 10,
-  offset: 0
+  page: 1
 });
 ```
 </CodeGroup>
