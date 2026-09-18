@@ -2,7 +2,7 @@
 title: 'Confirmar Sessão de Checkout'
 description: 'Confirma e processa o pagamento de uma sessão de checkout'
 sidebarTitle: 'Confirmar'
-openapi: 'POST /api/v1/checkout-sessions/{checkoutSessionId}/confirm'
+api: 'POST https://api.billing.upag.io/v1/checkout-sessions/{checkoutSessionId}/confirm'
 ---
 
 Confirma a sessão e processa o pagamento com o cliente e método de pagamento informados. O ID da sessão vai na URL (`checkoutSessionId`); o `accountId` é resolvido pelo servidor a partir da autenticação.

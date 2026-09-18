@@ -2,7 +2,7 @@
 title: 'Atualizar Assinatura'
 description: 'Atualiza os dados de uma assinatura existente'
 sidebarTitle: 'Atualizar'
-openapi: 'PUT /api/v1/subscriptions/{id}'
+api: 'PUT https://api.billing.upag.io/v1/subscriptions/{id}'
 ---
 
 Atualiza os dados de uma assinatura. Apenas `paymentMethod` e `cancelAtPeriodEnd` são aceitos no body. Para alterar itens, use os endpoints de [itens da assinatura](./items).

@@ -2,7 +2,7 @@
 title: 'Pagar Fatura'
 description: 'Processa o pagamento de uma fatura'
 sidebarTitle: 'Pagar'
-openapi: 'POST /api/v1/invoices/{id}/pay'
+api: 'POST https://api.billing.upag.io/v1/invoices/{id}/pay'
 ---
 
 Processa o pagamento de uma fatura utilizando o método de pagamento associado. A fatura deve estar com status `open`.

@@ -2,7 +2,7 @@
 title: 'Criar uma Fatura'
 description: 'Crie uma nova fatura para um cliente'
 sidebarTitle: 'Criar'
-openapi: 'POST /api/v1/invoices'
+api: 'POST https://api.billing.upag.io/v1/invoices'
 ---
 
 Cria uma nova fatura para um cliente. A fatura é criada com status `draft` e pode ser editada antes de ser emitida. A moeda da fatura é definida automaticamente a partir dos preços dos itens (todos os itens devem usar a mesma moeda).

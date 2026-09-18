@@ -28,10 +28,11 @@
 
 - `seo.metatags.canonical`: `https://docs.upag.io` (ajustar se o domínio publicado for outro).
 - Busca in-product: `boost` em guias quickstart (4), SDK index (3), simulador (0.5). Grupos **Primeiros passos** / **SDKs** também têm `boost` no `docs.json`.
-- Páginas com `openapi`: sem `icon` na sidebar; `searchable: false` só se quiser ocultar da busca interna (não afeta Google).
+- Endpoints de referência: frontmatter `api: 'METHOD https://host/v1/...'` (URL completa; Billing `api.billing.upag.io`, Core `api.upag.io`). Playground Mintlify em `docs.json` → `api.playground.display: interactive`, auth Bearer.
+- Sem `icon` nessas páginas; `searchable: false` só se quiser ocultar da busca interna (não afeta Google).
 
 ## Uso para assistentes
 
 Integração ponta a ponta → aba **Guias**. Campos e contratos HTTP → aba **Referência**. Eventos → aba **Webhooks** (`overview` + `security` + payloads Billing).
 
-Sidebar (estilo Abacate): **sem** `icon` em tabs/grupos no `docs.json`. Endpoints com `openapi` → só badge HTTP, sem `icon`. **Com** `icon` apenas em subpáginas: guias, payloads de webhook, `sdk/server` e `sdk/frontend`. Sem ícone em `reference.mdx`, overview/security de webhooks, índice SDK ou simulador.
+Sidebar (estilo Abacate): **sem** `icon` em tabs/grupos no `docs.json`. Endpoints com `api` no frontmatter → badge HTTP, sem `icon`. **Com** `icon` apenas em subpáginas: guias, payloads de webhook, `sdk/server` e `sdk/frontend`. Sem ícone em `reference.mdx`, overview/security de webhooks, índice SDK ou simulador.

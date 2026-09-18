@@ -19,6 +19,28 @@
             "url": "https://upag.io"
         }
     },
+    "api": {
+        "playground": {
+            "display": "interactive",
+            "proxy": true
+        },
+        "examples": {
+            "languages": [
+                "curl",
+                "javascript",
+                "node"
+            ],
+            "defaults": "required",
+            "prefill": false,
+            "autogenerate": true
+        },
+        "mdx": {
+            "auth": {
+                "method": "bearer"
+            }
+        },
+        "url": "full"
+    },
     "navigation": {
         "products": [
             {

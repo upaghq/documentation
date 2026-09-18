@@ -2,7 +2,7 @@
 title: 'Criar uma Assinatura'
 description: 'Crie uma nova assinatura recorrente para um cliente'
 sidebarTitle: 'Criar'
-openapi: 'POST /api/v1/subscriptions'
+api: 'POST https://api.billing.upag.io/v1/subscriptions'
 ---
 
 Cria uma nova assinatura recorrente para um cliente. Moeda e intervalo de cobrança vêm dos preços dos itens (todos os preços devem ser recorrentes e compartilhar o mesmo intervalo e moeda). Se `trialEnd` for informado, a assinatura entra em `trialing` e a cobrança inicial não é processada; caso contrário, a primeira fatura é gerada e o pagamento é tentado na hora.

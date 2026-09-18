@@ -2,7 +2,7 @@
 title: 'Cancelar Assinatura'
 description: 'Cancela uma assinatura imediatamente'
 sidebarTitle: 'Cancelar'
-openapi: 'DELETE /api/v1/subscriptions/{id}'
+api: 'DELETE https://api.billing.upag.io/v1/subscriptions/{id}'
 ---
 
 Cancela uma assinatura. O comportamento depende do body opcional: com `cancelAtPeriodEnd: false` (padrão), o cancelamento é imediato; com `cancelAtPeriodEnd: true`, a assinatura segue até o fim do período atual. Também é possível definir `cancelAtPeriodEnd` via [atualização da assinatura](./update) sem chamar delete.
