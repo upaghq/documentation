@@ -1,6 +1,7 @@
 ---
 title: 'Assinatura recorrente'
 description: 'Cliente, método de pagamento e assinatura com cobrança automática'
+icon: 'repeat'
 ---
 
 Fluxo típico para SaaS ou planos mensais: cadastre o pagador uma vez e deixe o Billing gerar faturas e tentativas de cobrança.
@@ -56,23 +57,22 @@ curl -X POST https://api.billing.upag.io/v1/customers/cus_ahwDXrgYvur89iPs/payme
     "type": "credit_card",
     "card": {
       "number": "4242424242424242",
-      "expMonth": 12,
-      "expYear": 2032,
-      "cvc": "123",
+      "expiryMonth": "12",
+      "expiryYear": "2032",
+      "cvv": "123",
       "holderName": "JOHN DOE"
     }
   }'
 ```
 
 ```javascript SDK
-const paymentMethod = await upag.paymentMethods.create({
-  customerId: customer.id,
+const paymentMethod = await upag.paymentMethods.create(customer.id, {
   type: 'credit_card',
   card: {
     number: '4242424242424242',
-    expMonth: 12,
-    expYear: 2032,
-    cvc: '123',
+    expiryMonth: '12',
+    expiryYear: '2032',
+    cvv: '123',
     holderName: 'JOHN DOE',
   },
 });
@@ -95,8 +95,8 @@ curl -X POST https://api.billing.upag.io/v1/subscriptions \
 
 ```javascript SDK
 const subscription = await upag.subscriptions.create({
-  customerId: customer.id,
-  paymentMethodId: paymentMethod.id,
+  customer: customer.id,
+  paymentMethod: paymentMethod.id,
   items: [{ price: 'price_def456ghi', quantity: 1 }],
 });
 

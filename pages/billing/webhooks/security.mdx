@@ -1,0 +1,79 @@
+---
+title: 'Verificação e segurança'
+description: 'Assinatura HMAC nos webhooks do Billing'
+---
+
+Valide a assinatura antes de atualizar pedido, crédito ou assinatura no seu sistema.
+
+## Corpo original do POST
+
+O HMAC-SHA256 usa os **bytes exatos** enviados no POST e a signing secret do webhook. O dashboard mostra o nome do header (ex.: `x-upag-signature`) e o formato esperado (hex, base64, prefixo).
+
+<Warning>
+  Middleware que faz parse JSON global (`express.json()`) altera o corpo. Na rota do webhook, use buffer bruto — por exemplo `express.raw({ type: 'application/json' })`.
+</Warning>
+
+```javascript
+import express from 'express';
+import crypto from 'node:crypto';
+
+function billingWebhookHmacValid(bodyUtf8, headerValue, secret) {
+  if (!headerValue || !secret) return false;
+
+  const computed = crypto.createHmac('sha256', secret).update(bodyUtf8, 'utf8').digest('hex');
+  const left = Buffer.from(computed, 'utf8');
+  const right = Buffer.from(String(headerValue).trim(), 'utf8');
+
+  if (left.length !== right.length) return false;
+  return crypto.timingSafeEqual(left, right);
+}
+
+const app = express();
+
+app.post(
+  '/webhooks/upag-billing',
+  express.raw({ type: 'application/json' }),
+  async (req, res) => {
+    const bodyUtf8 = req.body.toString('utf8');
+    const signatureHeader = req.headers['x-upag-signature'];
+    const secret = process.env.UPAG_WEBHOOK_SIGNING_SECRET;
+
+    if (!billingWebhookHmacValid(bodyUtf8, signatureHeader, secret)) {
+      return res.status(401).send('assinatura inválida');
+    }
+
+    const payload = JSON.parse(bodyUtf8);
+    await handleBillingWebhook(payload);
+    return res.status(200).send('ok');
+  },
+);
+```
+
+Ajuste `digest('hex')` e o parsing do header se o dashboard pedir outro encoding.
+
+## Evitar processamento duplicado
+
+```javascript
+async function handleBillingWebhook(payload) {
+  const id = payload.data?.id;
+  if (!id) return;
+
+  const key = `${payload.event}:${id}`;
+  if (await db.webhookDedupe.exists(key)) return;
+
+  await dispatch(payload);
+  await db.webhookDedupe.put(key);
+}
+```
+
+## Checklist rápido
+
+| Item | Ação |
+| ---- | ---- |
+| URL | TLS em produção |
+| Secret | Só em variável de ambiente |
+| Assinatura | Antes de `dispatch` |
+| Resposta HTTP | 2xx após fila ou commit |
+| Payload | Leia só os campos que você usa |
+
+[Voltar para Webhooks](./overview)

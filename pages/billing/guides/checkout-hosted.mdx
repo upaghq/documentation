@@ -1,6 +1,7 @@
 ---
 title: 'Checkout hospedado'
 description: 'Crie uma sessão de checkout, redirecione o cliente e confirme o pagamento'
+icon: 'cart-shopping'
 ---
 
 Use quando você prefere que o pagador complete o fluxo em uma página Upag, em vez de tokenizar cartão no seu backend.
@@ -54,7 +55,7 @@ Guarde `id` (`cs_...`) e `url`. Redirecione o cliente para `url`.
 
 ## 2. Confirmar (opcional)
 
-Use se você confirma o pagamento no **seu backend** após o retorno do pagador (fluxo headless), em vez de só confiar no redirect.
+Use se você confirma o pagamento no **seu backend** após o retorno do pagador (fluxo headless). O SDK `upag` ainda não expõe `confirm` — use REST:
 
 <CodeGroup>
 ```bash cURL
@@ -68,22 +69,13 @@ curl -X POST https://api.billing.upag.io/v1/checkout-sessions/cs_abc123xyz/confi
     "bumps": []
   }'
 ```
-
-```javascript SDK
-const confirmed = await upag.checkoutSessions.confirm('cs_abc123xyz', {
-  customer: 'cus_ahwDXrgYvur89iPs',
-  paymentMethod: 'pm_abc123xyz',
-  installments: 1,
-  bumps: [],
-});
-
-console.log(confirmed.status, confirmed.invoice);
-```
 </CodeGroup>
+
+Consultar sessão após redirect: `await upag.checkoutSessions.retrieve('cs_abc123xyz')`.
 
 ## 3. Webhook
 
-Configure a URL de webhook no dashboard Billing e escute `payment.approved` para liberar o pedido de forma confiável (não dependa só do redirect).
+Configure a URL de webhook no dashboard Billing e trate `payment.approved` no servidor — o redirect sozinho não garante que você receberá a confirmação.
 
 Exemplo de handler (Node + Express):
 

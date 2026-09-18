@@ -1,6 +1,7 @@
 ---
 title: 'Buscar Método de Pagamento por ID'
 description: 'Retorna os detalhes de um método de pagamento específico'
+sidebarTitle: 'Obter'
 openapi: 'GET /api/v1/customers/{customerId}/payment-methods/{paymentMethodId}'
 ---
 
@@ -19,7 +20,10 @@ import { Upag } from 'upag';
 
 const upag = new Upag('sk_test_your_api_key');
 
-const paymentMethod = await upag.paymentMethods.retrieve('pm_abc123xyz');
+const paymentMethod = await upag.paymentMethods.retrieve(
+  'cus_ahwDXrgYvur89iPs',
+  'pm_abc123xyz',
+);
 ```
 </CodeGroup>
 

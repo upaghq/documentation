@@ -1,28 +1,41 @@
 ---
-title: "Webhooks"
-description: "Configure e consuma webhooks para ser notificado sobre eventos da sua conta"
-icon: "bell"
+title: 'Webhooks'
+description: 'Configure URLs para receber eventos do Billing'
 ---
 
-Os webhooks permitem que sua aplicação seja notificada quando algo acontecer no Upag (assinatura criada, pagamento aprovado, fatura paga, etc.). Configure uma URL no painel e selecione os eventos que deseja receber.
+No Billing, webhooks avisam sua aplicação quando pagamentos, assinaturas ou faturas mudam. Você registra uma URL HTTPS no dashboard, escolhe os eventos e passa a receber **POST** com `event` e `data`.
 
-## <Icon icon="folder-tree" type="solid"/> Envelope da requisição
+Consultar a API de tempos em tempos ainda serve para suporte ou telas administrativas; para **disparar automação** (ERP, e-mail transacional, liberação de produto), o webhook costuma ser o caminho mais simples.
 
-Cada requisição de webhook enviada pelo Upag segue este formato:
+## Montagem básica
+
+1. Exponha uma rota POST (ex.: `/webhooks/upag-billing`) com TLS.
+2. No dashboard Billing, informe a URL e marque os eventos.
+3. Valide a assinatura, trate o JSON, responda status **2xx** quando aceitar a entrega.
+
+O retorno do checkout no browser pode falhar (aba fechada, rede). Trate `payment.approved` ou `invoice.paid` no servidor como confirmação do negócio.
+
+## Sandbox vs live
+
+Mantenha URLs ou configurações distintas para contas/chaves **`sk_test_...`** e **`sk_live_...`**, para não processar evento de teste como produção.
+
+## Envelope
 
 ```json
 {
-  "event": "subscription.created",
+  "event": "payment.approved",
   "data": { }
 }
 ```
 
-- **event** — Nome do evento (ex.: `subscription.created`, `payment.approved`). Use este valor para decidir como processar o payload.
-- **data** — Objeto com os dados do recurso. A estrutura de `data` depende do tipo de evento. Consulte as páginas de referência abaixo para cada payload.
+| Campo | Uso |
+| ----- | --- |
+| `event` | Identificador (`subscription.created`, `payment.approved`, …). Roteie o handler por este valor. |
+| `data` | Snapshot do recurso. Formato por família — links na seção [Referência de payloads](#referencia-de-payloads). |
 
-## Tipos de evento
+## Eventos
 
-### Assinaturas (subscription)
+### Assinaturas
 
 | Evento | Descrição |
 | ------ | --------- |
@@ -30,14 +43,14 @@ Cada requisição de webhook enviada pelo Upag segue este formato:
 | `subscription.active` | Assinatura ativa |
 | `subscription.canceled` | Assinatura cancelada |
 | `subscription.past_due` | Assinatura em atraso |
-| `subscription.trialing` | Assinatura em período de trial |
+| `subscription.trialing` | Período de trial |
 | `subscription.incomplete` | Assinatura incompleta |
 | `subscription.paused` | Assinatura pausada |
 | `subscription.void` | Assinatura anulada |
 
-Referência do objeto em `data`: [Payload Subscription](./payload-subscription).
+`data`: [Payload Subscription](./payload-subscription).
 
-### Pagamentos (payment)
+### Pagamentos
 
 | Evento | Descrição |
 | ------ | --------- |
@@ -49,9 +62,9 @@ Referência do objeto em `data`: [Payload Subscription](./payload-subscription).
 | `payment.refused` | Pagamento recusado |
 | `payment.failed` | Pagamento falhou |
 
-Referência do objeto em `data`: [Payload Payment](./payload-payment).
+`data`: [Payload Payment](./payload-payment).
 
-### Faturas (invoice)
+### Faturas
 
 | Evento | Descrição |
 | ------ | --------- |
@@ -60,8 +73,48 @@ Referência do objeto em `data`: [Payload Payment](./payload-payment).
 | `invoice.paid` | Fatura paga |
 | `invoice.voided` | Fatura anulada |
 
-Referência do objeto em `data`: [Payload Invoice](./payload-invoice).
+`data`: [Payload Invoice](./payload-invoice).
 
-## Segurança
+## Autenticidade
 
-Para garantir que a requisição foi enviada pelo Upag, verifique a assinatura usando o cabeçalho da requisição (por exemplo `x-Upag-signature` ou o nome configurado no painel) e sua chave secreta de webhook. A assinatura é um HMAC do corpo da requisição. Compare o hash que você calcular com o valor do cabeçalho; se forem iguais, a requisição é autêntica. Mantenha a chave secreta em segurança e nunca a exponha no código ou em repositórios públicos.
+Confira HMAC do corpo com a signing secret do endpoint e o header indicado no dashboard (ex.: `x-upag-signature`). Passo a passo: [Verificação e segurança](./security).
+
+## Entregas repetidas
+
+O Billing pode **reenviar** o mesmo evento após timeout ou erro HTTP. Guarde um registro por `${event}:${data.id}` antes de efeitos colaterais.
+
+- Devolva **2xx** só depois de persistir ou enfileirar.
+- Não amarre validação a um schema fixo de todo o `data` — campos novos podem surgir sem aviso de versão na doc.
+
+```javascript
+const key = `${body.event}:${body.data?.id}`;
+if (await processed.has(key)) return res.sendStatus(200);
+await enqueue(body);
+await processed.add(key);
+return res.sendStatus(200);
+```
+
+## Referência de payloads
+
+<CardGroup cols={3}>
+  <Card title="Payment" icon="credit-card" href="./payload-payment">
+    Campos em `payment.*`.
+  </Card>
+  <Card title="Subscription" icon="repeat" href="./payload-subscription">
+    Campos em `subscription.*`.
+  </Card>
+  <Card title="Invoice" icon="file-invoice" href="./payload-invoice">
+    Campos em `invoice.*`.
+  </Card>
+</CardGroup>
+
+## Guias
+
+<CardGroup cols={2}>
+  <Card title="Checkout hospedado" icon="cart-shopping" href="../guides/checkout-hosted">
+    Sessão, redirect e handler de pagamento.
+  </Card>
+  <Card title="Assinatura recorrente" icon="calendar" href="../guides/subscription-recurring">
+    Ciclo de assinatura e fatura.
+  </Card>
+</CardGroup>

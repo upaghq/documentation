@@ -1,6 +1,7 @@
 ---
 title: 'Listar Métodos de Pagamento'
 description: 'Retorna todos os métodos de pagamento de um cliente'
+sidebarTitle: 'Listar'
 openapi: 'GET /api/v1/customers/{customerId}/payment-methods'
 ---
 
@@ -21,9 +22,9 @@ import { Upag } from 'upag';
 
 const upag = new Upag('sk_test_your_api_key');
 
-const paymentMethods = await upag.paymentMethods.listByCustomer('cus_ahwDXrgYvur89iPs', {
+const paymentMethods = await upag.paymentMethods.list('cus_ahwDXrgYvur89iPs', {
   limit: 10,
-  offset: 0
+  page: 1,
 });
 ```
 </CodeGroup>

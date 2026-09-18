@@ -1,6 +1,6 @@
 # Upag Documentation
 
-> Dois produtos no mesmo site Mintlify: **Billing** (gateway) e **Core** (conta digital / banking API).
+> Dois produtos no mesmo site Mintlify: **Billing** (gateway) e **Core** (conta digital / banking API). Índice para LLMs: `/llm.txt` (link no header da docs).
 
 ## Hosts
 
@@ -12,7 +12,7 @@
 - Abas: **Guias**, **Referência**, **Webhooks**, **SDK**, **Simulador**
 - Guias: `pages/billing/guides/` (quickstart, checkout-hosted, subscription-recurring)
 - Referência: endpoints REST em `pages/billing/{customers,payments,...}/`
-- SDK: `pages/billing/sdk/overview.mdx`
+- SDK: índice `pages/billing/sdk/overview.mdx`; detalhes `server.mdx` (npm upag), `frontend.mdx` (npm upag-js)
 
 ## Core
 
@@ -26,4 +26,6 @@
 
 ## Uso para assistentes
 
-Integração ponta a ponta → aba **Guias**. Campos e contratos HTTP → aba **Referência**. Eventos → aba **Webhooks**.
+Integração ponta a ponta → aba **Guias**. Campos e contratos HTTP → aba **Referência**. Eventos → aba **Webhooks** (`overview` + `security` + payloads Billing).
+
+Sidebar (estilo Abacate): **sem** `icon` em tabs/grupos no `docs.json`. Endpoints com `openapi` → só badge HTTP, sem `icon`. **Com** `icon` apenas em subpáginas: guias, payloads de webhook, `sdk/server` e `sdk/frontend`. Sem ícone em `reference.mdx`, overview/security de webhooks, índice SDK ou simulador.

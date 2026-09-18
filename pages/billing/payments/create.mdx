@@ -1,6 +1,7 @@
 ---
 title: 'Criar um novo Pagamento'
 description: 'Crie um pagamento usando um método de pagamento do cliente'
+sidebarTitle: 'Criar'
 openapi: 'POST /api/v1/payments'
 ---
 
@@ -28,11 +29,11 @@ import { Upag } from 'upag';
 const upag = new Upag('sk_test_your_api_key');
 
 const payment = await upag.payments.create({
-  customerId: 'cus_ahwDXrgYvur89iPs',
-  paymentMethodId: 'pm_abc123xyz',
+  customer: 'cus_ahwDXrgYvur89iPs',
+  paymentMethod: 'pm_abc123xyz',
   amount: 10000,
   currency: 'brl',
-  installments: 1
+  installments: 1,
 });
 ```
 </CodeGroup>
