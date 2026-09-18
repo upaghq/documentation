@@ -1,23 +1,43 @@
 ---
-title: "Webhooks"
-description: "Configure URLs para eventos da conta Core"
+title: 'Webhooks'
+description: 'Eventos da conta Core, cadastro via API e payloads'
+boost: 2
+keywords: ['webhooks', 'core', 'charge.paid', 'hmac']
 ---
 
-Registre endpoints HTTPS para receber eventos de cobranças, transferências, clientes, estornos e contestações.
+Registre URLs HTTPS para receber eventos de cobranças, transferências, clientes, estornos e contestações. Cadastre inscrições pela API ([Criar webhook](./create)); falhas de entrega aparecem em [Logs de entrega](../webhook-logs/list).
+
+## Montagem básica
+
+1. Exponha uma rota POST (ex.: `/webhooks/upag-core`) com TLS.
+2. Crie o webhook com `POST /v1/webhooks` e guarde o `secret` (`whsec_...`).
+3. Valide a assinatura, trate o JSON, responda **2xx** quando aceitar a entrega.
+
+## Sandbox vs live
+
+Use chaves **`sk_test_...`** e **`sk_live_...`** em ambientes separados para não processar evento de teste como produção.
 
 ## Envelope
 
 ```json
 {
+  "id": "880e8400-e29b-41d4-a716-446655440000",
   "event": "charge.paid",
+  "createdAt": "2026-03-18T12:05:00.000Z",
   "data": { }
 }
 ```
 
-- **event** — identificador do evento (veja tabelas abaixo).
-- **data** — recurso serializado; consulte [Payload Cobrança](./payload-charge), [Payload Transferência](./payload-transfer) e [Payload Cliente](./payload-customer).
+| Campo | Uso |
+| ----- | --- |
+| `id` | Identificador desta entrega (idempotência) |
+| `event` | Identificador do evento (tabelas abaixo) |
+| `createdAt` | ISO 8601 do envio |
+| `data` | Recurso serializado — links na seção [Referência de payloads](#referencia-de-payloads) |
 
-## Cobranças
+## Eventos
+
+### Cobranças
 
 | Evento | Descrição |
 | ------ | --------- |
@@ -29,14 +49,18 @@ Registre endpoints HTTPS para receber eventos de cobranças, transferências, cl
 | `charge.refunded` | Cobrança estornada |
 | `charge.partially_refunded` | Estorno parcial |
 
-## Clientes
+`data`: [Payload cobrança](./payload-charge).
+
+### Clientes
 
 | Evento | Descrição |
 | ------ | --------- |
 | `customer.created` | Cliente criado |
 | `customer.updated` | Cliente atualizado |
 
-## Transferências
+`data`: [Payload cliente](./payload-customer).
+
+### Transferências
 
 | Evento | Descrição |
 | ------ | --------- |
@@ -46,7 +70,9 @@ Registre endpoints HTTPS para receber eventos de cobranças, transferências, cl
 | `transfer.completed` | Concluída |
 | `transfer.failed` | Falhou |
 
-## Estornos e contestações
+`data`: [Payload transferência](./payload-transfer).
+
+### Estornos e contestações
 
 | Evento | Descrição |
 | ------ | --------- |
@@ -59,4 +85,37 @@ Registre endpoints HTTPS para receber eventos de cobranças, transferências, cl
 | `dispute.updated` | Contestação atualizada |
 | `dispute.resolved` | Contestação finalizada |
 
-Configure inscrições em [Criar webhook](./create). Entregas falhas podem ser reprocessadas via [Logs](../webhook-logs/list).
+## Autenticidade
+
+Confira HMAC do corpo com o `secret` do webhook e o header `X-Webhook-Signature` (`sha256=...`). Passo a passo: [Verificação e segurança](./security).
+
+## Entregas repetidas
+
+A Core pode **reenviar** após timeout ou erro HTTP. Use `payload.id` ou `${event}:${data.id}` antes de efeitos colaterais.
+
+- Devolva **2xx** só depois de persistir ou enfileirar.
+- Campos novos podem aparecer em `data` sem aviso de versão na doc.
+
+```javascript
+const deliveryId = body.id;
+if (deliveryId && (await processed.has(deliveryId))) return res.sendStatus(200);
+await enqueue(body);
+if (deliveryId) await processed.add(deliveryId);
+return res.sendStatus(200);
+```
+
+## Referência de payloads
+
+<CardGroup cols={3}>
+  <Card title="Cobrança" icon="qrcode" href="./payload-charge">
+    Eventos `charge.*`.
+  </Card>
+  <Card title="Transferência" icon="arrow-right-arrow-left" href="./payload-transfer">
+    Eventos `transfer.*`.
+  </Card>
+  <Card title="Cliente" icon="user" href="./payload-customer">
+    Eventos `customer.*`.
+  </Card>
+</CardGroup>
+
+Objeto webhook na API: [Referência](./reference).

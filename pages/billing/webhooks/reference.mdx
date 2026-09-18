@@ -1,0 +1,39 @@
+---
+title: 'Referência'
+description: 'Cadastro de webhook no Billing e formato da entrega'
+sidebarTitle: 'Referência'
+---
+
+No Billing, o webhook é configurado no **dashboard** (não há CRUD público na API de gateway). Você informa URL HTTPS, seleciona eventos e obtém a **signing secret** para validar entregas.
+
+## Configuração
+
+| Item | Detalhe |
+| ---- | ------- |
+| URL | HTTPS, rota POST da sua aplicação |
+| Eventos | Assinatura, pagamento e/ou fatura — lista em [Webhooks](./overview#eventos) |
+| Secret | Exibida ao criar ou rotacionar o endpoint; use só em variável de ambiente |
+
+Separe endpoints ou URLs entre chaves **`sk_test_...`** e **`sk_live_...`** para não misturar sandbox com produção.
+
+## Corpo da entrega
+
+```json
+{
+  "event": "payment.approved",
+  "data": { }
+}
+```
+
+| Campo | Uso |
+| ----- | --- |
+| `event` | Identificador (`payment.approved`, `subscription.active`, …) |
+| `data` | Snapshot do recurso — ver [Payloads](#payloads) na sidebar |
+
+Headers e algoritmo de assinatura: [Verificação e segurança](./security).
+
+## Payloads
+
+- [Payload pagamento](./payload-payment)
+- [Payload assinatura](./payload-subscription)
+- [Payload fatura](./payload-invoice)

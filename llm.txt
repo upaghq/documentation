@@ -33,6 +33,6 @@
 
 ## Uso para assistentes
 
-Integração ponta a ponta → aba **Guias**. Campos e contratos HTTP → aba **Referência**. Eventos → aba **Webhooks** (`overview` + `security` + payloads Billing).
+Integração ponta a ponta → aba **Guias**. Campos e contratos HTTP → aba **Referência**. Eventos → aba **Webhooks**: mesma ordem de grupos **Visão geral → Referência → Segurança → Payloads** (Core acrescenta **Endpoints** e **Logs de entrega**).
 
 Sidebar (estilo Abacate): **sem** `icon` em tabs/grupos no `docs.json`. Endpoints com `api` no frontmatter → badge HTTP, sem `icon`. **Com** `icon` apenas em subpáginas: guias, payloads de webhook, `sdk/server` e `sdk/frontend`. Sem ícone em `reference.mdx`, overview/security de webhooks, índice SDK ou simulador.

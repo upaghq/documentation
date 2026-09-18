@@ -1,7 +1,8 @@
 ---
-title: 'Payload Transferência'
+title: 'Payload transferência'
 description: 'Campo data nos eventos transfer.*'
 icon: 'arrow-right-arrow-left'
+sidebarTitle: 'Transferência'
 ---
 
 Em eventos `transfer.*`, `data` usa o payload de webhook (documento bruto, sem formatação extra de CPF/CNPJ):
@@ -33,4 +34,4 @@ Em eventos `transfer.*`, `data` usa o payload de webhook (documento bruto, sem f
 }
 ```
 
-Ver [Referência de transferências](../transfers/reference).
+Campos usados com frequência: `id`, `status`, `amount`, `direction`, `pixKey`, `endToEndId`, `from` / `to`. Detalhes: [Referência de transferências](../transfers/reference).

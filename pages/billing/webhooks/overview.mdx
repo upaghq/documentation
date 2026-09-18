@@ -12,7 +12,7 @@ Consultar a API de tempos em tempos ainda serve para suporte ou telas administra
 ## Montagem básica
 
 1. Exponha uma rota POST (ex.: `/webhooks/upag-billing`) com TLS.
-2. No dashboard Billing, informe a URL e marque os eventos.
+2. No dashboard Billing, informe a URL e marque os eventos ([Referência](./reference)).
 3. Valide a assinatura, trate o JSON, responda status **2xx** quando aceitar a entrega.
 
 O retorno do checkout no browser pode falhar (aba fechada, rede). Trate `payment.approved` ou `invoice.paid` no servidor como confirmação do negócio.

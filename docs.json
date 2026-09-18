@@ -143,7 +143,18 @@
                             {
                                 "group": "Visão geral",
                                 "pages": [
-                                    "pages/billing/webhooks/overview",
+                                    "pages/billing/webhooks/overview"
+                                ]
+                            },
+                            {
+                                "group": "Referência",
+                                "pages": [
+                                    "pages/billing/webhooks/reference"
+                                ]
+                            },
+                            {
+                                "group": "Segurança",
+                                "pages": [
                                     "pages/billing/webhooks/security"
                                 ]
                             },
@@ -271,6 +282,12 @@
                                 "group": "Referência",
                                 "pages": [
                                     "pages/core/webhooks/reference"
+                                ]
+                            },
+                            {
+                                "group": "Segurança",
+                                "pages": [
+                                    "pages/core/webhooks/security"
                                 ]
                             },
                             {
