@@ -1,0 +1,34 @@
+---
+title: 'Reprocessar log'
+description: 'Reenvia um evento a partir de um log de falha'
+---
+
+Dispara nova tentativa de entrega e grava um novo log.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/v1/webhooks/aa0e8400-e29b-41d4-a716-446655440000/logs/bb0e8400-e29b-41d4-a716-446655440000/reprocess \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+</CodeGroup>
+
+## Resposta
+
+`200 OK` — novo log da tentativa (ID diferente do log original).
+
+```json Response
+{
+  "id": "cc0e8400-e29b-41d4-a716-446655440000",
+  "webhookId": "aa0e8400-e29b-41d4-a716-446655440000",
+  "event": "charge.paid",
+  "method": "POST",
+  "url": "https://example.com/webhooks",
+  "statusCode": 200,
+  "duration": 85,
+  "retryCount": 1,
+  "success": true,
+  "createdAt": "2026-03-18T12:15:00.000Z"
+}
+```

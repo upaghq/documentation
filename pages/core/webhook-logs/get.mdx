@@ -1,0 +1,40 @@
+---
+title: 'Obter log de entrega'
+description: 'Inspecta uma tentativa de entrega de webhook'
+---
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.io/v1/webhooks/aa0e8400-e29b-41d4-a716-446655440000/logs/bb0e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+</CodeGroup>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "id": "bb0e8400-e29b-41d4-a716-446655440000",
+  "webhookId": "aa0e8400-e29b-41d4-a716-446655440000",
+  "event": "charge.paid",
+  "method": "POST",
+  "url": "https://example.com/webhooks",
+  "statusCode": 500,
+  "duration": 120,
+  "request": {
+    "headers": { "Content-Type": "application/json" },
+    "body": { "event": "charge.paid", "data": {} }
+  },
+  "response": {
+    "headers": { "Content-Type": "text/plain" },
+    "body": "Internal Server Error"
+  },
+  "retryCount": 0,
+  "success": false,
+  "createdAt": "2026-03-18T12:10:00.000Z"
+}
+```

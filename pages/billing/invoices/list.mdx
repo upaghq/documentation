@@ -1,0 +1,76 @@
+---
+title: 'Listar Faturas'
+description: 'Retorna uma lista de todas as faturas'
+openapi: 'GET /api/v1/invoices'
+---
+
+Retorna uma lista paginada de todas as faturas. Pode ser filtrada por cliente ou status.
+
+## Endpoint
+
+```bash cURL
+curl -G https://api.billing.upag.io/v1/invoices \
+  -H "Authorization: Bearer {token}" \
+  -d page=1 \
+  -d limit=10 \
+  -d customer=cus_ahwDXrgYvur89iPs
+```
+
+## Parâmetros
+
+<ParamField query="limit" type="integer">
+  Limita o número de faturas retornadas. Padrão: `10`, máximo: `100`.
+</ParamField>
+
+<ParamField query="page" type="integer">
+  Número da página a ser retornada. Padrão: `1`.
+</ParamField>
+
+<ParamField query="id" type="string">
+  Filtra por ID da fatura (`inv_...`).
+</ParamField>
+
+<ParamField query="customer" type="string">
+  ID do cliente (`cus_...`) para filtrar faturas desse cliente. O parâmetro na query é `customer`, não `customerId`.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filtra faturas por status: `draft`, `open`, `paid`, `uncollectible`, `void`.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "data": [
+    {
+      "id": "inv_abc123xyz",
+      "customerId": "cus_ahwDXrgYvur89iPs",
+      "paymentMethodId": "pm_abc123xyz",
+      "currency": "BRL",
+      "status": "open",
+      "livemode": false,
+      "number": "INV-001",
+      "description": null,
+      "dueDate": "2024-12-15T00:00:00.000Z",
+      "paidAt": null,
+      "amountDue": 9900,
+      "amountPaid": 0,
+      "attemptCount": 1,
+      "subscriptionId": null,
+      "items": [
+        {
+          "id": "ii_abc123xyz",
+          "priceId": "price_def456ghi",
+          "quantity": 1,
+          "amount": 9900
+        }
+      ],
+      "payments": [],
+      "createdAt": "2024-11-15T10:00:00.000Z",
+      "updatedAt": "2024-11-15T10:00:00.000Z"
+    }
+  ],
+  "total": 1
+}
+```

@@ -1,0 +1,76 @@
+---
+title: 'Atualizar Sessão de Checkout'
+description: 'Atualiza os dados de uma sessão de checkout existente'
+openapi: 'PUT /api/v1/checkout-sessions/{id}'
+---
+
+Atualiza uma sessão de checkout aberta. Todos os campos do body são opcionais no schema; envie apenas o que deseja alterar.
+
+## Endpoint
+
+```bash cURL
+curl -X PUT https://api.billing.upag.io/v1/checkout-sessions/cs_abc123xyz \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "cus_ahwDXrgYvur89iPs",
+    "items": [
+      {
+        "priceId": "price_def456ghi",
+        "quantity": 2
+      }
+    ],
+    "paymentMethods": ["credit_card", "pix"],
+    "successUrl": "https://seusite.com/sucesso",
+    "cancelUrl": "https://seusite.com/cancelado"
+  }'
+```
+
+## Parâmetros
+
+<ParamField path="id" type="string" required>
+  ID único da sessão de checkout, começando com `cs_`.
+</ParamField>
+
+<ParamField body="customerId" type="string">
+  Opcional. ID do cliente (`cus_...`).
+</ParamField>
+
+<ParamField body="items" type="array">
+  Opcional. Se enviado, deve ter pelo menos um item com `priceId` e `quantity` (mínimo `1`).
+</ParamField>
+
+<ParamField body="paymentMethods" type="string[]">
+  Opcional. `credit_card`, `pix`.
+</ParamField>
+
+<ParamField body="successUrl" type="string">
+  Opcional. URL válida de sucesso.
+</ParamField>
+
+<ParamField body="cancelUrl" type="string">
+  Opcional. URL válida de cancelamento.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "id": "cs_abc123xyz",
+  "status": "open",
+  "customerId": "cus_ahwDXrgYvur89iPs",
+  "url": "https://checkout.upag.io/cs_abc123xyz",
+  "billingAddressCollection": false,
+  "successUrl": "https://example.com/success",
+  "cancelUrl": "https://example.com/cancel",
+  "latitude": null,
+  "longitude": null,
+  "country": null,
+  "region": null,
+  "city": null,
+  "expiresAt": "2024-11-16T10:00:00.000Z",
+  "createdAt": "2024-11-15T10:00:00.000Z",
+  "updatedAt": "2024-11-15T11:00:00.000Z",
+  "items": []
+}
+```

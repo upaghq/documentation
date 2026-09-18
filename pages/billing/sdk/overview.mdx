@@ -1,0 +1,58 @@
+---
+title: 'SDK JavaScript'
+description: 'Instale e use o pacote upag no Billing'
+icon: 'code'
+---
+
+O SDK oficial do **Billing** encapsula a API REST em `https://api.billing.upag.io/v1`. Use chaves de teste (`sk_test_...`) em desenvolvimento.
+
+## Instalação
+
+```bash
+npm install upag
+```
+
+## Autenticação
+
+```javascript
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+```
+
+A chave secreta é enviada automaticamente no header `Authorization: Bearer ...`.
+
+## Exemplo rápido
+
+```javascript
+const customer = await upag.customers.create({
+  name: 'John Doe',
+  email: 'john.doe@example.com',
+});
+
+const paymentMethod = await upag.paymentMethods.create({
+  customerId: customer.id,
+  type: 'credit_card',
+  card: {
+    number: '4242424242424242',
+    expMonth: 12,
+    expYear: 2032,
+    cvc: '123',
+    holderName: 'JOHN DOE',
+  },
+});
+
+const payment = await upag.payments.create({
+  customerId: customer.id,
+  paymentMethodId: paymentMethod.id,
+  amount: 1000,
+  currency: 'brl',
+  installments: 1,
+});
+```
+
+Fluxo completo passo a passo: [Quickstart](../guides/quickstart).
+
+## Onde ver exemplos SDK
+
+Cada endpoint na aba **Guides** inclui um bloco **SDK** ao lado do cURL no `<CodeGroup>`.

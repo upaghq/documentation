@@ -1,0 +1,27 @@
+---
+title: 'Payload Cobrança'
+description: 'Campo data nos eventos charge.*'
+---
+
+Em eventos `charge.*`, `data` segue a forma de evento da cobrança:
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "type": "pix",
+  "status": "paid",
+  "amount": 9900,
+  "description": "Pedido #10482",
+  "customer": "660e8400-e29b-41d4-a716-446655440001",
+  "pix": {
+    "reference": "tx-qr-1",
+    "qrCode": "00020126...",
+    "expiresAt": "2026-03-18T12:00:00.000Z"
+  },
+  "splits": [],
+  "createdAt": "2026-03-18T11:50:00.000Z",
+  "updatedAt": "2026-03-18T12:05:00.000Z"
+}
+```
+
+Ver também [Referência de cobranças](../charges/reference).

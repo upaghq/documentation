@@ -1,0 +1,63 @@
+---
+title: "Webhooks"
+description: "Configure URLs para eventos da conta Core"
+icon: "bell"
+---
+
+Registre endpoints HTTPS para receber eventos de cobranças, transferências, clientes, estornos e contestações.
+
+## Envelope
+
+```json
+{
+  "event": "charge.paid",
+  "data": { }
+}
+```
+
+- **event** — identificador do evento (veja tabelas abaixo).
+- **data** — recurso serializado; consulte [Payload Cobrança](./payload-charge), [Payload Transferência](./payload-transfer) e [Payload Cliente](./payload-customer).
+
+## Cobranças
+
+| Evento | Descrição |
+| ------ | --------- |
+| `charge.created` | Cobrança criada |
+| `charge.updated` | Cobrança atualizada |
+| `charge.pending` | Cobrança pendente |
+| `charge.paid` | Cobrança paga |
+| `charge.expired` | Cobrança expirada |
+| `charge.refunded` | Cobrança estornada |
+| `charge.partially_refunded` | Estorno parcial |
+
+## Clientes
+
+| Evento | Descrição |
+| ------ | --------- |
+| `customer.created` | Cliente criado |
+| `customer.updated` | Cliente atualizado |
+
+## Transferências
+
+| Evento | Descrição |
+| ------ | --------- |
+| `transfer.created` | Transferência criada |
+| `transfer.updated` | Transferência atualizada |
+| `transfer.processing` | Em processamento |
+| `transfer.completed` | Concluída |
+| `transfer.failed` | Falhou |
+
+## Estornos e contestações
+
+| Evento | Descrição |
+| ------ | --------- |
+| `refund.created` | Estorno criado |
+| `refund.updated` | Estorno atualizado |
+| `refund.processing` | Estorno em processamento |
+| `refund.completed` | Estorno concluído |
+| `refund.failed` | Estorno falhou |
+| `dispute.created` | Contestação criada |
+| `dispute.updated` | Contestação atualizada |
+| `dispute.resolved` | Contestação finalizada |
+
+Configure inscrições em [Criar webhook](./create). Entregas falhas podem ser reprocessadas via [Logs](../webhook-logs/list).

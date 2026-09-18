@@ -1,0 +1,37 @@
+---
+title: 'Atualizar webhook'
+description: 'Altera URL, eventos ou status do webhook'
+---
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X PATCH https://api.upag.io/v1/webhooks/aa0e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "active": false,
+    "events": ["charge.paid"]
+  }'
+```
+</CodeGroup>
+
+Todos os campos do create são opcionais no PATCH.
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "id": "aa0e8400-e29b-41d4-a716-446655440000",
+  "description": "Order events",
+  "active": false,
+  "url": "https://example.com/webhooks",
+  "headers": { "X-Custom": "value" },
+  "events": ["charge.paid"],
+  "createdAt": "2026-03-18T09:00:00.000Z",
+  "updatedAt": "2026-03-18T10:00:00.000Z"
+}
+```

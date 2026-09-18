@@ -1,0 +1,50 @@
+---
+title: 'Referência'
+description: 'Objeto Cobrança (charge) na API Core'
+icon: 'book-open-cover'
+---
+
+Uma cobrança representa um recebimento Pix na conta autenticada pela chave de API.
+
+## Estrutura
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "type": "pix",
+  "status": "pending",
+  "amount": 9900,
+  "description": "Pedido #10482",
+  "customer": "660e8400-e29b-41d4-a716-446655440001",
+  "pix": {
+    "reference": "tx-qr-1",
+    "qrCode": "00020126...",
+    "expiresAt": "2026-03-18T12:00:00.000Z"
+  },
+  "splits": [],
+  "createdAt": "2026-03-18T11:50:00.000Z",
+  "updatedAt": "2026-03-18T11:50:00.000Z"
+}
+```
+
+Com `?includes=customer`, o campo `customer` traz o objeto completo do cliente em vez do UUID.
+
+## Atributos principais
+
+<AccordionGroup>
+  <Accordion title="type">
+    `pix` — único tipo disponível hoje.
+  </Accordion>
+  <Accordion title="status">
+    `pending`, `paid`, `expired`, `refunded`, `partially_refunded`.
+  </Accordion>
+  <Accordion title="amount">
+    Valor em **centavos** (inteiro).
+  </Accordion>
+  <Accordion title="pix">
+    `reference` (TxId), `qrCode` (payload copia-e-cola ou hash) e `expiresAt` para cobrança dinâmica.
+  </Accordion>
+  <Accordion title="splits">
+    Lista de repasses internos configurados na criação (`accountId`, `amount` em centavos).
+  </Accordion>
+</AccordionGroup>

@@ -1,26 +1,29 @@
 # Upag Documentation
 
-> Documentação da API Upag: clientes, métodos de pagamento, pagamentos e webhooks. Site gerado com Mintlify; fontes em MDX sob `pages/`.
+> Dois produtos no mesmo site Mintlify: **Billing** (gateway) e **Core** (conta digital / banking API).
 
-## Onde começar
+## Hosts
 
-- Fluxo completo (cliente → método de pagamento → pagamento): `pages/quickstart.mdx`
+- **Billing API:** `https://api.billing.upag.io/v1`
+- **Core API:** `https://api.upag.io/v1` — autenticação `Authorization: Bearer sk_...`
 
-## Conteúdo por área
+## Billing
 
-- **Clientes** — `pages/customers/` (reference, create, list, get, update)
-- **Métodos de pagamento** — `pages/payment-methods/` (reference, create, list, get)
-- **Pagamentos** — `pages/payments/` (reference, create, list, get)
-- **Sessões de Checkout** — `pages/checkout-sessions/` (reference, create, list, get, update, delete, confirm)
-- **Faturas** — `pages/invoices/` (reference, create, list, get, pay, mark-as-paid, upcoming, items)
-- **Assinaturas** — `pages/subscriptions/` (reference, create, list, get, update, cancel, items, scheduled-changes)
-- **Webhooks** — `pages/webhooks/` (overview, payloads de subscription, payment, invoice)
+- Abas: **Guias**, **Referência**, **Webhooks**, **SDK**, **Simulador**
+- Guias: `pages/billing/guides/` (quickstart, checkout-hosted, subscription-recurring)
+- Referência: endpoints REST em `pages/billing/{customers,payments,...}/`
+- SDK: `pages/billing/sdk/overview.mdx`
 
-## Convenções
+## Core
 
-- Exemplos usam chaves de teste (`sk_test_...`) quando aplicável.
-- Há exemplos com SDK JavaScript (`upag`) e padrões REST.
+- Abas: **Guias**, **Referência**, **Webhooks** (sem SDK)
+- Guias: `pages/core/guides/` (quickstart, pix-charge, pix-transfer)
+- Referência: `pages/core/{charges,transfers,customers,sub-accounts}/`
+
+## Navegação
+
+`docs.json` → `navigation.products` (switcher Billing / Core).
 
 ## Uso para assistentes
 
-Para integração ponta a ponta, priorize o quickstart. Para campos, parâmetros e contratos, use as páginas `reference` e os guias por operação (create, get, list, update).
+Integração ponta a ponta → aba **Guias**. Campos e contratos HTTP → aba **Referência**. Eventos → aba **Webhooks**.

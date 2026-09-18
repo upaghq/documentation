@@ -1,0 +1,58 @@
+---
+title: 'Listar cobranças'
+description: 'Lista cobranças da conta autenticada'
+---
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -G https://api.upag.io/v1/charges \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -d "limit=20" \
+  -d "offset=0" \
+  -d "includes=customer"
+```
+</CodeGroup>
+
+## Query
+
+<ParamField query="limit" type="integer">
+  Itens por página (padrão conforme paginação da API).
+</ParamField>
+
+<ParamField query="offset" type="integer">
+  Deslocamento para paginação.
+</ParamField>
+
+<ParamField query="includes" type="string">
+  `customer` — inclui o objeto cliente em cada item.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "type": "pix",
+      "status": "pending",
+      "amount": 9900,
+      "description": "Pedido #10482",
+      "customer": "660e8400-e29b-41d4-a716-446655440001",
+      "pix": {
+        "reference": "tx-qr-1",
+        "qrCode": "00020126580014br.gov.bcb.pix...",
+        "expiresAt": "2026-03-18T12:00:00.000Z"
+      },
+      "splits": [],
+      "createdAt": "2026-03-18T11:50:00.000Z",
+      "updatedAt": "2026-03-18T11:50:00.000Z"
+    }
+  ],
+  "count": 1
+}
+```

@@ -9,100 +9,252 @@
     },
     "favicon": "/favicon.svg",
     "navigation": {
-        "tabs": [
+        "products": [
             {
-                "tab": "Guides",
-                "groups": [
+                "product": "Billing",
+                "icon": "credit-card",
+                "tabs": [
                     {
-                        "group": "Primeiros passos",
-                        "pages": [
-                            "pages/quickstart"
+                        "tab": "Guias",
+                        "groups": [
+                            {
+                                "group": "Primeiros passos",
+                                "pages": [
+                                    "pages/billing/guides/quickstart"
+                                ]
+                            },
+                            {
+                                "group": "Fluxos",
+                                "pages": [
+                                    "pages/billing/guides/checkout-hosted",
+                                    "pages/billing/guides/subscription-recurring"
+                                ]
+                            }
                         ]
                     },
                     {
-                        "group": "Clientes",
-                        "pages": [
-                            "pages/customers/reference",
-                            "pages/customers/create",
-                            "pages/customers/list",
-                            "pages/customers/get",
-                            "pages/customers/update"
+                        "tab": "Referência",
+                        "groups": [
+                            {
+                                "group": "Clientes",
+                                "pages": [
+                                    "pages/billing/customers/reference",
+                                    "pages/billing/customers/create",
+                                    "pages/billing/customers/list",
+                                    "pages/billing/customers/get",
+                                    "pages/billing/customers/update"
+                                ]
+                            },
+                            {
+                                "group": "Métodos de Pagamento",
+                                "pages": [
+                                    "pages/billing/payment-methods/reference",
+                                    "pages/billing/payment-methods/create",
+                                    "pages/billing/payment-methods/list",
+                                    "pages/billing/payment-methods/get"
+                                ]
+                            },
+                            {
+                                "group": "Pagamentos",
+                                "pages": [
+                                    "pages/billing/payments/reference",
+                                    "pages/billing/payments/create",
+                                    "pages/billing/payments/list",
+                                    "pages/billing/payments/get"
+                                ]
+                            },
+                            {
+                                "group": "Sessões de Checkout",
+                                "pages": [
+                                    "pages/billing/checkout-sessions/reference",
+                                    "pages/billing/checkout-sessions/create",
+                                    "pages/billing/checkout-sessions/list",
+                                    "pages/billing/checkout-sessions/get",
+                                    "pages/billing/checkout-sessions/update",
+                                    "pages/billing/checkout-sessions/delete",
+                                    "pages/billing/checkout-sessions/confirm"
+                                ]
+                            },
+                            {
+                                "group": "Faturas",
+                                "pages": [
+                                    "pages/billing/invoices/reference",
+                                    "pages/billing/invoices/create",
+                                    "pages/billing/invoices/list",
+                                    "pages/billing/invoices/get",
+                                    "pages/billing/invoices/pay",
+                                    "pages/billing/invoices/mark-as-paid",
+                                    "pages/billing/invoices/upcoming",
+                                    "pages/billing/invoices/items"
+                                ]
+                            },
+                            {
+                                "group": "Assinaturas",
+                                "pages": [
+                                    "pages/billing/subscriptions/reference",
+                                    "pages/billing/subscriptions/create",
+                                    "pages/billing/subscriptions/list",
+                                    "pages/billing/subscriptions/get",
+                                    "pages/billing/subscriptions/update",
+                                    "pages/billing/subscriptions/cancel",
+                                    "pages/billing/subscriptions/items",
+                                    "pages/billing/subscriptions/scheduled-changes"
+                                ]
+                            }
                         ]
                     },
                     {
-                        "group": "Métodos de Pagamento",
-                        "pages": [
-                            "pages/payment-methods/reference",
-                            "pages/payment-methods/create",
-                            "pages/payment-methods/list",
-                            "pages/payment-methods/get"
+                        "tab": "Webhooks",
+                        "groups": [
+                            {
+                                "group": "Visão geral",
+                                "pages": [
+                                    "pages/billing/webhooks/overview"
+                                ]
+                            },
+                            {
+                                "group": "Payloads",
+                                "pages": [
+                                    "pages/billing/webhooks/payload-subscription",
+                                    "pages/billing/webhooks/payload-payment",
+                                    "pages/billing/webhooks/payload-invoice"
+                                ]
+                            }
                         ]
                     },
                     {
-                        "group": "Pagamentos",
-                        "pages": [
-                            "pages/payments/reference",
-                            "pages/payments/create",
-                            "pages/payments/list",
-                            "pages/payments/get"
+                        "tab": "SDK",
+                        "groups": [
+                            {
+                                "group": "JavaScript",
+                                "pages": [
+                                    "pages/billing/sdk/overview"
+                                ]
+                            }
                         ]
                     },
                     {
-                        "group": "Sessões de Checkout",
-                        "pages": [
-                            "pages/checkout-sessions/reference",
-                            "pages/checkout-sessions/create",
-                            "pages/checkout-sessions/list",
-                            "pages/checkout-sessions/get",
-                            "pages/checkout-sessions/update",
-                            "pages/checkout-sessions/delete",
-                            "pages/checkout-sessions/confirm"
-                        ]
-                    },
-                    {
-                        "group": "Faturas",
-                        "pages": [
-                            "pages/invoices/reference",
-                            "pages/invoices/create",
-                            "pages/invoices/list",
-                            "pages/invoices/get",
-                            "pages/invoices/pay",
-                            "pages/invoices/mark-as-paid",
-                            "pages/invoices/upcoming",
-                            "pages/invoices/items"
-                        ]
-                    },
-                    {
-                        "group": "Assinaturas",
-                        "pages": [
-                            "pages/subscriptions/reference",
-                            "pages/subscriptions/create",
-                            "pages/subscriptions/list",
-                            "pages/subscriptions/get",
-                            "pages/subscriptions/update",
-                            "pages/subscriptions/cancel",
-                            "pages/subscriptions/items",
-                            "pages/subscriptions/scheduled-changes"
-                        ]
-                    },
-                    {
-                        "group": "Webhooks",
-                        "pages": [
-                            "pages/webhooks/overview",
-                            "pages/webhooks/payload-subscription",
-                            "pages/webhooks/payload-payment",
-                            "pages/webhooks/payload-invoice"
+                        "tab": "Simulador",
+                        "groups": [
+                            {
+                                "group": "Ambiente de testes",
+                                "pages": [
+                                    "pages/billing/simulator"
+                                ]
+                            }
                         ]
                     }
                 ]
             },
             {
-                "tab": "Simulador",
-                "groups": [
+                "product": "Core",
+                "icon": "building-columns",
+                "tabs": [
                     {
-                        "group": "Ambiente de testes",
-                        "pages": [
-                            "pages/simulator"
+                        "tab": "Guias",
+                        "groups": [
+                            {
+                                "group": "Primeiros passos",
+                                "pages": [
+                                    "pages/core/guides/quickstart"
+                                ]
+                            },
+                            {
+                                "group": "Fluxos Pix",
+                                "pages": [
+                                    "pages/core/guides/pix-charge",
+                                    "pages/core/guides/pix-transfer"
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "tab": "Referência",
+                        "groups": [
+                            {
+                                "group": "Cobranças",
+                                "pages": [
+                                    "pages/core/charges/reference",
+                                    "pages/core/charges/create",
+                                    "pages/core/charges/list",
+                                    "pages/core/charges/get"
+                                ]
+                            },
+                            {
+                                "group": "Transferências",
+                                "pages": [
+                                    "pages/core/transfers/reference",
+                                    "pages/core/transfers/lookup",
+                                    "pages/core/transfers/create",
+                                    "pages/core/transfers/list",
+                                    "pages/core/transfers/get",
+                                    "pages/core/transfers/receipt"
+                                ]
+                            },
+                            {
+                                "group": "Clientes",
+                                "pages": [
+                                    "pages/core/customers/reference",
+                                    "pages/core/customers/create",
+                                    "pages/core/customers/list",
+                                    "pages/core/customers/get",
+                                    "pages/core/customers/update",
+                                    "pages/core/customers/delete"
+                                ]
+                            },
+                            {
+                                "group": "Subcontas",
+                                "pages": [
+                                    "pages/core/sub-accounts/reference",
+                                    "pages/core/sub-accounts/create",
+                                    "pages/core/sub-accounts/list",
+                                    "pages/core/sub-accounts/get",
+                                    "pages/core/sub-accounts/roll-api-key"
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "tab": "Webhooks",
+                        "groups": [
+                            {
+                                "group": "Visão geral",
+                                "pages": [
+                                    "pages/core/webhooks/overview"
+                                ]
+                            },
+                            {
+                                "group": "Referência",
+                                "pages": [
+                                    "pages/core/webhooks/reference"
+                                ]
+                            },
+                            {
+                                "group": "Endpoints",
+                                "pages": [
+                                    "pages/core/webhooks/create",
+                                    "pages/core/webhooks/list",
+                                    "pages/core/webhooks/get",
+                                    "pages/core/webhooks/update",
+                                    "pages/core/webhooks/delete"
+                                ]
+                            },
+                            {
+                                "group": "Payloads",
+                                "pages": [
+                                    "pages/core/webhooks/payload-charge",
+                                    "pages/core/webhooks/payload-transfer",
+                                    "pages/core/webhooks/payload-customer"
+                                ]
+                            },
+                            {
+                                "group": "Logs de entrega",
+                                "pages": [
+                                    "pages/core/webhook-logs/list",
+                                    "pages/core/webhook-logs/get",
+                                    "pages/core/webhook-logs/reprocess"
+                                ]
+                            }
                         ]
                     }
                 ]

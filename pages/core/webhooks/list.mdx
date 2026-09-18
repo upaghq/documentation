@@ -1,0 +1,37 @@
+---
+title: 'Listar webhooks'
+description: 'Lista webhooks da conta'
+---
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -G https://api.upag.io/v1/webhooks \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -d "limit=20" \
+  -d "offset=0"
+```
+</CodeGroup>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "data": [
+    {
+      "id": "aa0e8400-e29b-41d4-a716-446655440000",
+      "description": "Order events",
+      "active": true,
+      "url": "https://example.com/webhooks",
+      "headers": {},
+      "events": ["charge.paid"],
+      "createdAt": "2026-03-18T09:00:00.000Z",
+      "updatedAt": "2026-03-18T09:00:00.000Z"
+    }
+  ],
+  "count": 1
+}
+```

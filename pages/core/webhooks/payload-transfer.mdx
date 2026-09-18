@@ -1,0 +1,35 @@
+---
+title: 'Payload Transferência'
+description: 'Campo data nos eventos transfer.*'
+---
+
+Em eventos `transfer.*`, `data` usa o payload de webhook (documento bruto, sem formatação extra de CPF/CNPJ):
+
+```json
+{
+  "id": "770e8400-e29b-41d4-a716-446655440000",
+  "status": "completed",
+  "direction": "out",
+  "type": "key",
+  "amount": 100,
+  "pixKey": "55ce1aae-0d2b-4d76-bc77-294d6407349e",
+  "pixKeyType": "random",
+  "from": {
+    "name": "Acme LTDA",
+    "taxNumber": "12345678000199",
+    "bankName": "Upag"
+  },
+  "to": {
+    "name": "Maria Receiver",
+    "taxNumber": "11144477735",
+    "bankName": "FitBank"
+  },
+  "endToEndId": "E12345678202603181200000000000000",
+  "providerTransactionId": "555",
+  "url": null,
+  "createdAt": "2026-03-18T12:00:00.000Z",
+  "updatedAt": "2026-03-18T12:01:00.000Z"
+}
+```
+
+Ver [Referência de transferências](../transfers/reference).

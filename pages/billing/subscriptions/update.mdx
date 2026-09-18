@@ -1,0 +1,72 @@
+---
+title: 'Atualizar Assinatura'
+description: 'Atualiza os dados de uma assinatura existente'
+openapi: 'PUT /api/v1/subscriptions/{id}'
+---
+
+Atualiza os dados de uma assinatura. Apenas `paymentMethod` e `cancelAtPeriodEnd` são aceitos no body. Para alterar itens, use os endpoints de [itens da assinatura](./items).
+
+## Endpoint
+
+```bash cURL
+curl -X PUT https://api.billing.upag.io/v1/subscriptions/sub_abc123xyz \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "paymentMethod": "pm_def456ghi",
+    "cancelAtPeriodEnd": true
+  }'
+```
+
+## Parâmetros
+
+<ParamField path="id" type="string" required>
+  ID único da assinatura, começando com `sub_`.
+</ParamField>
+
+<ParamField body="paymentMethod" type="string">
+  Novo ID do método de pagamento a ser utilizado nas cobranças.
+</ParamField>
+
+<ParamField body="cancelAtPeriodEnd" type="boolean">
+  Se `true`, a assinatura será cancelada ao final do período atual em vez de renovar.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "id": "sub_abc123xyz",
+  "livemode": false,
+  "customerId": "cus_ahwDXrgYvur89iPs",
+  "paymentMethodId": "pm_def456ghi",
+  "status": "active",
+  "currency": "BRL",
+  "interval": "month",
+  "intervalCount": 1,
+  "cancelAtPeriodEnd": true,
+  "startDate": "2024-11-15T10:00:00.000Z",
+  "endDate": null,
+  "trialStartDate": null,
+  "trialEndDate": null,
+  "currentPeriodStart": "2024-11-15T10:00:00.000Z",
+  "currentPeriodEnd": "2024-12-15T10:00:00.000Z",
+  "canceledAt": null,
+  "cancellationReason": null,
+  "items": [
+    {
+      "id": "si_abc123xyz",
+      "subscriptionId": "sub_abc123xyz",
+      "productId": "prod_xyz789abc",
+      "priceId": "price_def456ghi",
+      "name": "Plano Pro",
+      "amount": 9900,
+      "quantity": 1,
+      "createdAt": "2024-11-15T10:00:00.000Z",
+      "updatedAt": "2024-11-15T10:00:00.000Z"
+    }
+  ],
+  "createdAt": "2024-11-15T10:00:00.000Z",
+  "updatedAt": "2024-11-15T11:00:00.000Z"
+}
+```

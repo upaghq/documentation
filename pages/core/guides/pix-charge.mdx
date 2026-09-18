@@ -1,0 +1,127 @@
+---
+title: 'Cobrança Pix'
+description: 'QR dinâmico, cliente inline e confirmação via webhook'
+---
+
+Guia para receber via Pix na conta Core: cobrança **dinâmica** (com vencimento e pagador) ou **estática** (valor fixo, cliente opcional).
+
+Autenticação: `Authorization: Bearer sk_...`. Valores em **centavos**.
+
+```mermaid
+sequenceDiagram
+  participant App
+  participant CoreAPI
+  participant Pagador
+  App->>CoreAPI: POST /v1/charges
+  CoreAPI-->>App: pix.qrCode
+  App->>Pagador: exibe QR ou copia-e-cola
+  Pagador->>CoreAPI: paga Pix
+  CoreAPI-->>App: webhook charge.paid
+```
+
+## 1. Criar cobrança dinâmica
+
+O pagador pode ser UUID de cliente existente ou objeto inline (cria/atualiza por documento).
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/v1/charges \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "pix",
+    "amount": 9900,
+    "description": "Pedido #10482",
+    "pix": { "method": "dynamic" },
+    "customer": {
+      "name": "Maria Pagadora",
+      "document": { "type": "cpf", "number": "39053344705" }
+    }
+  }'
+```
+</CodeGroup>
+
+Exiba `pix.qrCode` na UI. Guarde `id` — status inicial `pending`.
+
+## 2. Cobrança estática (opcional)
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/v1/charges \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "pix",
+    "amount": 5000,
+    "pix": { "method": "static" }
+  }'
+```
+</CodeGroup>
+
+Cliente não é obrigatório para estática.
+
+## 3. Acompanhar pagamento (polling)
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.io/v1/charges/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+</CodeGroup>
+
+Repita até `status` ser `paid` ou `expired`. Em produção, prefira webhook (passo 4).
+
+## 4. Webhook (recomendado)
+
+Registre o endpoint:
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/v1/webhooks \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "description": "Cobranças Pix",
+    "url": "https://example.com/webhooks/core",
+    "events": ["charge.paid", "charge.expired"]
+  }'
+```
+</CodeGroup>
+
+Handler de exemplo:
+
+```javascript
+app.post('/webhooks/core', express.json(), (req, res) => {
+  const { event, data } = req.body;
+
+  if (event === 'charge.paid') {
+    console.log('Cobrança paga:', data.id, data.amount);
+    // liberar pedido / atualizar ERP
+  }
+
+  res.sendStatus(200);
+});
+```
+
+Payload: [charge.paid](../webhooks/payload-charge).
+
+## 5. Repasse interno (splits)
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/v1/charges \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "pix",
+    "amount": 10000,
+    "pix": { "method": "dynamic" },
+    "customer": "660e8400-e29b-41d4-a716-446655440001",
+    "splits": [
+      { "accountId": "880e8400-e29b-41d4-a716-446655440000", "amount": 2000 }
+    ]
+  }'
+```
+</CodeGroup>
+
+Detalhes: [Criar cobrança](../charges/create).

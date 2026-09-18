@@ -1,0 +1,77 @@
+---
+title: 'Criar cobrança'
+description: 'Gera uma cobrança Pix na conta da chave de API'
+---
+
+Cria uma cobrança Pix. Cobrança **dinâmica** exige `customer` (UUID existente ou objeto inline).
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/v1/charges \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "pix",
+    "amount": 9900,
+    "description": "Pedido #10482",
+    "pix": { "method": "dynamic" },
+    "customer": {
+      "name": "Maria Pagadora",
+      "document": { "type": "cpf", "number": "39053344705" }
+    }
+  }'
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField body="type" type="string" required>
+  Sempre `pix`.
+</ParamField>
+
+<ParamField body="amount" type="integer" required>
+  Valor em centavos.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Descrição (até 140 caracteres).
+</ParamField>
+
+<ParamField body="pix" type="object">
+  `method`: `dynamic` (padrão, com vencimento) ou `static`. Para dinâmica, `dueDate` opcional (ISO 8601).
+</ParamField>
+
+<ParamField body="customer" type="string | object">
+  Obrigatório para Pix dinâmico. UUID de cliente ou objeto de criação/atualização (ver [Clientes](../customers/reference)).
+</ParamField>
+
+<ParamField body="splits" type="array">
+  Repasses para outras contas internas: `{ "accountId": "uuid", "amount": centavos }`.
+</ParamField>
+
+## Resposta
+
+`201 Created`
+
+```json Response
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "type": "pix",
+  "status": "pending",
+  "amount": 9900,
+  "description": "Pedido #10482",
+  "customer": "660e8400-e29b-41d4-a716-446655440001",
+  "pix": {
+    "reference": "tx-qr-1",
+    "qrCode": "00020126580014br.gov.bcb.pix...",
+    "expiresAt": "2026-03-18T12:00:00.000Z"
+  },
+  "splits": [],
+  "createdAt": "2026-03-18T11:50:00.000Z",
+  "updatedAt": "2026-03-18T11:50:00.000Z"
+}
+```
+
+Campos completos: [Referência de cobranças](./reference).
