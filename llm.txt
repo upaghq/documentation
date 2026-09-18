@@ -24,6 +24,12 @@
 
 `docs.json` → `navigation.products` (switcher Billing / Core).
 
+## SEO e busca (Mintlify)
+
+- `seo.metatags.canonical`: `https://docs.upag.io` (ajustar se o domínio publicado for outro).
+- Busca in-product: `boost` em guias quickstart (4), SDK index (3), simulador (0.5). Grupos **Primeiros passos** / **SDKs** também têm `boost` no `docs.json`.
+- Páginas com `openapi`: sem `icon` na sidebar; `searchable: false` só se quiser ocultar da busca interna (não afeta Google).
+
 ## Uso para assistentes
 
 Integração ponta a ponta → aba **Guias**. Campos e contratos HTTP → aba **Referência**. Eventos → aba **Webhooks** (`overview` + `security` + payloads Billing).

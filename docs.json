@@ -8,6 +8,17 @@
         "dark": "#0583A6"
     },
     "favicon": "/favicon.svg",
+    "seo": {
+        "metatags": {
+            "canonical": "https://docs.upag.io",
+            "og:locale": "pt_BR",
+            "language": "pt-BR"
+        },
+        "organization": {
+            "name": "Upag",
+            "url": "https://upag.io"
+        }
+    },
     "navigation": {
         "products": [
             {
@@ -19,6 +30,7 @@
                         "groups": [
                             {
                                 "group": "Primeiros passos",
+                                "boost": 4,
                                 "pages": [
                                     "pages/billing/guides/quickstart"
                                 ]
@@ -128,6 +140,7 @@
                         "groups": [
                             {
                                 "group": "SDKs",
+                                "boost": 3,
                                 "pages": [
                                     "pages/billing/sdk/overview"
                                 ]
@@ -163,6 +176,7 @@
                         "groups": [
                             {
                                 "group": "Primeiros passos",
+                                "boost": 4,
                                 "pages": [
                                     "pages/core/guides/quickstart"
                                 ]
