@@ -24,8 +24,8 @@ const upag = new Upag('sk_test_your_api_key');
 
 const payments = await upag.payments.list({
   limit: 10,
-  page: 1,
-  customer: 'cus_ahwDXrgYvur89iPs'
+  offset: 0,
+  customerId: 'cus_ahwDXrgYvur89iPs'
 });
 ```
 </CodeGroup>
