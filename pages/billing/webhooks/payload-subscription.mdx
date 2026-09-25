@@ -1,0 +1,43 @@
+---
+title: 'Payload assinatura'
+description: 'Campo data nos eventos subscription.*'
+icon: 'repeat'
+sidebarTitle: 'Assinatura'
+---
+
+Em eventos `subscription.*`, `data` é uma assinatura:
+
+```json
+{
+  "id": "sub_xyz789abc",
+  "livemode": false,
+  "customer": "cus_ahwDXrgYvur89iPs",
+  "paymentMethod": "pm_abc123xyz",
+  "status": "active",
+  "currency": "BRL",
+  "interval": "month",
+  "intervalCount": 1,
+  "cancelAtPeriodEnd": false,
+  "startDate": 1731622178441,
+  "endDate": null,
+  "trialStartDate": null,
+  "trialEndDate": null,
+  "currentPeriodStart": 1731622178441,
+  "currentPeriodEnd": 1734300578441,
+  "createdAt": 1731622178441,
+  "updatedAt": 1731622178441,
+  "canceledAt": null,
+  "items": [
+    {
+      "id": "si_abc123",
+      "product": "prod_xyz",
+      "price": "pri_xyz",
+      "name": "Plano Mensal",
+      "amount": 9900,
+      "quantity": 1
+    }
+  ]
+}
+```
+
+Campos usados com frequência: `id` (`sub_...`), `status`, ciclo (`interval`, `intervalCount`, `currentPeriodStart`, `currentPeriodEnd`), `customer`, `paymentMethod`, `items`. Detalhes: [Referência de assinaturas](../subscriptions/reference).

@@ -1,0 +1,144 @@
+---
+title: 'Assinatura recorrente'
+description: 'Cliente, método de pagamento e assinatura com cobrança automática'
+icon: 'repeat'
+---
+
+Fluxo típico para SaaS ou planos mensais: cadastre o pagador uma vez e deixe o Billing gerar faturas e tentativas de cobrança.
+
+```mermaid
+sequenceDiagram
+  participant App
+  participant BillingAPI
+  App->>BillingAPI: POST /customers
+  App->>BillingAPI: POST /customers/:id/payment-methods
+  App->>BillingAPI: POST /subscriptions
+  BillingAPI-->>App: subscription
+  Note over BillingAPI: Renovações geram invoices + payments
+```
+
+## 1. Criar cliente
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.billing.upag.io/v1/customers \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "John Doe",
+    "email": "john.doe@example.com",
+    "phone": "+5511999999999",
+    "taxId": "12345678900"
+  }'
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const customer = await upag.customers.create({
+  name: 'John Doe',
+  email: 'john.doe@example.com',
+  phone: '+5511999999999',
+  taxId: '12345678900',
+});
+```
+</CodeGroup>
+
+## 2. Cadastrar cartão
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.billing.upag.io/v1/customers/cus_ahwDXrgYvur89iPs/payment-methods \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "credit_card",
+    "card": {
+      "number": "4242424242424242",
+      "expiryMonth": "12",
+      "expiryYear": "2032",
+      "cvv": "123",
+      "holderName": "JOHN DOE"
+    }
+  }'
+```
+
+```javascript SDK
+const paymentMethod = await upag.paymentMethods.create(customer.id, {
+  type: 'credit_card',
+  card: {
+    number: '4242424242424242',
+    expiryMonth: '12',
+    expiryYear: '2032',
+    cvv: '123',
+    holderName: 'JOHN DOE',
+  },
+});
+```
+</CodeGroup>
+
+## 3. Criar assinatura
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.billing.upag.io/v1/subscriptions \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer": "cus_ahwDXrgYvur89iPs",
+    "paymentMethod": "pm_abc123xyz",
+    "items": [{ "price": "price_def456ghi", "quantity": 1 }]
+  }'
+```
+
+```javascript SDK
+const subscription = await upag.subscriptions.create({
+  customer: customer.id,
+  paymentMethod: paymentMethod.id,
+  items: [{ price: 'price_def456ghi', quantity: 1 }],
+});
+
+console.log(subscription.id);
+```
+</CodeGroup>
+
+## 4. Próxima cobrança
+
+<CodeGroup>
+```bash cURL
+curl -G https://api.billing.upag.io/v1/invoices/upcoming \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -d "subscription=sub_abc123xyz"
+```
+
+```javascript SDK
+const preview = await upag.invoices.upcoming({
+  subscription: subscription.id,
+});
+
+console.log('Próximo valor (centavos):', preview.amountDue);
+```
+</CodeGroup>
+
+## 5. Webhooks
+
+Escute renovações e falhas de cobrança:
+
+```javascript
+app.post('/webhooks/billing', express.json(), (req, res) => {
+  const { event, data } = req.body;
+
+  if (event === 'invoice.paid') {
+    console.log('Fatura paga:', data.id, 'subscription', data.subscriptionId);
+  }
+  if (event === 'subscription.past_due') {
+    console.log('Assinatura em atraso:', data.id);
+  }
+
+  res.sendStatus(200);
+});
+```
+
+Eventos: `subscription.*`, `invoice.paid` — ver [Webhooks](../webhooks/overview).

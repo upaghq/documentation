@@ -1,0 +1,55 @@
+---
+title: 'Atualizar cliente'
+description: 'Atualiza dados parciais do cliente'
+sidebarTitle: 'Atualizar'
+api: 'PATCH https://api.upag.io/v1/customers/{customerId}'
+---
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X PATCH https://api.upag.io/v1/customers/660e8400-e29b-41d4-a716-446655440001 \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "John Customer Jr",
+    "email": "john.jr@example.com"
+  }'
+```
+</CodeGroup>
+
+Campos opcionais: `name`, `email`, `phone`, `address`. Documento não é alterável neste endpoint.
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "id": "660e8400-e29b-41d4-a716-446655440001",
+  "name": "John Customer Jr",
+  "email": "john.jr@example.com",
+  "document": {
+    "number": "12345678901",
+    "type": "cpf"
+  },
+  "phone": {
+    "countryCode": "55",
+    "areaCode": "11",
+    "number": "999998888"
+  },
+  "address": {
+    "street": "Rua A",
+    "number": "100",
+    "complement": "Apto 1",
+    "neighborhood": "Centro",
+    "city": "Sao Paulo",
+    "state": "SP",
+    "country": "BR",
+    "zip": "01001000"
+  },
+  "createdAt": "2026-03-18T11:00:00.000Z",
+  "updatedAt": "2026-03-18T11:30:00.000Z"
+}
+```

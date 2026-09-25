@@ -1,0 +1,86 @@
+---
+title: 'Criar cliente'
+description: 'Cadastra um cliente na conta'
+sidebarTitle: 'Criar'
+api: 'POST https://api.upag.io/v1/customers'
+---
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/v1/customers \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "John Customer",
+    "email": "john@example.com",
+    "document": { "type": "cpf", "number": "12345678901" },
+    "phone": { "countryCode": "55", "areaCode": "11", "number": "999998888" },
+    "address": {
+      "street": "Rua A",
+      "number": "100",
+      "neighborhood": "Centro",
+      "city": "Sao Paulo",
+      "state": "SP",
+      "country": "BR",
+      "zip": "01001000"
+    }
+  }'
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField body="name" type="string" required>
+  Nome do cliente.
+</ParamField>
+
+<ParamField body="document" type="object" required>
+  `{ "type": "cpf" | "cnpj", "number": "..." }`.
+</ParamField>
+
+<ParamField body="email" type="string">
+  E-mail.
+</ParamField>
+
+<ParamField body="phone" type="object">
+  `countryCode`, `areaCode`, `number`.
+</ParamField>
+
+<ParamField body="address" type="object">
+  Campos de endereço (`street`, `number`, `complement`, `neighborhood`, `city`, `state`, `country`, `zip`).
+</ParamField>
+
+## Resposta
+
+`201 Created`
+
+```json Response
+{
+  "id": "660e8400-e29b-41d4-a716-446655440001",
+  "name": "John Customer",
+  "email": "john@example.com",
+  "document": {
+    "number": "12345678901",
+    "type": "cpf"
+  },
+  "phone": {
+    "countryCode": "55",
+    "areaCode": "11",
+    "number": "999998888"
+  },
+  "address": {
+    "street": "Rua A",
+    "number": "100",
+    "complement": "Apto 1",
+    "neighborhood": "Centro",
+    "city": "Sao Paulo",
+    "state": "SP",
+    "country": "BR",
+    "zip": "01001000"
+  },
+  "createdAt": "2026-03-18T11:00:00.000Z",
+  "updatedAt": "2026-03-18T11:00:00.000Z"
+}
+```

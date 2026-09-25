@@ -1,0 +1,64 @@
+---
+title: 'Criar webhook'
+description: 'Registra URL e eventos; retorna o signing secret'
+api: 'POST https://api.upag.io/v1/webhooks'
+---
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/v1/webhooks \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "description": "Order events",
+    "url": "https://example.com/webhooks",
+    "events": ["charge.paid", "transfer.completed"],
+    "active": true,
+    "headers": { "X-Custom": "value" }
+  }'
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField body="url" type="string (uri)" required>
+  URL HTTPS de destino.
+</ParamField>
+
+<ParamField body="events" type="array" required>
+  Um ou mais eventos (lista em [Webhooks — overview](./overview)).
+</ParamField>
+
+<ParamField body="description" type="string">
+  Rótulo interno.
+</ParamField>
+
+<ParamField body="active" type="boolean">
+  Padrão `true`.
+</ParamField>
+
+<ParamField body="headers" type="object">
+  Cabeçalhos extras enviados em cada POST.
+</ParamField>
+
+## Resposta
+
+`201 Created`
+
+```json Response
+{
+  "id": "aa0e8400-e29b-41d4-a716-446655440000",
+  "description": "Order events",
+  "active": true,
+  "url": "https://example.com/webhooks",
+  "headers": { "X-Custom": "value" },
+  "events": ["charge.paid", "transfer.completed"],
+  "secret": "whsec_abc123...",
+  "createdAt": "2026-03-18T09:00:00.000Z",
+  "updatedAt": "2026-03-18T09:00:00.000Z"
+}
+```
+
+Guarde `secret` para validar assinaturas.

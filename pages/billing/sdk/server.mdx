@@ -1,0 +1,116 @@
+---
+title: 'Node.js'
+description: 'upag-node — SDK servidor do Billing'
+icon: 'node-js'
+---
+
+<Card title="upag (upag-node)" icon="npm" href="https://www.npmjs.com/package/upag">
+  Pacote npm oficial para Node.js e TypeScript.
+</Card>
+
+## Requisitos
+
+- Node.js 16 ou superior
+- Secret key de teste ou produção (`sk_test_...` / `sk_live_...`)
+
+## Instalação
+
+<CodeGroup>
+```bash npm
+npm install upag
+```
+```bash yarn
+yarn add upag
+```
+```bash pnpm
+pnpm add upag
+```
+</CodeGroup>
+
+## Autenticação
+
+Carregue a secret a partir do ambiente (nunca hardcode):
+
+```bash
+# .env
+UPAG_SECRET_KEY=sk_test_your_api_key
+```
+
+```javascript
+import { Upag } from 'upag';
+
+const upag = new Upag(process.env.UPAG_SECRET_KEY);
+```
+
+## Exemplo: cobrar com cartão salvo
+
+```javascript
+const customer = await upag.customers.create({
+  name: 'John Doe',
+  email: 'john.doe@example.com',
+  taxId: '12345678900',
+});
+
+const paymentMethod = await upag.paymentMethods.create(customer.id, {
+  type: 'credit_card',
+  card: {
+    number: '4242424242424242',
+    expiryMonth: '12',
+    expiryYear: '2032',
+    cvv: '123',
+    holderName: 'JOHN DOE',
+  },
+});
+
+const payment = await upag.payments.create({
+  customer: customer.id,
+  paymentMethod: paymentMethod.id,
+  amount: 1000,
+  currency: 'brl',
+  installments: 1,
+});
+```
+
+`paymentMethods.create` recebe o **customer id como primeiro argumento**.
+
+## Recursos principais
+
+| Recurso | Métodos |
+| ------- | ------- |
+| `customers` | `create`, `retrieve`, `update`, `list`, `delete` |
+| `paymentMethods` | `create`, `retrieve`, `list`, `delete` |
+| `payments` | `create`, `retrieve`, `list`, `refund`, `capture`, `cancel` |
+| `checkoutSessions` | `create`, `retrieve`, `update`, `list` |
+| `subscriptions` | `create`, `retrieve`, `update`, `cancel`, `list`, itens, scheduled changes |
+| `invoices` | `create`, `retrieve`, `pay`, `markAsPaid`, `upcoming`, itens |
+| `products` / `prices` | Catálogo |
+| `webhooks` | CRUD de endpoints |
+
+Confirmação de checkout (`POST .../confirm`) ainda é **somente REST** — [Referência](../checkout-sessions/confirm).
+
+## Erros
+
+```javascript
+try {
+  await upag.customers.create({ email: 'invalid', name: 'Test' });
+} catch (error) {
+  console.error(error.type, error.message, error.statusCode);
+}
+```
+
+## Onde ir depois
+
+<CardGroup cols={2}>
+  <Card title="Assinatura recorrente" icon="repeat" href="../guides/subscription-recurring">
+    Cliente, cartão, plano e próxima fatura.
+  </Card>
+  <Card title="Referência HTTP" icon="book-open" href="../customers/create">
+    Parâmetros e respostas de cada endpoint.
+  </Card>
+  <Card title="SDK browser" icon="browser" href="./frontend">
+    Checkout e antifraud com `pk_...`.
+  </Card>
+  <Card title="Índice de SDKs" icon="code" href="./overview">
+    Comparativo `upag` / `upag-js`.
+  </Card>
+</CardGroup>

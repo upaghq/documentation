@@ -1,0 +1,40 @@
+---
+title: 'Listar logs de entrega'
+description: 'Histórico de entregas de um webhook, mais recentes primeiro'
+api: 'GET https://api.upag.io/v1/webhooks/{webhookId}/logs'
+---
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.io/v1/webhooks/aa0e8400-e29b-41d4-a716-446655440000/logs \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+</CodeGroup>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "data": [
+    {
+      "id": "bb0e8400-e29b-41d4-a716-446655440000",
+      "webhookId": "aa0e8400-e29b-41d4-a716-446655440000",
+      "event": "charge.paid",
+      "method": "POST",
+      "url": "https://example.com/webhooks",
+      "statusCode": 500,
+      "duration": 120,
+      "success": false,
+      "retryCount": 0,
+      "createdAt": "2026-03-18T12:10:00.000Z"
+    }
+  ],
+  "count": 1
+}
+```
+
+Detalhes de request/response: [Obter log](./get).

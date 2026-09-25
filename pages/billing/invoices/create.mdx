@@ -1,0 +1,72 @@
+---
+title: 'Criar uma Fatura'
+description: 'Crie uma nova fatura para um cliente'
+sidebarTitle: 'Criar'
+api: 'POST https://api.billing.upag.io/v1/invoices'
+---
+
+Cria uma nova fatura para um cliente. A fatura é criada com status `draft` e pode ser editada antes de ser emitida. A moeda da fatura é definida automaticamente a partir dos preços dos itens (todos os itens devem usar a mesma moeda).
+
+## Endpoint
+
+```bash cURL
+curl -X POST https://api.billing.upag.io/v1/invoices \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "cus_ahwDXrgYvur89iPs",
+    "paymentMethodId": "pm_abc123xyz",
+    "items": [
+      {
+        "priceId": "price_def456ghi",
+        "quantity": 1
+      }
+    ]
+  }'
+```
+
+## Parâmetros
+
+<ParamField body="customerId" type="string" required>
+  ID do cliente para quem a fatura será emitida.
+</ParamField>
+
+<ParamField body="paymentMethodId" type="string" required>
+  ID do método de pagamento associado ao cliente.
+</ParamField>
+
+<ParamField body="items" type="array" required>
+  Lista de itens. Cada item deve conter `priceId` e `quantity` (mínimo 1). É obrigatório pelo menos um item.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "id": "inv_abc123xyz",
+  "customerId": "cus_ahwDXrgYvur89iPs",
+  "paymentMethodId": "pm_abc123xyz",
+  "currency": "BRL",
+  "status": "draft",
+  "livemode": false,
+  "number": null,
+  "description": null,
+  "dueDate": null,
+  "paidAt": null,
+  "amountDue": 9900,
+  "amountPaid": 0,
+  "attemptCount": 0,
+  "subscriptionId": null,
+  "items": [
+    {
+      "id": "ii_abc123xyz",
+      "priceId": "price_def456ghi",
+      "quantity": 1,
+      "amount": 9900
+    }
+  ],
+  "payments": [],
+  "createdAt": "2024-11-15T10:00:00.000Z",
+  "updatedAt": "2024-11-15T10:00:00.000Z"
+}
+```

@@ -1,0 +1,40 @@
+---
+title: 'Referência'
+description: 'Objeto Cliente na API Core'
+sidebarTitle: 'Visão geral'
+---
+
+Clientes vinculados à conta da chave de API (pagadores de cobranças, etc.).
+
+## Estrutura
+
+```json
+{
+  "id": "660e8400-e29b-41d4-a716-446655440001",
+  "name": "John Customer",
+  "email": "john@example.com",
+  "document": {
+    "number": "12345678901",
+    "type": "cpf"
+  },
+  "phone": {
+    "countryCode": "55",
+    "areaCode": "11",
+    "number": "999998888"
+  },
+  "address": {
+    "street": "Rua A",
+    "number": "100",
+    "complement": "Apto 1",
+    "neighborhood": "Centro",
+    "city": "Sao Paulo",
+    "state": "SP",
+    "country": "BR",
+    "zip": "01001000"
+  },
+  "createdAt": "2026-03-18T11:00:00.000Z",
+  "updatedAt": "2026-03-18T11:00:00.000Z"
+}
+```
+
+`document.type`: `cpf` ou `cnpj`.

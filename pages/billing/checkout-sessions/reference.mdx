@@ -1,0 +1,214 @@
+---
+title: "Referência"
+description: "Crie e gerencie sessões de checkout para seus clientes"
+sidebarTitle: 'Visão geral'
+---
+
+Uma sessão de checkout representa uma instância de uma página de pagamento criada para um cliente. Ela contém todas as informações necessárias para concluir uma compra.
+
+## <Icon icon="folder-tree" type="solid"/> Estrutura
+
+Uma sessão de checkout é representada em nossa API pela seguinte estrutura:
+
+```json
+{
+  "id": "cs_abc123xyz",
+  "status": "open",
+  "customerId": "cus_ahwDXrgYvur89iPs",
+  "url": "https://checkout.upag.io/cs_abc123xyz",
+  "billingAddressCollection": false,
+  "successUrl": "https://example.com/success",
+  "cancelUrl": "https://example.com/cancel",
+  "latitude": null,
+  "longitude": null,
+  "country": null,
+  "region": null,
+  "city": null,
+  "expiresAt": "2024-11-16T10:00:00.000Z",
+  "createdAt": "2024-11-15T10:00:00.000Z",
+  "updatedAt": "2024-11-15T10:00:00.000Z",
+  "items": [
+    {
+      "id": "csi_abc123xyz",
+      "priceId": "price_def456ghi",
+      "quantity": 1,
+      "price": {
+        "id": "price_def456ghi",
+        "name": "Plano Pro Mensal",
+        "billingType": "recurring",
+        "interval": "month",
+        "intervalCount": 1,
+        "currency": "BRL",
+        "amount": 9900,
+        "product": {
+          "id": "prod_xyz789abc",
+          "name": "Plano Pro",
+          "description": null,
+          "image": null
+        }
+      }
+    }
+  ]
+}
+```
+
+## Atributos:
+
+<AccordionGroup>
+  <Accordion title="id:">
+    ```json {2}
+    {
+      "id": "cs_abc123xyz",
+    }
+    ```
+
+    `id` : <u> string. </u> <br />
+    Identificador único da sessão de checkout, começando com `cs_`
+  </Accordion>
+
+  <Accordion title="status:">
+    ```json {2}
+    {
+      "status": "open",
+    }
+    ```
+    `status` : <u> string. </u> <br />
+    Status atual da sessão de checkout
+
+    <Info>
+      | Status | Descrição |
+      | ----------- | ------------------------------------- |
+      | `open` | **A sessão está aberta e aguardando pagamento** |
+      | `complete` | **A sessão foi concluída com sucesso** |
+      | `expired` | **A sessão expirou sem pagamento** |
+    </Info>
+  </Accordion>
+
+  <Accordion title="customerId:">
+    ```json {2}
+    {
+      "customerId": "cus_ahwDXrgYvur89iPs",
+    }
+    ```
+    `customerId` : <u> string | null. </u> <br />
+    ID do cliente associado à sessão. Veja a referência completa <a href="../customers/reference">aqui</a>
+  </Accordion>
+
+  <Accordion title="url:">
+    ```json {2}
+    {
+      "url": "https://checkout.upag.io/cs_abc123xyz",
+    }
+    ```
+    `url` : <u> string. </u> <br />
+    URL da página de checkout para redirecionar o cliente
+  </Accordion>
+
+  <Accordion title="billingAddressCollection:">
+    ```json {2}
+    {
+      "billingAddressCollection": false,
+    }
+    ```
+    `billingAddressCollection` : <u> boolean. </u> <br />
+    Indica se o endereço de cobrança deve ser coletado durante o checkout
+  </Accordion>
+
+  <Accordion title="successUrl:">
+    ```json {2}
+    {
+      "successUrl": "https://example.com/success",
+    }
+    ```
+    `successUrl` : <u> string | null. </u> <br />
+    URL para redirecionar o cliente após a conclusão bem-sucedida do pagamento
+  </Accordion>
+
+  <Accordion title="cancelUrl:">
+    ```json {2}
+    {
+      "cancelUrl": "https://example.com/cancel",
+    }
+    ```
+    `cancelUrl` : <u> string | null. </u> <br />
+    URL para redirecionar o cliente ao cancelar ou abandonar o checkout
+  </Accordion>
+
+  <Accordion title="latitude / longitude:">
+    ```json {2-3}
+    {
+      "latitude": null,
+      "longitude": null,
+    }
+    ```
+    `latitude` / `longitude` : <u> string | null. </u> <br />
+    Coordenadas geográficas detectadas do cliente durante o checkout
+  </Accordion>
+
+  <Accordion title="country / region / city:">
+    ```json {2-4}
+    {
+      "country": null,
+      "region": null,
+      "city": null,
+    }
+    ```
+    `country` / `region` / `city` : <u> string | null. </u> <br />
+    Localização geográfica detectada do cliente durante o checkout
+  </Accordion>
+
+  <Accordion title="expiresAt:">
+    ```json {2}
+    {
+      "expiresAt": "2024-11-16T10:00:00.000Z",
+    }
+    ```
+    `expiresAt` : <u> string | null. </u> <br />
+    Data de expiração da sessão em formato ISO 8601
+  </Accordion>
+
+  <Accordion title="items:">
+    ```json {2-14}
+    {
+      "items": [
+        {
+          "id": "csi_abc123xyz",
+          "priceId": "price_def456ghi",
+          "quantity": 1,
+          "price": {
+            "id": "price_def456ghi",
+            "name": "Plano Pro Mensal",
+            "billingType": "recurring",
+            "interval": "month",
+            "intervalCount": 1,
+            "currency": "BRL",
+            "amount": 9900
+          }
+        }
+      ]
+    }
+    ```
+    `items` : <u> array. </u> <br />
+    Lista de itens da sessão de checkout. Cada item contém `id`, `priceId`, `quantity` e o objeto `price` expandido com detalhes do preço e produto
+  </Accordion>
+
+  <Accordion title="createdAt:">
+    ```json {2}
+    {
+      "createdAt": "2024-11-15T10:00:00.000Z",
+    }
+    ```
+    `createdAt` : <u> string. </u> <br />
+    Data de criação da sessão em formato ISO 8601
+  </Accordion>
+
+  <Accordion title="updatedAt:">
+    ```json {2}
+    {
+      "updatedAt": "2024-11-15T10:00:00.000Z",
+    }
+    ```
+    `updatedAt` : <u> string. </u> <br />
+    Data da última atualização da sessão em formato ISO 8601
+  </Accordion>
+</AccordionGroup>

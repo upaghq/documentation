@@ -1,0 +1,65 @@
+---
+title: 'Buscar Sessão de Checkout por ID'
+description: 'Retorna os detalhes de uma sessão de checkout específica'
+sidebarTitle: 'Obter'
+api: 'GET https://api.billing.upag.io/v1/checkout-sessions/{id}'
+---
+
+Retorna as informações completas de uma sessão de checkout específica pelo seu ID.
+
+## Endpoint
+
+```bash cURL
+curl https://api.billing.upag.io/v1/checkout-sessions/cs_abc123xyz \
+  -H "Authorization: Bearer {token}"
+```
+
+## Parâmetros
+
+<ParamField path="id" type="string" required>
+  ID único da sessão de checkout, começando com `cs_`.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "id": "cs_abc123xyz",
+  "status": "open",
+  "customerId": "cus_ahwDXrgYvur89iPs",
+  "url": "https://checkout.upag.io/cs_abc123xyz",
+  "billingAddressCollection": false,
+  "successUrl": "https://example.com/success",
+  "cancelUrl": "https://example.com/cancel",
+  "latitude": null,
+  "longitude": null,
+  "country": null,
+  "region": null,
+  "city": null,
+  "expiresAt": "2024-11-16T10:00:00.000Z",
+  "createdAt": "2024-11-15T10:00:00.000Z",
+  "updatedAt": "2024-11-15T10:00:00.000Z",
+  "items": [
+    {
+      "id": "csi_abc123xyz",
+      "priceId": "price_def456ghi",
+      "quantity": 1,
+      "price": {
+        "id": "price_def456ghi",
+        "name": "Plano Pro Mensal",
+        "billingType": "recurring",
+        "interval": "month",
+        "intervalCount": 1,
+        "currency": "BRL",
+        "amount": 9900,
+        "product": {
+          "id": "prod_xyz789abc",
+          "name": "Plano Pro",
+          "description": null,
+          "image": null
+        }
+      }
+    }
+  ]
+}
+```

@@ -1,0 +1,65 @@
+---
+title: 'Consultar destino Pix'
+description: 'Resolve chave, hash ou beneficiário antes de transferir'
+sidebarTitle: 'Consultar'
+api: 'POST https://api.upag.io/v1/transfers/lookup'
+---
+
+Valida e retorna dados do destino antes de um Pix-out.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/v1/transfers/lookup \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "key",
+    "value": "55ce1aae-0d2b-4d76-bc77-294d6407349e"
+  }'
+```
+</CodeGroup>
+
+## Corpo (`type`)
+
+<ParamField body="type" type="string" required>
+  `key` — use `value` com a chave Pix.
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  `hash` — use `value` com o BR Code (copia-e-cola).
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  `beneficiary` — use `beneficiaryId` e `beneficiaryAccountId` (UUIDs).
+</ParamField>
+
+## Resposta
+
+`200 OK` — formato depende de `type` no corpo.
+
+### Consulta por chave (`type: key`)
+
+```json Response
+{
+  "type": "key",
+  "isBeneficiary": false,
+  "pixKey": "55ce1aae-0d2b-4d76-bc77-294d6407349e",
+  "pixKeyType": "random",
+  "name": "Maria Receiver",
+  "tradingName": null,
+  "taxNumber": "11144477735",
+  "ispb": "00000000",
+  "bank": "450",
+  "bankName": "FitBank",
+  "branch": "0001",
+  "account": "99999",
+  "accountDigit": "1",
+  "accountType": "payment"
+}
+```
+
+### Consulta por hash (`type: hash`)
+
+Inclui ainda `hash`, `originalValue`, `finalValue`, `dueDate` e `description` do QR.

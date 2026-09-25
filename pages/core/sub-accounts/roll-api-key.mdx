@@ -1,0 +1,33 @@
+---
+title: 'Rotacionar chave da subconta'
+description: 'Gera nova chave secreta para a subconta (titular)'
+sidebarTitle: 'Rotacionar chave'
+api: 'POST https://api.upag.io/v1/sub-accounts/{subAccountId}/api-key/roll'
+---
+
+Invalida a chave anterior da subconta e retorna o novo `secret` (uma exibição).
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/v1/sub-accounts/880e8400-e29b-41d4-a716-446655440000/api-key/roll \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+</CodeGroup>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "id": "aa0e8400-e29b-41d4-a716-446655440000",
+  "type": "secret",
+  "secret": "sk_test_new_rotated_secret...",
+  "description": null,
+  "permissions": ["charge.read", "charge.write", "transfer.read", "transfer.write"],
+  "createdAt": "2026-03-18T10:00:00.000Z",
+  "updatedAt": "2026-03-18T14:00:00.000Z"
+}
+```

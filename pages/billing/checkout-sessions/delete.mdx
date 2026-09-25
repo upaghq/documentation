@@ -1,0 +1,25 @@
+---
+title: 'Excluir Sessão de Checkout'
+description: 'Exclui uma sessão de checkout'
+sidebarTitle: 'Excluir'
+api: 'DELETE https://api.billing.upag.io/v1/checkout-sessions/{id}'
+---
+
+Exclui uma sessão de checkout. Somente sessões com status `open` podem ser excluídas.
+
+## Endpoint
+
+```bash cURL
+curl -X DELETE https://api.billing.upag.io/v1/checkout-sessions/cs_abc123xyz \
+  -H "Authorization: Bearer {token}"
+```
+
+## Parâmetros
+
+<ParamField path="id" type="string" required>
+  ID único da sessão de checkout, começando com `cs_`.
+</ParamField>
+
+## Resposta
+
+Sem corpo. HTTP `204 No Content` em caso de sucesso.

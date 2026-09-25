@@ -1,0 +1,34 @@
+---
+title: 'Payload pagamento'
+description: 'Campo data nos eventos payment.*'
+icon: 'credit-card'
+sidebarTitle: 'Pagamento'
+---
+
+Em eventos `payment.*`, `data` é um pagamento:
+
+```json
+{
+  "id": "pay_xyz789abc",
+  "livemode": false,
+  "customer": "cus_ahwDXrgYvur89iPs",
+  "paymentMethod": "pm_abc123xyz",
+  "amount": 10000,
+  "refundedAmount": 0,
+  "gross": 10000,
+  "mdr": 0,
+  "net": 10000,
+  "interest": 0,
+  "currency": "BRL",
+  "status": "approved",
+  "description": null,
+  "pixQrCode": null,
+  "refuseReason": null,
+  "installments": 1,
+  "createdAt": 1731622178441,
+  "updatedAt": 1731622178441,
+  "dueAt": null
+}
+```
+
+Campos usados com frequência: `id` (`pay_...`), `status`, `amount` e valores financeiros em **centavos**, `customer`, `paymentMethod`, `currency`, `livemode`. Detalhes do recurso REST: [Referência de pagamentos](../payments/reference).

@@ -1,0 +1,68 @@
+---
+title: 'Listar transferências'
+description: 'Lista transferências da conta'
+sidebarTitle: 'Listar'
+api: 'GET https://api.upag.io/v1/transfers'
+---
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -G https://api.upag.io/v1/transfers \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -d "limit=20" \
+  -d "offset=0" \
+  -d "direction=out"
+```
+</CodeGroup>
+
+## Query
+
+<ParamField query="direction" type="string">
+  `in` ou `out` — filtra entradas ou saídas.
+</ParamField>
+
+<ParamField query="limit" type="integer">
+  Paginação.
+</ParamField>
+
+<ParamField query="offset" type="integer">
+  Paginação.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "data": [
+    {
+      "id": "770e8400-e29b-41d4-a716-446655440000",
+      "status": "completed",
+      "direction": "out",
+      "type": "key",
+      "amount": 100,
+      "pixKey": "55ce1aae-0d2b-4d76-bc77-294d6407349e",
+      "pixKeyType": "random",
+      "from": {
+        "name": "Acme LTDA",
+        "taxNumber": "12.345.678/0001-99",
+        "bankName": "Upag"
+      },
+      "to": {
+        "name": "Maria Receiver",
+        "taxNumber": "111.444.777-35",
+        "bankName": "FitBank"
+      },
+      "endToEndId": "E12345678202603181200000000000000",
+      "providerTransactionId": "555",
+      "url": null,
+      "createdAt": "2026-03-18T12:00:00.000Z",
+      "updatedAt": "2026-03-18T12:01:00.000Z"
+    }
+  ],
+  "count": 1
+}
+```

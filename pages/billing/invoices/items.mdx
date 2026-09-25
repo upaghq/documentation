@@ -1,0 +1,115 @@
+---
+title: 'Itens da Fatura'
+description: 'Gerencie os itens de uma fatura'
+sidebarTitle: 'Itens'
+---
+
+Os itens de uma fatura representam os produtos ou serviços cobrados. Você pode adicionar, atualizar e remover itens em faturas com status `draft`.
+
+## Adicionar Item
+
+```bash cURL
+curl -X POST https://api.billing.upag.io/v1/invoices/inv_abc123xyz/items \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "priceId": "price_def456ghi",
+    "quantity": 1
+  }'
+```
+
+### Parâmetros — Adicionar Item
+
+<ParamField path="invoiceId" type="string" required>
+  ID único da fatura, começando com `inv_`.
+</ParamField>
+
+<ParamField body="priceId" type="string" required>
+  ID do preço do produto a ser adicionado.
+</ParamField>
+
+<ParamField body="quantity" type="integer" required>
+  Quantidade do item. Mínimo: `1`.
+</ParamField>
+
+### Resposta — Adicionar Item
+
+```json Response
+{
+  "id": "ii_abc123xyz",
+  "priceId": "price_def456ghi",
+  "quantity": 1,
+  "amount": 9900
+}
+```
+
+---
+
+## Atualizar Item
+
+```bash cURL
+curl -X PUT https://api.billing.upag.io/v1/invoices/inv_abc123xyz/items/ii_abc123xyz \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "priceId": "price_def456ghi",
+    "quantity": 2
+  }'
+```
+
+### Parâmetros — Atualizar Item
+
+<ParamField path="invoiceId" type="string" required>
+  ID único da fatura, começando com `inv_`.
+</ParamField>
+
+<ParamField path="itemId" type="string" required>
+  ID único do item da fatura, começando com `ii_`.
+</ParamField>
+
+<ParamField body="priceId" type="string" required>
+  ID do preço do item (obrigatório no body junto com `quantity`).
+</ParamField>
+
+<ParamField body="quantity" type="integer" required>
+  Nova quantidade do item.
+</ParamField>
+
+### Resposta — Atualizar Item
+
+```json Response
+{
+  "id": "ii_abc123xyz",
+  "priceId": "price_def456ghi",
+  "quantity": 2,
+  "amount": 9900
+}
+```
+
+---
+
+## Remover Item
+
+```bash cURL
+curl -X DELETE https://api.billing.upag.io/v1/invoices/inv_abc123xyz/items/ii_abc123xyz \
+  -H "Authorization: Bearer {token}"
+```
+
+### Parâmetros — Remover Item
+
+<ParamField path="invoiceId" type="string" required>
+  ID único da fatura, começando com `inv_`.
+</ParamField>
+
+<ParamField path="itemId" type="string" required>
+  ID único do item da fatura, começando com `ii_`.
+</ParamField>
+
+### Resposta — Remover Item
+
+```json Response
+{
+  "id": "ii_abc123xyz",
+  "deleted": true
+}
+```

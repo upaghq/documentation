@@ -1,0 +1,33 @@
+---
+title: 'Comprovante'
+description: 'HTML do comprovante de transferência'
+sidebarTitle: 'Comprovante'
+api: 'GET https://api.upag.io/v1/transfers/{transferId}/receipt'
+---
+
+Retorna página HTML do comprovante (imagem ou PDF com auto-print).
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl "https://api.upag.io/v1/transfers/770e8400-e29b-41d4-a716-446655440000/receipt?format=image" \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+</CodeGroup>
+
+## Query
+
+<ParamField query="format" type="string">
+  `image` (padrão) ou `pdf`.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+| Header | Valor |
+| ------ | ----- |
+| `Content-Type` | `text/html; charset=utf-8` |
+
+Corpo: página HTML com dados do comprovante (valor em centavos, pagador, recebedor, chave Pix, `controlNumber` / EndToEndId). Com `format=pdf`, o HTML inclui script de impressão para gerar PDF no navegador.

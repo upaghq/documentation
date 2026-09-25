@@ -1,0 +1,31 @@
+---
+title: 'Obter webhook'
+description: 'Consulta um webhook pelo ID'
+api: 'GET https://api.upag.io/v1/webhooks/{webhookId}'
+---
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.io/v1/webhooks/aa0e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+</CodeGroup>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "id": "aa0e8400-e29b-41d4-a716-446655440000",
+  "description": "Order events",
+  "active": true,
+  "url": "https://example.com/webhooks",
+  "headers": { "X-Custom": "value" },
+  "events": ["charge.paid"],
+  "createdAt": "2026-03-18T09:00:00.000Z",
+  "updatedAt": "2026-03-18T09:00:00.000Z"
+}
+```

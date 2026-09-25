@@ -1,0 +1,85 @@
+---
+title: 'Verificação e segurança'
+description: 'Assinatura HMAC nos webhooks da API Core'
+sidebarTitle: 'Segurança'
+---
+
+Valide `X-Webhook-Signature` antes de aplicar efeitos colaterais no seu sistema.
+
+## Corpo original do POST
+
+A assinatura usa os **bytes exatos** do POST e o `secret` (`whsec_...`) retornado em [Criar webhook](./create). O header vem no formato `sha256=<hex>`.
+
+<Warning>
+  Middleware com `express.json()` global altera o corpo. Na rota do webhook, use buffer bruto — por exemplo `express.raw({ type: 'application/json' })`.
+</Warning>
+
+```javascript
+import express from 'express';
+import crypto from 'node:crypto';
+
+function coreWebhookSignatureValid(bodyUtf8, signatureHeader, secret) {
+  if (!signatureHeader || !secret) return false;
+
+  const expectedPrefix = 'sha256=';
+  const headerValue = String(signatureHeader).trim();
+  if (!headerValue.startsWith(expectedPrefix)) return false;
+
+  const receivedHex = headerValue.slice(expectedPrefix.length);
+  const computedHex = crypto.createHmac('sha256', secret).update(bodyUtf8, 'utf8').digest('hex');
+
+  const left = Buffer.from(computedHex, 'utf8');
+  const right = Buffer.from(receivedHex, 'utf8');
+  if (left.length !== right.length) return false;
+  return crypto.timingSafeEqual(left, right);
+}
+
+const app = express();
+
+app.post(
+  '/webhooks/upag-core',
+  express.raw({ type: 'application/json' }),
+  async (req, res) => {
+    const bodyUtf8 = req.body.toString('utf8');
+    const signatureHeader = req.headers['x-webhook-signature'];
+    const secret = process.env.UPAG_CORE_WEBHOOK_SECRET;
+
+    if (!coreWebhookSignatureValid(bodyUtf8, signatureHeader, secret)) {
+      return res.status(401).send('assinatura inválida');
+    }
+
+    const payload = JSON.parse(bodyUtf8);
+    await handleCoreWebhook(payload);
+    return res.status(200).send('ok');
+  },
+);
+```
+
+Headers úteis em cada entrega: `X-Webhook-Id`, `X-Webhook-Event`, além de cabeçalhos customizados definidos no cadastro do webhook.
+
+## Evitar processamento duplicado
+
+Use `id` da entrega (UUID no envelope) ou `${event}:${data.id}` antes de side effects.
+
+```javascript
+async function handleCoreWebhook(payload) {
+  const deliveryId = payload.id;
+  if (deliveryId && (await db.webhookDedupe.exists(deliveryId))) return;
+
+  await dispatch(payload);
+
+  if (deliveryId) await db.webhookDedupe.put(deliveryId);
+}
+```
+
+## Checklist rápido
+
+| Item | Ação |
+| ---- | ---- |
+| URL | TLS em produção |
+| Secret | Só em variável de ambiente |
+| Assinatura | Antes de `dispatch` |
+| Resposta HTTP | 2xx após fila ou commit |
+| Payload | Leia só os campos que você usa |
+
+[Voltar para Webhooks](./overview)

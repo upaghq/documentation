@@ -1,0 +1,157 @@
+---
+title: 'Itens da Assinatura'
+description: 'Gerencie os itens de uma assinatura'
+sidebarTitle: 'Itens'
+---
+
+Os itens de uma assinatura representam os produtos ou serviços cobrados recorrentemente. Dependendo de `applyAt`, a alteração pode ser imediata ou virar uma **mudança agendada** (resposta com objeto de scheduled change em vez do item).
+
+## Adicionar Item
+
+```bash cURL
+curl -X POST https://api.billing.upag.io/v1/subscriptions/sub_abc123xyz/items \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "price": "price_def456ghi",
+    "quantity": 1,
+    "applyAt": "now"
+  }'
+```
+
+### Parâmetros — Adicionar Item
+
+<ParamField path="subscriptionId" type="string" required>
+  ID único da assinatura, começando com `sub_`.
+</ParamField>
+
+<ParamField body="price" type="string" required>
+  ID do preço (`price_...`) a ser adicionado.
+</ParamField>
+
+<ParamField body="quantity" type="integer" required>
+  Quantidade (inteiro, mínimo `1`).
+</ParamField>
+
+<ParamField body="applyAt" type="string">
+  Opcional. `now` (padrão) ou `period_end` para aplicar na renovação.
+</ParamField>
+
+### Resposta — Adicionar Item
+
+`201 Created` — item imediato (`applyAt: now`):
+
+```json Response
+{
+  "id": "si_abc123xyz",
+  "subscriptionId": "sub_abc123xyz",
+  "productId": "prod_xyz789abc",
+  "priceId": "price_def456ghi",
+  "name": "Plano Pro",
+  "amount": 9900,
+  "quantity": 1,
+  "createdAt": "2024-11-15T10:00:00.000Z",
+  "updatedAt": "2024-11-15T10:00:00.000Z"
+}
+```
+
+Com `applyAt: period_end`, a resposta pode ser uma mudança agendada (mesmo formato de [Mudanças agendadas](./scheduled-changes#resposta--listar)).
+
+---
+
+## Atualizar Item
+
+```bash cURL
+curl -X PUT https://api.billing.upag.io/v1/subscriptions/sub_abc123xyz/items/si_abc123xyz \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "quantity": 2,
+    "applyAt": "now"
+  }'
+```
+
+É obrigatório enviar **pelo menos um** de `price` ou `quantity`.
+
+### Parâmetros — Atualizar Item
+
+<ParamField path="subscriptionId" type="string" required>
+  ID único da assinatura, começando com `sub_`.
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  ID único do item da assinatura, começando com `si_`.
+</ParamField>
+
+<ParamField body="quantity" type="integer">
+  Nova quantidade (opcional se `price` for enviado).
+</ParamField>
+
+<ParamField body="price" type="string">
+  Novo ID de preço (opcional se `quantity` for enviado).
+</ParamField>
+
+<ParamField body="applyAt" type="string">
+  Opcional. `now` ou `period_end`.
+</ParamField>
+
+### Resposta — Atualizar Item
+
+`200 OK` — item atualizado:
+
+```json Response
+{
+  "id": "si_abc123xyz",
+  "subscriptionId": "sub_abc123xyz",
+  "productId": "prod_xyz789abc",
+  "priceId": "price_def456ghi",
+  "name": "Plano Pro",
+  "amount": 9900,
+  "quantity": 2,
+  "createdAt": "2024-11-15T10:00:00.000Z",
+  "updatedAt": "2024-11-16T10:00:00.000Z"
+}
+```
+
+---
+
+## Remover Item
+
+`applyAt` é lido da **query string** (`req.query`), não do body.
+
+```bash cURL
+curl -X DELETE "https://api.billing.upag.io/v1/subscriptions/sub_abc123xyz/items/si_abc123xyz?applyAt=now" \
+  -H "Authorization: Bearer {token}"
+```
+
+### Parâmetros — Remover Item
+
+<ParamField path="subscriptionId" type="string" required>
+  ID único da assinatura, começando com `sub_`.
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  ID único do item da assinatura, começando com `si_`.
+</ParamField>
+
+<ParamField query="applyAt" type="string">
+  Opcional. `now` (padrão) ou `period_end`.
+</ParamField>
+
+### Resposta — Remover Item
+
+`204 No Content` quando a remoção é imediata (sem corpo).
+
+Com `applyAt=period_end`, `200 OK` com mudança agendada:
+
+```json Response
+{
+  "id": "sc_abc123xyz",
+  "subscriptionId": "sub_abc123xyz",
+  "operation": "remove",
+  "itemId": "si_abc123xyz",
+  "priceId": "price_def456ghi",
+  "quantity": 1,
+  "createdAt": "2024-11-15T10:00:00.000Z"
+}
+```

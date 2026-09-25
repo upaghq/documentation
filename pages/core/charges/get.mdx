@@ -1,0 +1,60 @@
+---
+title: 'Obter cobrança'
+description: 'Consulta uma cobrança pelo ID'
+sidebarTitle: 'Obter'
+api: 'GET https://api.upag.io/v1/charges/{chargeId}'
+---
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.io/v1/charges/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -G -d "includes=customer"
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="chargeId" type="string (uuid)" required>
+  ID da cobrança.
+</ParamField>
+
+<ParamField query="includes" type="string">
+  `customer` — inclui o objeto cliente.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "type": "pix",
+  "status": "paid",
+  "amount": 9900,
+  "description": "Pedido #10482",
+  "customer": {
+    "id": "660e8400-e29b-41d4-a716-446655440001",
+    "name": "Maria Pagadora",
+    "email": "maria@example.com",
+    "document": { "number": "39053344705", "type": "cpf" },
+    "phone": null,
+    "address": null,
+    "createdAt": "2026-03-18T11:45:00.000Z",
+    "updatedAt": "2026-03-18T11:45:00.000Z"
+  },
+  "pix": {
+    "reference": "tx-qr-1",
+    "qrCode": "00020126580014br.gov.bcb.pix...",
+    "expiresAt": "2026-03-18T12:00:00.000Z"
+  },
+  "splits": [],
+  "createdAt": "2026-03-18T11:50:00.000Z",
+  "updatedAt": "2026-03-18T12:05:00.000Z"
+}
+```
+
+Com `includes=customer`, `customer` vem expandido como acima; sem include, é apenas o UUID.

@@ -1,0 +1,105 @@
+---
+title: 'Criar transferência'
+description: 'Envia Pix pela chave de API (sem PIN)'
+sidebarTitle: 'Criar'
+api: 'POST https://api.upag.io/v1/transfers'
+---
+
+Com chave secreta, Pix-out **não exige PIN**. Valores em centavos.
+
+## Endpoint — chave Pix
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/v1/transfers \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "key",
+    "pixKey": "55ce1aae-0d2b-4d76-bc77-294d6407349e",
+    "pixKeyType": "random",
+    "amount": 100,
+    "description": "Pagamento fornecedor"
+  }'
+```
+</CodeGroup>
+
+## Endpoint — copia-e-cola
+
+```bash
+curl -X POST https://api.upag.io/v1/transfers \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "hash",
+    "hash": "00020126580014br.gov.bcb.pix..."
+  }'
+```
+
+O valor é lido do QR; não envie `amount` para `hash`.
+
+## Parâmetros (`type: key`)
+
+<ParamField body="pixKey" type="string" required>
+  Chave Pix de destino.
+</ParamField>
+
+<ParamField body="pixKeyType" type="string" required>
+  `email`, `phone`, `cpf`, `cnpj` ou `random`.
+</ParamField>
+
+<ParamField body="amount" type="integer" required>
+  Valor em centavos.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Até 140 caracteres.
+</ParamField>
+
+<ParamField body="paymentDate" type="string">
+  Data de pagamento (quando aplicável ao provedor).
+</ParamField>
+
+## Resposta
+
+`201 Created`
+
+```json Response
+{
+  "id": "770e8400-e29b-41d4-a716-446655440000",
+  "status": "processing",
+  "direction": "out",
+  "type": "key",
+  "amount": 100,
+  "pixKey": "55ce1aae-0d2b-4d76-bc77-294d6407349e",
+  "pixKeyType": "random",
+  "from": {
+    "name": "Acme LTDA",
+    "taxNumber": "12.345.678/0001-99",
+    "bankName": "Upag"
+  },
+  "to": {
+    "name": "Maria Receiver",
+    "taxNumber": "111.444.777-35",
+    "bankName": "FitBank"
+  },
+  "endToEndId": null,
+  "providerTransactionId": "555",
+  "url": null,
+  "createdAt": "2026-03-18T12:00:00.000Z",
+  "updatedAt": "2026-03-18T12:00:00.000Z",
+  "transaction": {
+    "id": "880e8400-e29b-41d4-a716-446655440000",
+    "entryType": "debit",
+    "amount": 100,
+    "description": null,
+    "endToEndId": null,
+    "availableAt": null,
+    "source": {
+      "type": "transfer",
+      "id": "770e8400-e29b-41d4-a716-446655440000"
+    },
+    "createdAt": "2026-03-18T12:00:00.000Z"
+  }
+}
+```

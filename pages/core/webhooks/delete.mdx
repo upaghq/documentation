@@ -1,0 +1,18 @@
+---
+title: 'Excluir webhook'
+description: 'Remove (soft delete) um webhook'
+api: 'DELETE https://api.upag.io/v1/webhooks/{webhookId}'
+---
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE https://api.upag.io/v1/webhooks/aa0e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+</CodeGroup>
+
+## Resposta
+
+`204 No Content` — sem corpo em sucesso.

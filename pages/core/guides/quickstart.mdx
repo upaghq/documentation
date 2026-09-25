@@ -1,0 +1,55 @@
+---
+title: 'Fluxo completo: Cobrança Pix'
+description: 'Quickstart Core: crie cobrança Pix e consulte status com api.upag.io e chave sk_test.'
+icon: 'rocket'
+boost: 4
+keywords: ['upag', 'core', 'pix', 'cobrança', 'quickstart']
+---
+
+A API **Core** é a conta digital Upag. O **Billing** (gateway) utiliza o Core para liquidar pagamentos; aqui você integra diretamente com a conta.
+
+Autentique com **`Authorization: Bearer sk_...`**. Valores monetários em **centavos**.
+
+```mermaid
+sequenceDiagram
+  participant App
+  participant CoreAPI
+  App->>CoreAPI: POST /v1/charges
+  CoreAPI-->>App: charge.id, pix.qrCode
+```
+
+## 1. Criar cobrança
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/v1/charges \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "pix",
+    "amount": 9900,
+    "description": "Pedido #10482",
+    "pix": { "method": "dynamic" },
+    "customer": {
+      "name": "Maria Pagadora",
+      "email": "maria@example.com",
+      "document": { "type": "cpf", "number": "39053344705" }
+    }
+  }'
+```
+</CodeGroup>
+
+Use `pix.qrCode` para pagamento. Anote `id`.
+
+## 2. Consultar status
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.io/v1/charges/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+</CodeGroup>
+
+Quando `status` for `paid`, o Pix foi recebido.
+
+Guia completo: [Cobrança Pix](./pix-charge). Referência: [Criar cobrança](../charges/create), [Referência](../charges/reference).

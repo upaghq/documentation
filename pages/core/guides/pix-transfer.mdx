@@ -1,0 +1,119 @@
+---
+title: 'Transferência Pix'
+description: 'Consultar chave, enviar Pix-out e obter comprovante'
+icon: 'arrow-right-arrow-left'
+---
+
+Com chave secreta (`sk_...`), Pix-out **não exige PIN**. Valores em centavos.
+
+```mermaid
+sequenceDiagram
+  participant App
+  participant CoreAPI
+  App->>CoreAPI: POST /v1/transfers/lookup
+  CoreAPI-->>App: dados do recebedor
+  App->>CoreAPI: POST /v1/transfers
+  CoreAPI-->>App: transfer + transaction
+  App->>CoreAPI: GET .../receipt
+  CoreAPI-->>App: HTML comprovante
+```
+
+## 1. Consultar destino
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/v1/transfers/lookup \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "key",
+    "value": "55ce1aae-0d2b-4d76-bc77-294d6407349e"
+  }'
+```
+</CodeGroup>
+
+Confira `name` e `taxNumber` antes de debitar.
+
+## 2. Enviar Pix por chave
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/v1/transfers \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "key",
+    "pixKey": "55ce1aae-0d2b-4d76-bc77-294d6407349e",
+    "pixKeyType": "random",
+    "amount": 100,
+    "description": "Pagamento fornecedor"
+  }'
+```
+</CodeGroup>
+
+Guarde `id` da resposta. Status evolui até `completed`.
+
+## 3. Copia-e-cola (hash)
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/v1/transfers/lookup \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "hash",
+    "value": "00020126580014br.gov.bcb.pix..."
+  }'
+```
+
+```bash cURL
+curl -X POST https://api.upag.io/v1/transfers \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "hash",
+    "hash": "00020126580014br.gov.bcb.pix..."
+  }'
+```
+</CodeGroup>
+
+O valor é lido do QR; não envie `amount`.
+
+## 4. Comprovante
+
+<CodeGroup>
+```bash cURL
+curl "https://api.upag.io/v1/transfers/770e8400-e29b-41d4-a716-446655440000/receipt?format=image" \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+</CodeGroup>
+
+Resposta HTML — salve ou abra no navegador.
+
+## 5. Webhook
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.io/v1/webhooks \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com/webhooks/core",
+    "events": ["transfer.completed", "transfer.failed"]
+  }'
+```
+</CodeGroup>
+
+```javascript
+app.post('/webhooks/core', express.json(), (req, res) => {
+  const { event, data } = req.body;
+
+  if (event === 'transfer.completed') {
+    console.log('Pix enviado:', data.id, data.amount);
+  }
+
+  res.sendStatus(200);
+});
+```
+
+Payload: [transfer.completed](../webhooks/payload-transfer).

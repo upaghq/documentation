@@ -1,0 +1,23 @@
+---
+title: 'Referência'
+description: 'Objeto Webhook na API Core'
+sidebarTitle: 'Referência'
+---
+
+## Estrutura
+
+```json
+{
+  "id": "aa0e8400-e29b-41d4-a716-446655440000",
+  "description": "Order events",
+  "active": true,
+  "url": "https://example.com/webhooks",
+  "headers": {},
+  "events": ["charge.paid"],
+  "secret": "whsec_...",
+  "createdAt": "2026-03-18T09:00:00.000Z",
+  "updatedAt": "2026-03-18T09:00:00.000Z"
+}
+```
+
+O `secret` (`whsec_...`) é retornado na **criação** e serve para validar assinaturas. Em consultas posteriores, o segredo pode estar omitido conforme política da conta.

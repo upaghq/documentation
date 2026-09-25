@@ -1,0 +1,99 @@
+---
+title: 'Checkout hospedado'
+description: 'Crie uma sessão de checkout, redirecione o cliente e confirme o pagamento'
+icon: 'cart-shopping'
+---
+
+Use quando você prefere que o pagador complete o fluxo em uma página Upag, em vez de tokenizar cartão no seu backend.
+
+```mermaid
+sequenceDiagram
+  participant Loja
+  participant BillingAPI
+  participant Pagador
+  Loja->>BillingAPI: POST /checkout-sessions
+  BillingAPI-->>Loja: url
+  Loja->>Pagador: redirect url
+  Pagador->>BillingAPI: paga na página
+  BillingAPI-->>Loja: webhook payment.approved
+```
+
+## 1. Criar sessão
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.billing.upag.io/v1/checkout-sessions \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "successUrl": "https://example.com/success",
+    "cancelUrl": "https://example.com/cancel",
+    "paymentMethods": ["credit_card", "pix"],
+    "items": [
+      { "priceId": "price_def456ghi", "quantity": 1 }
+    ]
+  }'
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const session = await upag.checkoutSessions.create({
+  successUrl: 'https://example.com/success',
+  cancelUrl: 'https://example.com/cancel',
+  paymentMethods: ['credit_card', 'pix'],
+  items: [{ priceId: 'price_def456ghi', quantity: 1 }],
+});
+
+console.log(session.url);
+```
+</CodeGroup>
+
+Guarde `id` (`cs_...`) e `url`. Redirecione o cliente para `url`.
+
+## 2. Confirmar (opcional)
+
+Use se você confirma o pagamento no **seu backend** após o retorno do pagador (fluxo headless). O SDK `upag` ainda não expõe `confirm` — use REST:
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.billing.upag.io/v1/checkout-sessions/cs_abc123xyz/confirm \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer": "cus_ahwDXrgYvur89iPs",
+    "paymentMethod": "pm_abc123xyz",
+    "installments": 1,
+    "bumps": []
+  }'
+```
+</CodeGroup>
+
+Consultar sessão após redirect: `await upag.checkoutSessions.retrieve('cs_abc123xyz')`.
+
+## 3. Webhook
+
+Configure a URL de webhook no dashboard Billing e trate `payment.approved` no servidor — o redirect sozinho não garante que você receberá a confirmação.
+
+Exemplo de handler (Node + Express):
+
+```javascript
+import express from 'express';
+
+const app = express();
+app.post('/webhooks/billing', express.json(), (req, res) => {
+  const { event, data } = req.body;
+
+  if (event === 'payment.approved') {
+    const paymentId = data.id;
+    // idempotente: marque pedido como pago no seu banco
+    console.log('Pagamento aprovado:', paymentId);
+  }
+
+  res.sendStatus(200);
+});
+```
+
+Payload de referência: [Payload Payment](../webhooks/payload-payment).

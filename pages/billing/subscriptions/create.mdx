@@ -1,0 +1,83 @@
+---
+title: 'Criar uma Assinatura'
+description: 'Crie uma nova assinatura recorrente para um cliente'
+sidebarTitle: 'Criar'
+api: 'POST https://api.billing.upag.io/v1/subscriptions'
+---
+
+Cria uma nova assinatura recorrente para um cliente. Moeda e intervalo de cobrança vêm dos preços dos itens (todos os preços devem ser recorrentes e compartilhar o mesmo intervalo e moeda). Se `trialEnd` for informado, a assinatura entra em `trialing` e a cobrança inicial não é processada; caso contrário, a primeira fatura é gerada e o pagamento é tentado na hora.
+
+## Endpoint
+
+```bash cURL
+curl -X POST https://api.billing.upag.io/v1/subscriptions \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer": "cus_ahwDXrgYvur89iPs",
+    "paymentMethod": "pm_abc123xyz",
+    "items": [
+      {
+        "price": "price_def456ghi",
+        "quantity": 1
+      }
+    ]
+  }'
+```
+
+## Parâmetros
+
+<ParamField body="customer" type="string" required>
+  ID do cliente (`cus_...`) para quem a assinatura será criada.
+</ParamField>
+
+<ParamField body="paymentMethod" type="string" required>
+  ID do método de pagamento (`pm_...`) usado nas cobranças.
+</ParamField>
+
+<ParamField body="items" type="array" required>
+  Lista de itens. Cada item deve conter `price` (ID do preço recorrente) e `quantity` (inteiro, mínimo `1`).
+</ParamField>
+
+<ParamField body="trialEnd" type="integer">
+  Opcional. Timestamp numérico inteiro positivo indicando o fim do período de teste. Quando presente, a assinatura é criada como `trialing` e não há cobrança inicial neste request.
+</ParamField>
+
+## Resposta
+
+```json Response
+{
+  "id": "sub_abc123xyz",
+  "livemode": false,
+  "customerId": "cus_ahwDXrgYvur89iPs",
+  "paymentMethodId": "pm_abc123xyz",
+  "status": "active",
+  "currency": "BRL",
+  "interval": "month",
+  "intervalCount": 1,
+  "cancelAtPeriodEnd": false,
+  "startDate": "2024-11-15T10:00:00.000Z",
+  "endDate": null,
+  "trialStartDate": null,
+  "trialEndDate": null,
+  "currentPeriodStart": "2024-11-15T10:00:00.000Z",
+  "currentPeriodEnd": "2024-12-15T10:00:00.000Z",
+  "canceledAt": null,
+  "cancellationReason": null,
+  "items": [
+    {
+      "id": "si_abc123xyz",
+      "subscriptionId": "sub_abc123xyz",
+      "productId": "prod_xyz789abc",
+      "priceId": "price_def456ghi",
+      "name": "Plano Pro",
+      "amount": 9900,
+      "quantity": 1,
+      "createdAt": "2024-11-15T10:00:00.000Z",
+      "updatedAt": "2024-11-15T10:00:00.000Z"
+    }
+  ],
+  "createdAt": "2024-11-15T10:00:00.000Z",
+  "updatedAt": "2024-11-15T10:00:00.000Z"
+}
+```

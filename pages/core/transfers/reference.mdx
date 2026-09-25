@@ -1,0 +1,50 @@
+---
+title: 'Referência'
+description: 'Objeto Transferência na API Core'
+sidebarTitle: 'Visão geral'
+---
+
+Transferências Pix (entrada e saída) na conta da chave de API.
+
+## Estrutura
+
+```json
+{
+  "id": "770e8400-e29b-41d4-a716-446655440000",
+  "status": "processing",
+  "direction": "out",
+  "type": "key",
+  "amount": 100,
+  "pixKey": "55ce1aae-0d2b-4d76-bc77-294d6407349e",
+  "pixKeyType": "random",
+  "from": {
+    "name": "Acme LTDA",
+    "taxNumber": "12.345.678/0001-99",
+    "bankName": "Upag"
+  },
+  "to": {
+    "name": "Maria Receiver",
+    "taxNumber": "111.444.777-35",
+    "bankName": "FitBank"
+  },
+  "endToEndId": null,
+  "providerTransactionId": "555",
+  "url": null,
+  "createdAt": "2026-03-18T12:00:00.000Z",
+  "updatedAt": "2026-03-18T12:00:00.000Z"
+}
+```
+
+Na criação (`POST /transfers`), a resposta inclui também `transaction` com o lançamento contábil.
+
+## Status
+
+`awaiting_approval`, `pending`, `processing`, `completed`, `canceled`, `failed`.
+
+## Direction
+
+`in` (Pix recebido) ou `out` (Pix enviado).
+
+## Type
+
+`key` (chave Pix), `hash` (copia-e-cola) ou `beneficiary` (conta salva — fluxo autenticado com PIN, não exposto nesta superfície de API key).

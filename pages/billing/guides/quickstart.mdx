@@ -1,0 +1,116 @@
+---
+title: 'Fluxo completo: Cliente e Pagamento'
+description: 'Quickstart Billing: crie cliente, método de pagamento e cobrança com a API ou SDK upag (sk_test).'
+icon: 'rocket'
+boost: 4
+keywords: ['upag', 'billing', 'quickstart', 'pagamentos', 'sdk']
+---
+
+Este guia mostra o fluxo completo em sequência: **Cliente** → **Método de pagamento** → **Pagamento**. Use chave de teste (`sk_test_...`). Cada passo usa o ID retornado no anterior.
+
+SDK servidor: [`upag`](https://www.npmjs.com/package/upag) (upag-node). Frontend: [`upag-js`](https://www.npmjs.com/package/upag-js).
+
+```mermaid
+sequenceDiagram
+  participant App
+  participant API
+  App->>API: POST /customers
+  API-->>App: customer.id
+  App->>API: POST /customers/:id/payment-methods
+  API-->>App: paymentMethod.id
+  App->>API: POST /payments
+  API-->>App: payment
+```
+
+## 1. Criar cliente
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.billing.upag.io/v1/customers \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "John Doe",
+    "email": "john.doe@example.com",
+    "phone": "+5511999999999",
+    "taxId": "12345678900"
+  }'
+```
+
+```javascript SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const customer = await upag.customers.create({
+  name: 'John Doe',
+  email: 'john.doe@example.com',
+  phone: '+5511999999999',
+  taxId: '12345678900',
+});
+```
+</CodeGroup>
+
+## 2. Cadastrar método de pagamento
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.billing.upag.io/v1/customers/cus_ahwDXrgYvur89iPs/payment-methods \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "credit_card",
+    "card": {
+      "number": "4242424242424242",
+      "expiryMonth": "12",
+      "expiryYear": "2032",
+      "cvv": "123",
+      "holderName": "JOHN DOE"
+    }
+  }'
+```
+
+```javascript SDK
+const paymentMethod = await upag.paymentMethods.create(customer.id, {
+  type: 'credit_card',
+  card: {
+    number: '4242424242424242',
+    expiryMonth: '12',
+    expiryYear: '2032',
+    cvv: '123',
+    holderName: 'JOHN DOE',
+  },
+});
+```
+</CodeGroup>
+
+## 3. Criar pagamento
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.billing.upag.io/v1/payments \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer": "cus_ahwDXrgYvur89iPs",
+    "paymentMethod": "pm_abc123xyz",
+    "amount": 1000,
+    "currency": "BRL",
+    "installments": 1
+  }'
+```
+
+```javascript SDK
+const payment = await upag.payments.create({
+  customer: customer.id,
+  paymentMethod: paymentMethod.id,
+  amount: 1000,
+  currency: 'brl',
+  installments: 1,
+});
+
+console.log('Pagamento criado:', payment.id, payment.status);
+```
+</CodeGroup>
+
+Contratos completos na aba **Referência**: [Clientes](../customers/create), [Métodos de pagamento](../payment-methods/create), [Pagamentos](../payments/create).

@@ -1,0 +1,34 @@
+---
+title: 'Payload fatura'
+description: 'Campo data nos eventos invoice.*'
+icon: 'file-invoice'
+sidebarTitle: 'Fatura'
+---
+
+Em eventos `invoice.*`, `data` é uma fatura:
+
+```json
+{
+  "id": "inv_xyz789abc",
+  "livemode": false,
+  "customer": "cus_ahwDXrgYvur89iPs",
+  "paymentMethod": "pm_abc123xyz",
+  "status": "open",
+  "currency": "BRL",
+  "createdAt": 1731622178441,
+  "updatedAt": 1731622178441,
+  "canceledAt": null,
+  "items": [
+    {
+      "id": "ii_abc123",
+      "product": "prod_xyz",
+      "price": "pri_xyz",
+      "name": "Plano Mensal",
+      "amount": 9900,
+      "quantity": 1
+    }
+  ]
+}
+```
+
+Campos usados com frequência: `id` (`inv_...`), `status`, `customer`, `paymentMethod`, `items`, `currency`. Detalhes: [Referência de faturas](../invoices/reference).

@@ -1,0 +1,116 @@
+---
+title: 'Browser'
+description: 'upag-js — SDK frontend do Billing'
+icon: 'browser'
+---
+
+<Card title="upag-js" icon="npm" href="https://www.npmjs.com/package/upag-js">
+  Pacote npm para React, Vue, Next.js ou JavaScript no browser.
+</Card>
+
+<Warning>
+  Use apenas chave **pública** (`pk_test_...` / `pk_live_...`). Nunca `sk_...` no frontend.
+</Warning>
+
+## Pré-requisitos
+
+- Bundler ou app que rode no browser (Vite, Next, Nuxt, etc.)
+- Chave pública do dashboard
+
+## Instalação
+
+<CodeGroup>
+```bash npm
+npm install upag-js
+```
+```bash yarn
+yarn add upag-js
+```
+```bash pnpm
+pnpm add upag-js
+```
+</CodeGroup>
+
+## Configuração
+
+Exponha só a chave pública (ex.: prefixo `NUXT_PUBLIC_` / `NEXT_PUBLIC_`):
+
+```javascript
+import { UpagJs } from 'upag-js';
+
+const upag = new UpagJs(import.meta.env.VITE_UPAG_PUBLIC_KEY);
+// ou new UpagJs('pk_test_your_public_key')
+```
+
+## Checkout hospedado
+
+```javascript
+const session = await upag.checkout.createSession({
+  items: [{ priceId: 'prc_123', quantity: 1 }],
+  successUrl: 'https://yoursite.com/success',
+  cancelUrl: 'https://yoursite.com/cancel',
+  paymentMethods: ['credit_card', 'pix'],
+});
+
+window.location.href = session.url;
+```
+
+Redirecionar em um passo:
+
+```javascript
+await upag.checkout.redirectToCheckout({
+  items: [{ priceId: 'prc_123', quantity: 1 }],
+  successUrl: 'https://yoursite.com/success',
+  cancelUrl: 'https://yoursite.com/cancel',
+});
+```
+
+## Antifraud
+
+```javascript
+const session = await upag.antifraud.createSession();
+// session.id — envie ao backend conforme seu fluxo de risco
+```
+
+## Recursos
+
+| Recurso | Métodos |
+| ------- | ------- |
+| `checkout` | `createSession`, `redirectToCheckout` |
+| `customers` | `create` |
+| `products` | `list`, `retrieve`, `listPrices`, `retrievePrice` |
+| `paymentMethods` | `create` |
+| `antifraud` | `createSession` |
+
+Pagamentos completos, assinaturas e webhooks → SDK **servidor** [`upag`](./server).
+
+## Erros
+
+```javascript
+try {
+  await upag.checkout.createSession({
+    items: [{ priceId: 'prc_123', quantity: 1 }],
+    successUrl: 'https://yoursite.com/success',
+    cancelUrl: 'https://yoursite.com/cancel',
+  });
+} catch (error) {
+  console.error(error.type, error.message, error.statusCode);
+}
+```
+
+## Onde ir depois
+
+<CardGroup cols={2}>
+  <Card title="Guia checkout" icon="cart-shopping" href="../guides/checkout-hosted">
+    Sessão, redirect e webhook.
+  </Card>
+  <Card title="Node.js (upag)" icon="node-js" href="./server">
+    Backend com chave secreta.
+  </Card>
+  <Card title="Webhooks" icon="webhook" href="../webhooks/overview">
+    Liberar pedido após `payment.approved`.
+  </Card>
+  <Card title="Índice de SDKs" icon="code" href="./overview">
+    Comparativo `upag` / `upag-js`.
+  </Card>
+</CardGroup>
