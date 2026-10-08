@@ -1,0 +1,83 @@
+---
+title: 'Atualizar webhook'
+description: 'Altera URL, eventos, headers ou status do webhook'
+sidebarTitle: 'Atualizar'
+api: 'PATCH https://api.upag.io/v1/webhooks/{webhookId}'
+---
+
+Permissão: `webhook.write`
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X PATCH https://api.upag.dev/v1/webhooks/aa0e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "active": false,
+    "events": ["charge.paid"]
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const webhook = await upag.webhooks.update('aa0e8400-e29b-41d4-a716-446655440000', {
+  active: false,
+  events: ['charge.paid'],
+});
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`. O SDK escolhe o host pela chave.
+</Note>
+
+## Parâmetros
+
+<ParamField path="webhookId" type="string (uuid)" required>
+  ID do webhook.
+</ParamField>
+
+<ParamField body="url" type="string (uri)">
+  Nova URL de destino.
+</ParamField>
+
+<ParamField body="events" type="array">
+  Substitui a lista de eventos inteira (mínimo de um).
+</ParamField>
+
+<ParamField body="description" type="string | null">
+  Rótulo interno.
+</ParamField>
+
+<ParamField body="active" type="boolean">
+  Ativa ou desativa as entregas.
+</ParamField>
+
+<ParamField body="headers" type="object">
+  Substitui os headers extras por inteiro.
+</ParamField>
+
+Todos os campos são opcionais; só os enviados mudam. O `secret` não é alterável.
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "id": "aa0e8400-e29b-41d4-a716-446655440000",
+  "description": "Order events",
+  "active": false,
+  "url": "https://example.com/webhooks",
+  "headers": { "X-Custom": "value" },
+  "events": ["charge.paid"],
+  "secret": "whsec_abc123...",
+  "createdAt": "2026-03-18T09:00:00.000Z",
+  "updatedAt": "2026-03-18T10:00:00.000Z"
+}
+```

@@ -1,0 +1,186 @@
+---
+title: 'Criar assinatura'
+description: 'Assina um cliente a preços recorrentes, com Pix, cartão ou período de teste'
+sidebarTitle: 'Criar'
+api: 'POST https://api.upag.io/v1/subscriptions'
+---
+
+Assina um [cliente](../customers/reference) a um ou mais [preços](../prices/reference) `recurring`. Sem `trialEnd`, o primeiro período é cobrado na hora, pelo método escolhido; com `trialEnd`, a assinatura começa em `trialing` e nada é cobrado até essa data.
+
+A assinatura nasce `incomplete` e vira `active` quando a fatura do primeiro período é paga:
+
+- **Cartão aprovado**: a resposta já volta `active`.
+- **Pix**: continua `incomplete` até o cliente pagar. A fatura e a cobrança do primeiro período são criadas automaticamente; para achar o QR code, [liste as faturas](../invoices/list) do cliente (`customer`, `status=open`), pegue a de `subscription` igual ao ID e consulte a cobrança em `payments[].charge` (veja [Obter cobrança](../charges/get)).
+- **Cartão recusado**: a assinatura continua `incomplete` (a criação não falha). Acompanhe por [webhook](../webhooks/payload-subscription).
+
+Permissão: `subscription.write`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+### Cartão
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/subscriptions \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+    "paymentMethod": "card",
+    "card": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
+    "items": [
+      { "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61", "quantity": 1 }
+    ]
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const subscription = await upag.subscriptions.create({
+  customer: '8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83',
+  paymentMethod: 'card',
+  card: '5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15',
+  items: [{ price: '3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61', quantity: 1 }],
+});
+```
+</CodeGroup>
+
+### Pix
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/subscriptions \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+    "paymentMethod": "pix",
+    "items": [{ "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61" }]
+  }'
+```
+
+```javascript Node.js SDK
+const subscription = await upag.subscriptions.create({
+  customer: '8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83',
+  paymentMethod: 'pix',
+  items: [{ price: '3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61' }],
+});
+```
+</CodeGroup>
+
+### Com período de teste
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/subscriptions \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+    "paymentMethod": "card",
+    "card": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
+    "trialEnd": "2026-10-21T19:00:00.000Z",
+    "items": [{ "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61" }]
+  }'
+```
+
+```javascript Node.js SDK
+const subscription = await upag.subscriptions.create({
+  customer: '8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83',
+  paymentMethod: 'card',
+  card: '5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15',
+  trialEnd: '2026-10-21T19:00:00.000Z',
+  items: [{ price: '3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61' }],
+});
+```
+</CodeGroup>
+
+Neste endpoint o teste é uma data fixa (`trialEnd`) e o `paymentMethod` é opcional. Para um teste relativo (`14 dias`) e para escolher o que acontece sem método de pagamento (`trialSettings`), use um [link de pagamento](../payment-links/reference) ou uma [sessão de checkout](../checkout-sessions/create). Veja o fluxo completo em [Teste grátis](../guides/free-trial).
+
+## Parâmetros
+
+<ParamField body="customer" type="string (uuid)" required>
+  UUID de um [cliente](../customers/reference) da conta.
+</ParamField>
+
+<ParamField body="items" type="array" required>
+  Pelo menos um item. Todos os preços precisam ser `recurring`, com o mesmo `interval`, `intervalCount` e moeda; o primeiro define os da assinatura. Não repita o mesmo preço.
+
+  - `price` (obrigatório): UUID do preço.
+  - `quantity`: inteiro ≥ 1. Padrão `1`.
+</ParamField>
+
+<ParamField body="paymentMethod" type="string">
+  `pix` ou `card`. Obrigatório, exceto quando `trialEnd` é enviado.
+</ParamField>
+
+<ParamField body="card" type="string (uuid)">
+  UUID de um [cartão tokenizado](../cards/create). Obrigatório quando `paymentMethod` é `card` e proibido nos demais casos. O cartão precisa estar ativo e **já pertencer ao `customer`**. Um cartão recém-tokenizado não pertence a ninguém: ele passa a ser do cliente quando é usado numa [cobrança](../charges/create) de cartão ou numa [confirmação de checkout](../checkout-sessions/confirm). Para assinar um cliente novo no cartão, use o [checkout](../guides/subscription-recurring).
+</ParamField>
+
+<ParamField body="trialEnd" type="string">
+  Fim do teste, em ISO 8601. Precisa estar no futuro. A assinatura começa `trialing` e a primeira fatura só é gerada nessa data.
+</ParamField>
+
+## Resposta
+
+`201 Created`
+
+```json Response
+{
+  "id": "9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36",
+  "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "paymentMethod": "card",
+  "card": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
+  "status": "active",
+  "currency": "brl",
+  "interval": "month",
+  "intervalCount": 1,
+  "cancelAtPeriodEnd": false,
+  "startDate": "2026-10-07T19:00:00.000Z",
+  "endDate": null,
+  "trialStartDate": null,
+  "trialEndDate": null,
+  "trialEndBehavior": null,
+  "currentPeriodStart": "2026-10-07T19:00:00.000Z",
+  "currentPeriodEnd": "2026-11-07T19:00:00.000Z",
+  "canceledAt": null,
+  "cancellationReason": null,
+  "items": [
+    {
+      "id": "c6d2f9a4-7e18-4b35-9a60-3f1e8d5b2c07",
+      "product": "7d2b5e90-1c34-4a68-b9f7-0e3a6c8d1f25",
+      "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61",
+      "name": "Plano mensal",
+      "amount": 9900,
+      "quantity": 1,
+      "totalAmount": 9900,
+      "createdAt": "2026-10-07T19:00:00.000Z",
+      "updatedAt": "2026-10-07T19:00:00.000Z"
+    }
+  ],
+  "createdAt": "2026-10-07T19:00:00.000Z",
+  "updatedAt": "2026-10-07T19:00:05.000Z"
+}
+```
+
+Com `trialEnd`, `status` vem `trialing`, `trialStartDate` e `trialEndDate` preenchidos, `startDate` e o período atual `null` e nenhuma fatura é criada. Se o teste acabar sem método de pagamento, a fatura é gerada e a assinatura fica `past_due` até você definir um [`paymentMethod`](./update) ou a fatura ser paga.
+
+## Erros
+
+| Status | Código | Quando |
+| ------ | ------ | ------ |
+| `404` | `CUSTOMER_NOT_FOUND` | O cliente não existe na conta |
+| `404` | `PRICE_NOT_FOUND` / `PRODUCT_NOT_FOUND` | O preço, ou o produto dele, não existe na conta |
+| `404` | `SUBSCRIPTION_CARD_NOT_FOUND` | O cartão não existe, está inativo ou não pertence ao cliente (inclusive um token novo, ainda sem cliente) |
+| `400` | `SUBSCRIPTION_PRICE_NOT_RECURRING` | Um dos preços não é `recurring` |
+| `400` | `SUBSCRIPTION_PRICE_MISMATCH` | Os preços têm intervalo ou moeda diferentes |
+| `400` | `SUBSCRIPTION_DUPLICATE_PRICE` | O mesmo preço aparece mais de uma vez em `items` |
+| `422` | `VALIDATION_FAILED` | Sem `paymentMethod` nem `trialEnd`; `card` ausente com `paymentMethod: "card"` (ou enviado sem ele); `trialEnd` no passado |

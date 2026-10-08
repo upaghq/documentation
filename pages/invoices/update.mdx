@@ -1,0 +1,89 @@
+---
+title: 'Atualizar fatura'
+description: 'Abre um rascunho de fatura para que possa ser paga'
+sidebarTitle: 'Atualizar'
+api: 'PATCH https://api.upag.io/v1/invoices/{invoiceId}'
+---
+
+Finaliza um rascunho com `{ "open": true }`, deixando a fatura pronta para [pagamento](./pay). Esta é a única alteração que o endpoint aceita; para mudar o conteúdo de um rascunho, use os endpoints de [itens](./create-item).
+
+Permissão: `invoice.write`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X PATCH https://api.upag.dev/v1/invoices/5b0e8d3a-9c71-4e26-a8f4-1d7c3b6e9a02 \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{ "open": true }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const invoice = await upag.invoices.update('5b0e8d3a-9c71-4e26-a8f4-1d7c3b6e9a02', {
+  open: true,
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="invoiceId" type="string (uuid)" required>
+  ID da fatura.
+</ParamField>
+
+<ParamField body="open" type="boolean">
+  `true` abre o rascunho: recalcula `amountDue` e muda o status para `open`. Depois de aberta, os itens ficam travados.
+</ParamField>
+
+## Resposta
+
+`200 OK` com o [objeto fatura](./reference), já com `status: "open"`.
+
+```json Response
+{
+  "id": "5b0e8d3a-9c71-4e26-a8f4-1d7c3b6e9a02",
+  "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "paymentMethod": null,
+  "subscription": null,
+  "status": "open",
+  "currency": "brl",
+  "description": "Consultoria de setembro",
+  "amountDue": 9900,
+  "amountPaid": 0,
+  "attemptCount": 0,
+  "dueDate": null,
+  "paidAt": null,
+  "items": [
+    {
+      "id": "e4a1c7f8-2b95-4d03-8e6a-9f1b5d0c3a74",
+      "product": "7d2b5e90-1c34-4a68-b9f7-0e3a6c8d1f25",
+      "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61",
+      "name": "Plano mensal",
+      "amount": 4950,
+      "quantity": 2,
+      "totalAmount": 9900
+    }
+  ],
+  "discounts": [],
+  "payments": [],
+  "createdAt": "2026-10-07T19:00:00.000Z",
+  "updatedAt": "2026-10-07T19:02:00.000Z"
+}
+```
+
+## Erros
+
+| Status | Código | Quando |
+| ------ | ------ | ------ |
+| `404` | `INVOICE_NOT_FOUND` | A fatura não existe ou é de outra conta |
+| `400` | `INVOICE_NO_ITEMS` | O rascunho não tem itens |
+| `400` | `INVOICE_INVALID_TRANSITION` | A fatura não é um rascunho (já está aberta, paga etc.) |

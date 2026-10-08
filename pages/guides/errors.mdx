@@ -1,0 +1,106 @@
+---
+title: 'Erros'
+description: 'Formato do envelope de erro, códigos HTTP e erros de validação da API Upag.'
+icon: 'triangle-exclamation'
+keywords: ['upag', 'erros', 'validação', 'status http', 'UpagError']
+---
+
+Toda requisição que falha devolve um objeto `error` e um status HTTP coerente com a falha.
+
+```json
+{
+  "error": {
+    "message": "Charge not found",
+    "meta": {
+      "errorCode": "CHARGE_NOT_FOUND",
+      "action": "Select an available charge that belongs to this account."
+    }
+  }
+}
+```
+
+Campos opcionais aparecem quando se aplicam:
+
+| Campo | Tipo | Descrição |
+| ----- | ---- | --------- |
+| `error.message` | `string` | Explicação legível. Sempre presente |
+| `error.code` | `string` | Código de máquina, inclusive de validação e de provedores (por exemplo `VALIDATION_FAILED`, `card_invalid`, `session_expired`) |
+| `error.details` | `object` | Contexto estruturado. Presente em falhas de validação |
+| `error.meta.errorCode` | `string` | Classificação estável do erro de aplicação |
+| `error.meta.action` | `string` | Instrução, em inglês, sobre o próximo passo |
+
+Use `error.code` e `error.meta.errorCode` para decidir o que fazer. Não interprete `message`.
+
+## Códigos HTTP
+
+| Status | Significado | Causa típica |
+| ------ | ----------- | ------------ |
+| `400` | Bad Request | Regra de negócio violada, como splits maiores que o valor da cobrança |
+| `401` | Unauthorized | Chave ausente, malformada ou revogada |
+| `403` | Forbidden | Chave válida sem a permissão exigida, ou tipo de chave não aceito na rota |
+| `404` | Not Found | O recurso não existe ou pertence a outra conta |
+| `409` | Conflict | Recurso já existe (documento duplicado) ou `Idempotency-Key` reutilizada com outro corpo |
+| `410` | Gone | Recurso expirado, como uma sessão 3DS vencida |
+| `422` | Unprocessable Entity | Corpo, query ou path falhou na validação de schema |
+| `429` | Too Many Requests | Limite de requisições atingido (veja o header `Retry-After`) |
+| `500` | Internal Server Error | Falha inesperada |
+| `502` | Bad Gateway | Resposta de provedor indisponível ou incompleta |
+
+Violações de regra de negócio são `400` e de schema são `422`. Isso importa nas retentativas: um `422` falha sempre com o mesmo payload, enquanto um `400` pode passar quando o estado mudar.
+
+## Erros de validação
+
+Falhas de schema retornam `422` com o código `VALIDATION_FAILED`. `details` agrupa os problemas pela parte da requisição (`body`, `query`, `params`, `headers`) e cada item traz o caminho do campo.
+
+```json
+{
+  "error": {
+    "message": "Validation failed",
+    "code": "VALIDATION_FAILED",
+    "details": {
+      "body": [
+        {
+          "path": ["amount"],
+          "message": "Too small: expected number to be >0",
+          "code": "too_small"
+        },
+        {
+          "path": ["customer"],
+          "message": "Customer is required for dynamic pix charges",
+          "code": "custom"
+        }
+      ]
+    }
+  }
+}
+```
+
+`path` é um array e aponta para estruturas aninhadas (por exemplo `["splits", 1, "account"]`). Todos os problemas vêm de uma vez.
+
+## Erros nos SDKs
+
+O pacote Node.js lança `UpagError` com `message`, `code`, `statusCode`, `details` e `meta`. O `upag-js` lança objetos com `type` (`api_error`, `validation_error`, `authentication_error`, `network_error`, `client_error`, `three_d_secure_error`), além de `message`, `statusCode`, `code` e `details`.
+
+```javascript Node.js SDK
+try {
+  await upag.customers.create({ name: 'Maria', document: { type: 'cpf', number: 'invalid' } });
+} catch (error) {
+  console.error(error.statusCode, error.code, error.message);
+  console.error(error.details);
+}
+```
+
+Veja [SDK Node.js](../sdk/server) e [SDK browser](../sdk/frontend).
+
+## Erros de cartão e 3D Secure
+
+| Código | Status | Quando |
+| ------ | ------ | ------ |
+| `card_invalid` | `422` | Cartão não aceito na tokenização (mensagem genérica de propósito) |
+| `too_many_attempts` | `429` | Limite de tentativas em `/cards` ou `/3ds` |
+| `session_not_found` | `404` | Sessão 3DS inexistente na conta |
+| `session_expired` | `410` | Sessão 3DS expirada |
+| `invalid_session_state` | `409` | Sessão 3DS não concluída ou já usada |
+| `threeds_session_mismatch` | `409` | Sessão autenticada para outro cartão, valor ou parcelas |
+
+Recusas da adquirente não são erro HTTP: a cobrança volta com `status: "failed"` e `failureCode`. Veja [Cobranças](../charges/reference).

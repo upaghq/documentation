@@ -1,0 +1,174 @@
+---
+title: 'Pagar fatura'
+description: 'Paga uma fatura aberta com Pix ou com um cartão tokenizado'
+sidebarTitle: 'Pagar'
+api: 'POST https://api.upag.io/v1/invoices/{invoiceId}/pay'
+---
+
+Cria uma [cobrança](../charges/reference) para o valor em aberto da fatura (`amountDue`) e a vincula em `payments`. A fatura precisa estar `open`, em `brl` e sem outro pagamento em andamento.
+
+- **Pix**: a fatura continua `open` com um pagamento `pending`. Ela vira `paid` quando a cobrança é paga (webhook `invoice.paid`); se o Pix vencer, vira `uncollectible`.
+- **Cartão**: o resultado sai na própria resposta. Aprovado, a fatura já volta `paid`; recusado, ela continua `open`, `attemptCount` sobe e você pode pagar de novo.
+
+Permissão: `invoice.write`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+### Pix
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/invoices/5b0e8d3a-9c71-4e26-a8f4-1d7c3b6e9a02/pay \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{ "method": "pix", "dueDate": "2026-10-08T12:00:00.000Z" }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const invoice = await upag.invoices.pay('5b0e8d3a-9c71-4e26-a8f4-1d7c3b6e9a02', {
+  method: 'pix',
+  dueDate: '2026-10-08T12:00:00.000Z',
+});
+```
+</CodeGroup>
+
+A resposta é a fatura: o QR code do Pix está na cobrança de `payments[0].charge`. Consulte-a em [Obter cobrança](../charges/get).
+
+### Cartão
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/invoices/5b0e8d3a-9c71-4e26-a8f4-1d7c3b6e9a02/pay \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "method": "card",
+    "card": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
+    "installments": 1,
+    "threeDSecureSession": "9b7c1e52-3f0a-4d86-a1c4-6e2d8f35b790"
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const invoice = await upag.invoices.pay('5b0e8d3a-9c71-4e26-a8f4-1d7c3b6e9a02', {
+  method: 'card',
+  card: '5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15',
+  installments: 1,
+  threeDSecureSession: '9b7c1e52-3f0a-4d86-a1c4-6e2d8f35b790',
+});
+```
+</CodeGroup>
+
+O `card` vem de [Criar cartão](../cards/create) (idealmente tokenizado no navegador com `upag-js`). Para autenticar o portador antes de cobrar, veja [Cartão com 3DS](../guides/card-3ds).
+
+## Parâmetros
+
+<ParamField path="invoiceId" type="string (uuid)" required>
+  ID da fatura.
+</ParamField>
+
+<ParamField body="method" type="string" required>
+  `pix` ou `card`. Define quais dos campos abaixo valem.
+</ParamField>
+
+### Pix (`method: "pix"`)
+
+<ParamField body="dueDate" type="string">
+  Vencimento do QR code (ISO 8601). Padrão: 10 minutos a partir de agora.
+</ParamField>
+
+### Cartão (`method: "card"`)
+
+<ParamField body="card" type="string (uuid)" required>
+  UUID de um [cartão tokenizado](../cards/create) da conta.
+</ParamField>
+
+<ParamField body="installments" type="integer" default="1">
+  Número de parcelas, de 1 a 12.
+</ParamField>
+
+<ParamField body="threeDSecureSession" type="string (uuid)">
+  Sessão 3D Secure concluída para este cartão, valor e parcelamento.
+</ParamField>
+
+<ParamField body="ipAddress" type="string">
+  IP público do pagador (IPv4 ou IPv6).
+</ParamField>
+
+<ParamField body="location" type="object">
+  Localização do pagador: `city` (até 50 caracteres), `state` (2), `country` (2) e `zip` (até 9). Todos opcionais.
+</ParamField>
+
+<ParamField body="softDescriptor" type="string">
+  Texto na fatura do cartão, de 1 a 13 caracteres.
+</ParamField>
+
+## Resposta
+
+`200 OK` com o [objeto fatura](./reference). Exemplo de cartão aprovado:
+
+```json Response
+{
+  "id": "5b0e8d3a-9c71-4e26-a8f4-1d7c3b6e9a02",
+  "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "paymentMethod": null,
+  "subscription": null,
+  "status": "paid",
+  "currency": "brl",
+  "description": "Consultoria de setembro",
+  "amountDue": 9900,
+  "amountPaid": 9900,
+  "attemptCount": 0,
+  "dueDate": null,
+  "paidAt": "2026-10-07T19:05:12.000Z",
+  "items": [
+    {
+      "id": "e4a1c7f8-2b95-4d03-8e6a-9f1b5d0c3a74",
+      "product": "7d2b5e90-1c34-4a68-b9f7-0e3a6c8d1f25",
+      "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61",
+      "name": "Plano mensal",
+      "amount": 4950,
+      "quantity": 2,
+      "totalAmount": 9900
+    }
+  ],
+  "discounts": [],
+  "payments": [
+    {
+      "charge": "1f7d3c8a-4b52-4c9e-8a11-6d0e2f5b7c34",
+      "type": "card",
+      "status": "paid",
+      "settledAt": "2026-10-07T19:05:12.000Z",
+      "createdAt": "2026-10-07T19:05:11.000Z"
+    }
+  ],
+  "createdAt": "2026-10-07T19:00:00.000Z",
+  "updatedAt": "2026-10-07T19:05:12.000Z"
+}
+```
+
+Num Pix, `status` fica `open` e `payments[0]` vem com `type: "pix"`, `status: "pending"` e `settledAt: null`. Num cartão recusado, `status` fica `open`, `attemptCount` é `1` e o pagamento vem `failed`.
+
+## Erros
+
+| Status | Código | Quando |
+| ------ | ------ | ------ |
+| `404` | `INVOICE_NOT_FOUND` | A fatura não existe ou é de outra conta |
+| `400` | `INVOICE_NOT_PAYABLE` | A fatura não está `open` ou não tem valor a pagar |
+| `400` | `INVOICE_CURRENCY_UNSUPPORTED` | A fatura não está em `brl` |
+| `409` | `INVOICE_PAYMENT_IN_PROGRESS` | Já existe um pagamento pendente (um Pix ainda aberto, por exemplo) |
+| `422` | `VALIDATION_FAILED` | `method` inválido, `card` ausente num pagamento de cartão etc. |
+
+Erros do cartão (`card` inexistente, 3DS inválido etc.) seguem as regras de [Criar cobrança](../charges/create).

@@ -1,0 +1,236 @@
+---
+title: 'Browser'
+description: 'upag-js: SDK de browser para tokenizar cartões, 3D Secure, checkout do pagador e antifraude'
+icon: 'browser'
+---
+
+<Card title="upag-js" icon="npm" href="https://www.npmjs.com/package/upag-js">
+  Pacote npm oficial para o browser. Código em [github.com/upag/upag-js](https://github.com/upag/upag-js).
+</Card>
+
+<Warning>
+  Use somente a chave **publicável** (`pk_test_...` / `pk_live_...`) no front-end. Nunca use `sk_...`.
+</Warning>
+
+## Instalação
+
+<CodeGroup>
+```bash npm
+npm install upag-js
+```
+```bash yarn
+yarn add upag-js
+```
+```bash pnpm
+pnpm add upag-js
+```
+</CodeGroup>
+
+### Script tag (sem bundler)
+
+`dist/v1/upag.min.js` é um arquivo único que define `window.UpagJs`, sem `type="module"`:
+
+```html
+<script src="https://js.upag.io/v1/upag.min.js"></script>
+<script>
+  const upag = new UpagJs('pk_test_xxx');
+</script>
+```
+
+## Inicialização e host
+
+```javascript
+import { UpagJs } from 'upag-js';
+
+const upag = new UpagJs('pk_test_your_public_key');
+```
+
+`pk_test_` usa `https://api.upag.dev/v1` (sandbox) e qualquer outra chave usa `https://api.upag.io/v1`. Passe `{ publicKey, baseURL, timeout }` para sobrescrever o host (`baseURL` precisa ser https, exceto localhost). O ambiente resolvido fica em `upag.environment` (`'sandbox' | 'production'`).
+
+## Checkout do pagador
+
+Uma chave publicável não cria sessões nem lista o catálogo. A página do pagador parte do **código de um link de pagamento** (sem autenticação) e usa o `clientSecret` devolvido uma única vez por `start` para ler e pagar a sessão. Veja o fluxo em [Checkout hospedado](../guides/checkout-hosted).
+
+```javascript
+const session = await upag.checkout.start('link-code', { utmSource: 'ads' });
+const { id, clientSecret } = session;
+
+const fresh = await upag.checkout.retrieve(id, clientSecret);
+
+// Pix
+const paid = await upag.checkout.confirm(id, clientSecret, {
+  customer: {
+    name: 'Jane Doe',
+    email: 'jane@example.com',
+    document: { type: 'cpf', number: '52998224725' },
+  },
+  charge: { method: 'pix' },
+});
+
+// Cartão: tokenize e confirme com o id
+const card = await upag.cards.create({
+  number: '4242424242424242',
+  expirationMonth: 12,
+  expirationYear: 2030,
+  cvv: '123',
+  holderName: 'Jane Doe',
+});
+
+await upag.checkout.confirm(id, clientSecret, {
+  customer: { name: 'Jane Doe', document: { type: 'cpf', number: '52998224725' } },
+  charge: { method: 'card', card: card.id, installments: 1 },
+});
+
+await upag.checkout.applyCoupon(id, clientSecret, { code: 'SAVE10' });
+await upag.checkout.removeCoupon(id, clientSecret);
+await upag.checkout.listApps(id, clientSecret);
+
+// Carrinho Shopify -> checkout hospedado
+const shopify = await upag.checkout.startShopify({
+  items: [{ variantId: 'gid://shopify/ProductVariant/1', quantity: 1 }],
+});
+
+// Ou envie o browser à página hospedada
+await upag.checkout.redirectToCheckout('link-code');
+```
+
+### Teste grátis
+
+Quando `session.trial` existe e `session.amount` é `0`, nada é cobrado hoje: guarde um cartão para a primeira cobrança em vez de enviar `charge` (opcional se `session.paymentMethodCollection` for `'if_required'`). Veja [Teste grátis](../guides/free-trial).
+
+```javascript
+if (session.trial && session.amount === 0) {
+  await upag.checkout.confirm(id, clientSecret, {
+    customer: { name: 'Jane Doe', document: { type: 'cpf', number: '52998224725' } },
+    paymentMethod: { type: 'card', card: card.id },
+  });
+}
+```
+
+## Cartões
+
+Tokeniza um cartão e devolve um id para o servidor criar a cobrança. Número e CVV nunca são devolvidos.
+
+```javascript
+const card = await upag.cards.create({
+  number: '4242424242424242',
+  expirationMonth: 12,
+  expirationYear: 2030,
+  cvv: '123',
+  holderName: 'John Doe', // letras e espaços
+});
+
+console.log(card.id, card.brand, card.lastDigits);
+
+// Opcional: torna retentativas seguras
+await upag.cards.create(params, { idempotencyKey: 'checkout_42' });
+```
+
+`create` é a única operação de cartão que uma chave publicável pode fazer. Listar, obter e remover exigem a chave secreta, no servidor. Referência: [Criar cartão](../cards/create).
+
+## Antifraude
+
+Instanciar o cliente no browser inicia o coletor de dispositivo. Envie `sessionId()` como `meta.session_id` na cobrança de cartão e chame `rotate()` antes de uma nova tentativa.
+
+```javascript
+const deviceSessionId = upag.antifraud.sessionId();
+upag.antifraud.rotate();
+```
+
+## 3D Secure
+
+Autentica um cartão salvo com o banco do comprador antes da cobrança. O **servidor** abre a sessão com a chave secreta ([Criar sessão 3DS](../three-d-secure/create)) e o **browser** só conclui, com o `clientSecret` da sessão. O SDK coleta os dados do dispositivo e abre o desafio quando o banco exige.
+
+```javascript
+try {
+  const { sessionId } = await upag.threeDSecure.authenticate(
+    { clientSecret },
+    {
+      onStatusChange: (status) => console.log(status), // starting | authenticating | completing | idle
+    },
+  );
+  // envie sessionId ao servidor e crie a cobrança com threeDSecureSession
+} catch (error) {
+  if (error.code === 'authentication_canceled') {
+    // o comprador fechou a janela do banco
+  }
+}
+```
+
+A sessão autentica um cartão para um valor e parcelas, e pode ser usada por uma cobrança. Mantenha o `clientSecret` fora de logs e URLs. `authenticate` só roda no browser (não em SSR) e uma autenticação por vez. Fluxo completo: [Cartão com 3DS](../guides/card-3ds).
+
+## Frameworks
+
+```jsx
+import { UpagJs } from 'upag-js';
+
+const upag = new UpagJs('pk_test_your_public_key');
+
+function CheckoutButton({ code }) {
+  return <button onClick={() => upag.checkout.redirectToCheckout(code)}>Pagar</button>;
+}
+```
+
+O mesmo cliente funciona em Vue, Svelte ou JavaScript puro: instancie uma vez e reutilize.
+
+## Erros
+
+Falhas são lançadas com detalhes:
+
+```javascript
+try {
+  await upag.checkout.start('link-code');
+} catch (error) {
+  console.error(error.type, error.message, error.statusCode, error.code, error.details);
+}
+```
+
+| `type` | Quando |
+| ------ | ------ |
+| `api_error` | Erro do servidor |
+| `validation_error` | Parâmetros inválidos |
+| `authentication_error` | Chave publicável inválida |
+| `network_error` | Falha de rede ou `timeout` |
+| `client_error` | Erro do lado do cliente (por exemplo `invalid_params` quando falta o `clientSecret` em `threeDSecure.authenticate`) |
+| `three_d_secure_error` | A autenticação 3DS não concluiu. Veja `code`: `authentication_failed`, `authentication_canceled`, `authentication_timeout`, `authentication_unavailable`, `invalid_response` |
+
+Erros devolvidos pela API trazem o `code` dela (por exemplo `session_expired`, `unauthorized`, `too_many_attempts`).
+
+## Referência dos métodos
+
+| Recurso | Método | Descrição |
+| ------- | ------ | --------- |
+| `checkout` | `start(code, tracking?)` | Abre a sessão a partir do código do link (sem auth; devolve `clientSecret` uma vez) |
+| `checkout` | `retrieve(sessionId, clientSecret)` | Carrega a sessão |
+| `checkout` | `confirm(sessionId, clientSecret, body)` | Paga com Pix ou cartão tokenizado |
+| `checkout` | `applyCoupon(sessionId, clientSecret, { code })` | Aplica cupom |
+| `checkout` | `removeCoupon(sessionId, clientSecret)` | Remove o cupom |
+| `checkout` | `listApps(sessionId, clientSecret)` | Config pública dos apps do checkout |
+| `checkout` | `startShopify({ items })` | Sessão a partir de um carrinho Shopify |
+| `checkout` | `redirectToCheckout(code, tracking?)` | Abre a sessão e redireciona para a página hospedada |
+| `cards` | `create(params, options?)` | Tokeniza um cartão |
+| `threeDSecure` | `authenticate({ clientSecret }, options?)` | Autenticação 3D Secure de uma sessão criada pelo servidor |
+| `antifraud` | `sessionId()`, `rotate()` | Sessão de dispositivo para antifraude |
+
+## Boas práticas de segurança
+
+- Use chaves publicáveis no front-end e tokenização de cartão.
+- Valide tudo também no backend e use HTTPS em produção.
+- Nunca use chaves secretas no front-end nem guarde dados de cartão.
+
+## Onde ir depois
+
+<CardGroup cols={2}>
+  <Card title="Cartão com 3DS" icon="credit-card" href="../guides/card-3ds">
+    Browser e servidor, passo a passo.
+  </Card>
+  <Card title="Checkout hospedado" icon="cart-shopping" href="../guides/checkout-hosted">
+    Link, sessão e confirmação.
+  </Card>
+  <Card title="SDK Node.js" icon="node-js" href="./server">
+    Criar links, sessões e cobranças no servidor.
+  </Card>
+  <Card title="Índice de SDKs" icon="code" href="./overview">
+    Comparativo `upag` / `upag-js`.
+  </Card>
+</CardGroup>

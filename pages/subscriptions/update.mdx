@@ -1,0 +1,132 @@
+---
+title: 'Atualizar assinatura'
+description: 'Troca o método de pagamento ou agenda/desfaz o cancelamento no fim do período'
+sidebarTitle: 'Atualizar'
+api: 'PATCH https://api.upag.io/v1/subscriptions/{subscriptionId}'
+---
+
+Troca o método de pagamento da assinatura e/ou marca (ou desmarca) o cancelamento ao fim do período. Todos os campos são opcionais; envie apenas o que mudar. Para alterar itens, use [Adicionar item](./create-item) e [Atualizar item](./update-item).
+
+A troca não cobra nada na hora: o novo método é usado na próxima tentativa de cobrança, seja a renovação ou a nova tentativa de uma assinatura `past_due`. É também assim que você define o método de uma assinatura criada em teste sem `paymentMethod`.
+
+Permissão: `subscription.write`. Apenas chave secreta (`sk_…`). Assinaturas `canceled` ou `void` não podem ser alteradas.
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X PATCH https://api.upag.dev/v1/subscriptions/9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36 \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "paymentMethod": "card",
+    "card": "e1b84d70-3a9c-4f26-8d15-6c0a7f2b9e43"
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const subscription = await upag.subscriptions.update('9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36', {
+  paymentMethod: 'card',
+  card: 'e1b84d70-3a9c-4f26-8d15-6c0a7f2b9e43',
+});
+```
+</CodeGroup>
+
+### Cancelar no fim do período (e desfazer)
+
+<CodeGroup>
+```bash cURL
+curl -X PATCH https://api.upag.dev/v1/subscriptions/9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36 \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{ "cancelAtPeriodEnd": true }'
+```
+
+```javascript Node.js SDK
+await upag.subscriptions.update('9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36', {
+  cancelAtPeriodEnd: true,
+});
+
+// Desfaz: a assinatura volta a renovar
+await upag.subscriptions.update('9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36', {
+  cancelAtPeriodEnd: false,
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="subscriptionId" type="string (uuid)" required>
+  ID da assinatura.
+</ParamField>
+
+<ParamField body="paymentMethod" type="string">
+  `pix` ou `card`.
+</ParamField>
+
+<ParamField body="card" type="string (uuid)">
+  UUID de um [cartão tokenizado](../cards/create) ativo que já pertença ao cliente da assinatura (um token novo ainda não pertence a ninguém; veja [Criar assinatura](./create)). Obrigatório com `paymentMethod: "card"`; proibido com `pix`; não pode ser enviado sem `paymentMethod`.
+</ParamField>
+
+<ParamField body="cancelAtPeriodEnd" type="boolean">
+  `true` cancela a assinatura quando o período atual acabar (ela segue ativa até lá); `false` desfaz o agendamento. Para cancelar de imediato ou informar um motivo, use [Cancelar assinatura](./cancel).
+</ParamField>
+
+## Resposta
+
+`200 OK` com a [assinatura](./reference) atualizada.
+
+```json Response
+{
+  "id": "9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36",
+  "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "paymentMethod": "card",
+  "card": "e1b84d70-3a9c-4f26-8d15-6c0a7f2b9e43",
+  "status": "active",
+  "currency": "brl",
+  "interval": "month",
+  "intervalCount": 1,
+  "cancelAtPeriodEnd": false,
+  "startDate": "2026-10-07T19:00:00.000Z",
+  "endDate": null,
+  "trialStartDate": null,
+  "trialEndDate": null,
+  "trialEndBehavior": null,
+  "currentPeriodStart": "2026-10-07T19:00:00.000Z",
+  "currentPeriodEnd": "2026-11-07T19:00:00.000Z",
+  "canceledAt": null,
+  "cancellationReason": null,
+  "items": [
+    {
+      "id": "c6d2f9a4-7e18-4b35-9a60-3f1e8d5b2c07",
+      "product": "7d2b5e90-1c34-4a68-b9f7-0e3a6c8d1f25",
+      "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61",
+      "name": "Plano mensal",
+      "amount": 9900,
+      "quantity": 1,
+      "totalAmount": 9900,
+      "createdAt": "2026-10-07T19:00:00.000Z",
+      "updatedAt": "2026-10-07T19:00:00.000Z"
+    }
+  ],
+  "createdAt": "2026-10-07T19:00:00.000Z",
+  "updatedAt": "2026-10-12T14:20:00.000Z"
+}
+```
+
+## Erros
+
+| Status | Código | Quando |
+| ------ | ------ | ------ |
+| `404` | `SUBSCRIPTION_NOT_FOUND` | A assinatura não existe ou é de outra conta |
+| `404` | `SUBSCRIPTION_CARD_NOT_FOUND` | O cartão não existe, está inativo ou não pertence ao cliente da assinatura |
+| `400` | `SUBSCRIPTION_NOT_EDITABLE` | A assinatura está `canceled` ou `void` |
+| `422` | `VALIDATION_FAILED` | `card` ausente com `paymentMethod: "card"`, `card` com `pix`, ou `card` sem `paymentMethod` |

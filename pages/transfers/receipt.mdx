@@ -1,0 +1,61 @@
+---
+title: 'Comprovante'
+description: 'HTML do comprovante de uma transferência'
+sidebarTitle: 'Comprovante'
+api: 'GET https://api.upag.io/v1/transfers/{transferId}/receipt'
+---
+
+Retorna a página HTML do comprovante da transferência, em imagem (padrão) ou em PDF (a página já abre o diálogo de impressão do browser).
+
+Permissão: `transfer.read`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl "https://api.upag.dev/v1/transfers/770e8400-e29b-41d4-a716-446655440000/receipt?format=image" \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const html = await upag.transfers.receipt('770e8400-e29b-41d4-a716-446655440000', {
+  format: 'image',
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="transferId" type="string (uuid)" required>
+  ID da transferência.
+</ParamField>
+
+<ParamField query="format" type="string" default="image">
+  `image` ou `pdf`. Os dois devolvem HTML; `pdf` inclui o gatilho de impressão automática.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+| Header | Valor |
+| ------ | ----- |
+| `Content-Type` | `text/html; charset=utf-8` |
+
+O corpo é a página HTML do comprovante, com valor, data, pagador, recebedor, chave Pix e o número de controle (EndToEndId, ou a referência do provedor).
+
+## Erros
+
+| Status | Mensagem | Causa |
+| ------ | -------- | ----- |
+| `404` | `Transfer not found` | Transferência inexistente ou de outra conta |
+| `404` | `Account not found` | A conta da chave não foi encontrada |
+| `422` | `VALIDATION_FAILED` | `transferId` não é UUID, ou `format` inválido |

@@ -1,0 +1,103 @@
+---
+title: 'Criar sessão 3DS'
+description: 'Abre uma sessão 3D Secure para autenticar um cartão e um valor'
+sidebarTitle: 'Criar'
+api: 'POST https://api.upag.io/v1/3ds/sessions'
+---
+
+Abre uma sessão que autentica **um cartão para um valor**. Chame do seu servidor e entregue o `clientSecret` à página de checkout, que o passa ao [`upag-js`](../sdk/frontend) (`threeDSecure.authenticate`).
+
+Permissão: `charge.write`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/3ds/sessions \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Idempotency-Key: order-10482" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 10000,
+    "installments": 3,
+    "card": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
+    "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83"
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const session = await upag.threeDSecure.createSession(
+  {
+    amount: 10000,
+    installments: 3,
+    card: '5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15',
+    customer: '8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83',
+  },
+  { idempotencyKey: 'order-10482' },
+);
+
+// envie session.clientSecret à página de checkout
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField body="amount" type="integer" required>
+  Preço cheio em centavos (maior que zero, até 2.147.483.647). Envie exatamente o que a cobrança terá.
+</ParamField>
+
+<ParamField body="card" type="string (uuid)" required>
+  UUID de um [cartão tokenizado](../cards/create) da conta. Número de cartão nunca é aceito aqui: tokenize antes com `POST /v1/cards`.
+</ParamField>
+
+<ParamField body="customer" type="string | object" required>
+  UUID de um cliente, ou um objeto cliente inline (mesmos campos de [Criar cliente](../customers/create)). Dados inline valem só para esta autenticação e não são gravados. O cliente precisa ter e-mail e telefone.
+</ParamField>
+
+<ParamField body="installments" type="integer" default="1">
+  1 a 12.
+</ParamField>
+
+<ParamField body="softDescriptor" type="string">
+  Nome exibido na tela do desafio do banco, até 255 caracteres. É normalizado (sem acentos, só letras, dígitos e espaços) e cortado em 30. Padrão: descritivo da conta.
+</ParamField>
+
+<ParamField header="Idempotency-Key" type="string">
+  Até 255 caracteres. Por 24 horas, a mesma chave com o mesmo corpo devolve a **mesma sessão com um novo `clientSecret`** (o anterior deixa de valer). Chave igual com corpo diferente retorna `409`.
+</ParamField>
+
+## Resposta
+
+`201 Created`
+
+```json Response
+{
+  "id": "9b7c1e52-3f0a-4d86-a1c4-6e2d8f35b790",
+  "status": "requires_action",
+  "finalAmount": 11016,
+  "card": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
+  "expiresAt": "2026-09-30T19:06:02.113Z",
+  "clientSecret": "4fJq8Wm2Xc7Nb1Rt5Yh9Lk3Vd0Ze6Sa7Xp2Qn9Rt5Yh1Lk3V"
+}
+```
+
+`clientSecret` autoriza o browser a trabalhar nesta sessão: entregue só à página de checkout. Ele é guardado apenas como hash, então [Obter sessão](./get) nunca o devolve. Se perder, repita a criação com a mesma `Idempotency-Key` para receber outro.
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `400` | `invalid_params` | Corpo malformado (inclusive cartão enviado como objeto), ou cartão inativo, vencido ou indisponível para autenticação |
+| `404` | `card_not_found` | O cartão não existe na conta |
+| `404` | `not_found` | 3D Secure não está habilitado neste ambiente |
+| `409` | `idempotency_key_reused` | A `Idempotency-Key` já foi usada com outro corpo |
+| `422` | `customer_incomplete` | O cliente não tem o que a autenticação exige; `error.details.missingFields` lista os campos |
+| `429` | `too_many_attempts` | Mais de 100 sessões por minuto na conta |

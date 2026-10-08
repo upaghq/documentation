@@ -1,0 +1,88 @@
+---
+title: 'Atualizar preço'
+description: 'Atualiza nome, valor, quantidade de intervalos ou metadata'
+sidebarTitle: 'Atualizar'
+api: 'PATCH https://api.upag.io/v1/products/{productId}/prices/{priceId}'
+---
+
+Atualização parcial. `currency`, `billingType` e `interval` não podem ser alterados; para isso, crie outro preço.
+
+Permissão: `price.write` (chave secreta).
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X PATCH https://api.upag.dev/v1/products/0b9c1f3e-6a4d-4c1e-9d55-3f1f6a7c2e10/prices/5f2d7a90-3b1c-4e8a-8f6d-1c9e4b7a2d33 \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 5990,
+    "metadata": { "tier": "pro-plus" }
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+// upag.prices.update(productId, priceId, params)
+const price = await upag.prices.update(
+  '0b9c1f3e-6a4d-4c1e-9d55-3f1f6a7c2e10',
+  '5f2d7a90-3b1c-4e8a-8f6d-1c9e4b7a2d33',
+  { amount: 5990, metadata: { tier: 'pro-plus' } },
+);
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`.
+</Note>
+
+## Parâmetros
+
+<ParamField path="productId" type="string (uuid)" required>
+  ID do produto.
+</ParamField>
+
+<ParamField path="priceId" type="string (uuid)" required>
+  ID do preço.
+</ParamField>
+
+<ParamField body="name" type="string">
+  Novo nome (mínimo 1 caractere).
+</ParamField>
+
+<ParamField body="amount" type="integer">
+  Novo valor em centavos (mínimo 100).
+</ParamField>
+
+<ParamField body="intervalCount" type="integer">
+  Nova quantidade de intervalos (inteiro ≥ 1).
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Mesclada com a metadata existente (chaves enviadas sobrescrevem as atuais). Mesmos limites da criação.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "id": "5f2d7a90-3b1c-4e8a-8f6d-1c9e4b7a2d33",
+  "name": "Mensal",
+  "billingType": "recurring",
+  "interval": "month",
+  "intervalCount": 1,
+  "currency": "brl",
+  "amount": 5990,
+  "metadata": { "tier": "pro-plus" },
+  "createdAt": "2026-03-18T11:05:00.000Z",
+  "updatedAt": "2026-03-18T12:30:00.000Z"
+}
+```
+
+`404` — `PRODUCT_NOT_FOUND` ou `PRICE_NOT_FOUND`.

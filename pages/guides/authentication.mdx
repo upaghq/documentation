@@ -1,0 +1,94 @@
+---
+title: 'Autenticação'
+description: 'Chaves secretas e publicáveis, permissões, hosts de produção e sandbox da API Upag.'
+icon: 'key'
+keywords: ['upag', 'autenticação', 'api key', 'sk_', 'pk_', 'sandbox']
+---
+
+Toda requisição é autenticada com uma chave de API enviada como bearer token:
+
+```http
+Authorization: Bearer sk_live_9f2c...
+```
+
+Uma chave pertence a **uma conta** e carrega seu próprio conjunto de permissões. Nenhuma URL recebe identificador de conta: a conta é sempre derivada da chave. Crie e gerencie chaves no [painel](https://app.upag.io).
+
+## Tipos de chave
+
+| Prefixo | Tipo | Onde usar | O que faz |
+| ------- | ---- | --------- | --------- |
+| `sk_test_` / `sk_live_` | Secreta | Somente no servidor | Acesso a todos os recursos permitidos pela chave |
+| `pk_test_` / `pk_live_` | Publicável | Browser (`upag-js`) | Só tokeniza cartões ([`POST /cards`](../cards/create)) e conclui [3D Secure](../three-d-secure/reference) |
+
+<Warning>
+  Nunca coloque uma chave secreta no front-end, em repositórios ou em logs. Ela não pode ser recuperada depois de emitida, apenas rotacionada.
+</Warning>
+
+Os recursos de checkout do pagador usam o `clientSecret` da sessão, não uma chave. Veja [Sessões de checkout](../checkout-sessions/reference).
+
+## Hosts
+
+A API é única. O ambiente é definido pelo host, e a chave de teste só funciona no sandbox.
+
+| Ambiente | Host | Chaves |
+| -------- | ---- | ------ |
+| Sandbox | `https://api.upag.dev/v1` | `sk_test_...`, `pk_test_...` |
+| Produção | `https://api.upag.io/v1` | `sk_live_...`, `pk_live_...` |
+
+Os SDKs [`upag`](../sdk/server) e [`upag-js`](../sdk/frontend) escolhem o host pela chave (`sk_test_` e `pk_test_` usam o sandbox) e aceitam `baseURL` para sobrescrever.
+
+## Permissões
+
+Cada endpoint exige uma permissão. Se a chave não a tiver, a requisição é rejeitada com `403` antes de qualquer regra de negócio. As permissões usam semântica AND, e uma chave sem permissão em um recurso ainda pode usar os demais.
+
+| Permissão | Libera |
+| --------- | ------ |
+| `charge.read` / `charge.write` | Cobranças e sessões 3D Secure |
+| `card.read` / `card.write` | Cartões |
+| `customer.read` / `customer.write` | Clientes |
+| `transfer.read` / `transfer.write` | Transferências Pix |
+| `product.*`, `price.*` | Produtos e preços |
+| `coupon.*` | Cupons |
+| `invoice.*`, `subscription.*` | Faturas e assinaturas |
+| `payment_link.*` | Links de pagamento |
+| `checkout_session.*`, `checkout_layout.*` | Sessões e layouts de checkout |
+| `sub_account.*` | Subcontas |
+| `app.*` | Apps e integrações |
+| `webhook.read` / `webhook.write` | Webhooks e logs de entrega |
+
+`*` significa `read` e `write`. A permissão necessária aparece no topo de cada página da Referência.
+
+## Identificar a chave
+
+[`GET /me`](../me/get) devolve a conta, o tipo e as permissões da chave que fez a chamada. Funciona com qualquer tipo de chave.
+
+## Falhas de autenticação
+
+| Status | Mensagem | Causa |
+| ------ | -------- | ----- |
+| `401` | `Authentication required` | Sem header `Authorization`, esquema diferente de `Bearer` ou chave desconhecida para esta rota |
+| `401` | `Invalid API key` | A chave não existe, foi revogada ou o prefixo não corresponde ao tipo |
+| `403` | `This endpoint requires authentication via: secret_key` | Chave publicável (ou outro método) em rota exclusiva de chave secreta |
+| `403` | `You do not have permission to perform this action` | Chave válida sem a permissão exigida |
+
+## Exemplo
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.dev/v1/charges \
+  -H "Authorization: Bearer $UPAG_SECRET_KEY"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag(process.env.UPAG_SECRET_KEY);
+await upag.charges.list();
+```
+
+```javascript upag-js
+import { UpagJs } from 'upag-js';
+
+const upag = new UpagJs('pk_test_your_public_key');
+```
+</CodeGroup>

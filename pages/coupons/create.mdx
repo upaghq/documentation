@@ -1,0 +1,138 @@
+---
+title: 'Criar cupom'
+description: 'Cria um cupom de desconto percentual ou fixo'
+sidebarTitle: 'Criar'
+api: 'POST https://api.upag.io/v1/coupons'
+---
+
+Permissão: `coupon.write` (chave secreta; chave publicável não é aceita).
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/coupons \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "percentage",
+    "name": "Black Friday",
+    "code": "BLACK20",
+    "percentOff": 20,
+    "maxUses": 100,
+    "expiresAt": "2026-12-01T00:00:00.000Z",
+    "appliesTo": "all"
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const coupon = await upag.coupons.create({
+  type: 'percentage',
+  name: 'Black Friday',
+  code: 'BLACK20',
+  percentOff: 20,
+  maxUses: 100,
+  expiresAt: '2026-12-01T00:00:00.000Z',
+  appliesTo: 'all',
+});
+
+// Cupom fixo, só para produtos específicos
+await upag.coupons.create({
+  type: 'fixed',
+  name: 'R$ 10 off',
+  code: 'DEZ',
+  amountOff: 1000,
+  currency: 'brl',
+  appliesTo: 'specific',
+  appliesToProducts: ['0b9c1f3e-6a4d-4c1e-9d55-3f1f6a7c2e10'],
+});
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`.
+</Note>
+
+## Parâmetros
+
+<ParamField body="type" type="string" required>
+  `percentage` ou `fixed`.
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Nome interno (mínimo 3 caracteres).
+</ParamField>
+
+<ParamField body="code" type="string" required>
+  Código do cupom (mínimo 3 caracteres). Único por conta; guardado em maiúsculas.
+</ParamField>
+
+<ParamField body="appliesTo" type="string" required>
+  `all` ou `specific`.
+</ParamField>
+
+<ParamField body="appliesToProducts" type="string[]">
+  UUIDs de produtos. Obrigatório (não vazio) quando `appliesTo` é `specific`.
+</ParamField>
+
+<ParamField body="percentOff" type="integer">
+  Obrigatório quando `type` é `percentage`. Inteiro de 1 a 100.
+</ParamField>
+
+<ParamField body="amountOff" type="integer">
+  Obrigatório quando `type` é `fixed`. Valor em centavos (≥ 1).
+</ParamField>
+
+<ParamField body="currency" type="string">
+  Obrigatório quando `type` é `fixed`: `brl` ou `usd`.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Descrição (mínimo 3 caracteres). Padrão `null`.
+</ParamField>
+
+<ParamField body="active" type="boolean" default="true">
+  Se o cupom pode ser usado.
+</ParamField>
+
+<ParamField body="maxUses" type="integer">
+  Máximo de usos (≥ 1). Padrão `null` (ilimitado).
+</ParamField>
+
+<ParamField body="expiresAt" type="string (ISO 8601)">
+  Data de expiração. Padrão `null` (não expira).
+</ParamField>
+
+## Resposta
+
+`201 Created`
+
+```json Response
+{
+  "id": "a3c4d5e6-7f80-4912-8abc-0d1e2f3a4b5c",
+  "name": "Black Friday",
+  "description": null,
+  "active": true,
+  "type": "percentage",
+  "code": "BLACK20",
+  "currency": null,
+  "amountOff": null,
+  "percentOff": 20,
+  "uses": 0,
+  "maxUses": 100,
+  "appliesTo": "all",
+  "appliesToProducts": null,
+  "expiresAt": "2026-12-01T00:00:00.000Z",
+  "createdAt": "2026-03-18T11:10:00.000Z",
+  "updatedAt": "2026-03-18T11:10:00.000Z"
+}
+```
+
+- `400` (`COUPON_ALREADY_EXISTS`) — já existe um cupom com esse `code` na conta.
+- `422` — validação (por exemplo, `percentOff` fora de 1–100 ou `specific` sem produtos).
+
+Campos: [Referência de cupons](./reference).

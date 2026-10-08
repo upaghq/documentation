@@ -1,0 +1,106 @@
+---
+title: 'Criar preço'
+description: 'Cria um preço para um produto'
+sidebarTitle: 'Criar'
+api: 'POST https://api.upag.io/v1/products/{productId}/prices'
+---
+
+Permissão: `price.write` (chave secreta; chave publicável não é aceita).
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/products/0b9c1f3e-6a4d-4c1e-9d55-3f1f6a7c2e10/prices \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Mensal",
+    "amount": 4990,
+    "currency": "brl",
+    "billingType": "recurring",
+    "interval": "month",
+    "intervalCount": 1,
+    "metadata": { "tier": "pro" }
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+// upag.prices.create(productId, params)
+const price = await upag.prices.create('0b9c1f3e-6a4d-4c1e-9d55-3f1f6a7c2e10', {
+  name: 'Mensal',
+  amount: 4990,
+  currency: 'brl',
+  billingType: 'recurring',
+  interval: 'month',
+  intervalCount: 1,
+  metadata: { tier: 'pro' },
+});
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`.
+</Note>
+
+## Parâmetros
+
+<ParamField path="productId" type="string (uuid)" required>
+  ID do produto dono do preço.
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Nome do preço (mínimo 1 caractere).
+</ParamField>
+
+<ParamField body="amount" type="integer" required>
+  Valor em centavos (mínimo 100).
+</ParamField>
+
+<ParamField body="currency" type="string" required>
+  `brl` ou `usd`.
+</ParamField>
+
+<ParamField body="billingType" type="string" required>
+  `one_time` ou `recurring`.
+</ParamField>
+
+<ParamField body="interval" type="string">
+  `day`, `week`, `month` ou `year`. Obrigatório quando `billingType` é `recurring`.
+</ParamField>
+
+<ParamField body="intervalCount" type="integer">
+  Inteiro ≥ 1. Obrigatório quando `billingType` é `recurring`.
+</ParamField>
+
+<ParamField body="metadata" type="object" default="{}">
+  Até 10 chaves (até 20 caracteres cada); valores string (até 255) ou booleano.
+</ParamField>
+
+## Resposta
+
+`201 Created`
+
+```json Response
+{
+  "id": "5f2d7a90-3b1c-4e8a-8f6d-1c9e4b7a2d33",
+  "name": "Mensal",
+  "billingType": "recurring",
+  "interval": "month",
+  "intervalCount": 1,
+  "currency": "brl",
+  "amount": 4990,
+  "metadata": { "tier": "pro" },
+  "createdAt": "2026-03-18T11:05:00.000Z",
+  "updatedAt": "2026-03-18T11:05:00.000Z"
+}
+```
+
+- `404` (`PRODUCT_NOT_FOUND`) — produto inexistente ou de outra conta.
+- `422` — validação (por exemplo, preço recorrente sem `interval` ou `intervalCount`, ou `amount` abaixo de 100).
+
+Campos: [Referência de preços](./reference).

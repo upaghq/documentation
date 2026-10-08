@@ -1,43 +1,46 @@
-# Mintlify Starter Kit
+# Upag Documentation
 
-Use the starter kit to get your docs deployed and ready to customize.
+Documentação pública da API Upag (Mintlify, pt-BR): uma única API para Pix, cartão com 3D Secure, checkout, assinaturas, transferências, subcontas e webhooks, com os SDKs [`upag`](https://www.npmjs.com/package/upag) (Node.js) e [`upag-js`](https://www.npmjs.com/package/upag-js) (browser).
 
-Click the green **Use this template** button at the top of this repo to copy the Mintlify starter kit. The starter kit contains examples with
+- Produção: `https://api.upag.io/v1`
+- Sandbox: `https://api.upag.dev/v1` (chaves `sk_test_` / `pk_test_`)
 
-- Guide pages
-- Navigation
-- Customizations
-- API reference pages
-- Use of popular components
+## Estrutura
 
-**[Follow the full quickstart guide](https://starter.mintlify.com/quickstart)**
+```
+docs.json          navegação (abas Guias, Referência, Webhooks, SDK, Simulador) e redirects
+pages/guides/      quickstart, autenticação, convenções, erros e fluxos
+pages/<recurso>/   referência por recurso (reference, create, list, get, ...)
+pages/webhooks/    visão geral, segurança, endpoints e payloads
+pages/sdk/         SDKs upag e upag-js
+pages/simulator    cartões de teste do sandbox
+llm.txt            índice para LLMs
+```
 
-## Development
+Os endpoints têm exemplos em cURL e no SDK. A fonte da verdade é o código da API (`apps/api/src/entrypoints/api` no repositório `pix-api`) e os SDKs `upag-node` e `upag-js`.
 
-Install the [Mintlify CLI](https://www.npmjs.com/package/mint) to preview your documentation changes locally. To install, use the following command:
+## Desenvolvimento
+
+Instale a [Mintlify CLI](https://www.npmjs.com/package/mint) para visualizar as alterações:
 
 ```
 npm i -g mint
 ```
 
-Run the following command at the root of your documentation, where your `docs.json` is located:
+Na raiz (onde está o `docs.json`):
 
 ```
 mint dev
 ```
 
-View your local preview at `http://localhost:3000`.
+A prévia fica em `http://localhost:3000`. Para checar links quebrados: `mint broken-links`.
 
-## Publishing changes
+## Publicação
 
-Install our GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app) to propagate changes from your repo to your deployment. Changes are deployed to production automatically after pushing to the default branch.
+Com o GitHub app da Mintlify instalado, as alterações na branch padrão são publicadas automaticamente.
 
-## Need help?
+## Ajuda
 
-### Troubleshooting
-
-- If your dev environment isn't running: Run `mint update` to ensure you have the most recent version of the CLI.
-- If a page loads as a 404: Make sure you are running in a folder with a valid `docs.json`.
-
-### Resources
-- [Mintlify documentation](https://mintlify.com/docs)
+- Se o ambiente não subir, rode `mint update`.
+- Se uma página retornar 404, confirme que está na pasta com um `docs.json` válido.
+- [Documentação da Mintlify](https://mintlify.com/docs)

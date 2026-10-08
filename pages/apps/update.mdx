@@ -1,0 +1,92 @@
+---
+title: 'Atualizar app'
+description: 'Atualiza nome, configuração, ativação ou produtos do app'
+sidebarTitle: 'Atualizar'
+api: 'PATCH https://api.upag.io/v1/apps/{appId}'
+---
+
+Atualização parcial. `config` é **mesclada** à configuração guardada; um segredo reenviado mascarado (como veio na resposta) é ignorado e o valor real é mantido.
+
+Permissão: `app.write` (chave secreta).
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X PATCH https://api.upag.dev/v1/apps/b7c8d9e0-f1a2-4b3c-8d4e-5f6a7b8c9d01 \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Meta Pixel (principal)",
+    "active": false
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const app = await upag.apps.update('b7c8d9e0-f1a2-4b3c-8d4e-5f6a7b8c9d01', {
+  name: 'Meta Pixel (principal)',
+  active: false,
+});
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`.
+</Note>
+
+## Parâmetros
+
+<ParamField path="appId" type="string (uuid)" required>
+  ID do app.
+</ParamField>
+
+<ParamField body="name" type="string">
+  Novo nome (mínimo 3 caracteres).
+</ParamField>
+
+<ParamField body="provider" type="string">
+  Troca o provedor (`meta`, `spedy`, `utmify`, `trackup`). Não é possível trocar para `shopify`, e a conta não pode ter outro app do provedor de destino. `type` não é alterável.
+</ParamField>
+
+<ParamField body="config" type="object">
+  Chaves a alterar (veja [Criar app](./create)).
+</ParamField>
+
+<ParamField body="active" type="boolean">
+  Liga ou desliga o app.
+</ParamField>
+
+<ParamField body="appliesTo" type="string">
+  `all` ou `specific`. Ao enviar `specific`, envie também `appliesToProducts` não vazio.
+</ParamField>
+
+<ParamField body="appliesToProducts" type="string[] | null">
+  UUIDs de produtos.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "id": "b7c8d9e0-f1a2-4b3c-8d4e-5f6a7b8c9d01",
+  "type": "integration",
+  "provider": "meta",
+  "scope": "public",
+  "name": "Meta Pixel (principal)",
+  "config": { "pixelId": "123456789", "accessToken": "********oken" },
+  "active": false,
+  "appliesTo": "all",
+  "appliesToProducts": null,
+  "createdAt": "2026-03-18T11:30:00.000Z",
+  "updatedAt": "2026-03-18T12:30:00.000Z"
+}
+```
+
+- `404` (`APP_NOT_FOUND`).
+- `400` — `APP_ALREADY_EXISTS` (provedor de destino já em uso) ou `APP_SHOPIFY_NOT_SUPPORTED`.

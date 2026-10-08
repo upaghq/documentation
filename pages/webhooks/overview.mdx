@@ -1,0 +1,232 @@
+---
+title: 'Webhooks'
+description: 'Eventos da API Upag, cadastro via API, entrega e payloads'
+sidebarTitle: 'Visão geral'
+boost: 2
+keywords: ['webhooks', 'eventos', 'charge.paid', 'transfer.completed', 'hmac', 'X-Webhook-Signature']
+---
+
+Registre URLs para receber eventos de cobranças, clientes, transferências, estornos, contestações, faturas, assinaturas e sessões de checkout. Cadastre inscrições pela API ([Criar webhook](./create)); falhas de entrega aparecem em [Logs de entrega](../webhook-logs/list).
+
+## Montagem básica
+
+1. Exponha uma rota `POST` (ex.: `/webhooks/upag`) com TLS.
+2. Crie o webhook com `POST /v1/webhooks`, informando `url` e `events`, e guarde o `secret` (`whsec_...`).
+3. Valide a assinatura sobre o corpo bruto ([Verificação e segurança](./security)), trate o JSON e responda **2xx**.
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const webhook = await upag.webhooks.create({
+  url: 'https://example.com/webhooks/upag',
+  events: ['charge.paid', 'transfer.completed'],
+});
+
+console.log(webhook.secret); // whsec_...
+```
+
+## Sandbox e produção
+
+Use `sk_test_...` contra `https://api.upag.dev/v1` e `sk_live_...` contra `https://api.upag.io/v1`. Cadastre webhooks separados em cada ambiente para não processar evento de teste como produção.
+
+## Envelope
+
+Cada entrega é um `POST` com corpo JSON:
+
+```json
+{
+  "id": "880e8400-e29b-41d4-a716-446655440000",
+  "event": "charge.paid",
+  "createdAt": "2026-03-18T12:05:00.000Z",
+  "data": { }
+}
+```
+
+| Campo | Uso |
+| ----- | --- |
+| `id` | UUID desta entrega (idempotência) |
+| `event` | Nome do evento (tabelas abaixo) |
+| `createdAt` | ISO 8601 do momento do envio |
+| `data` | Recurso serializado como a API o retorna; entidades relacionadas vêm como id, nunca expandidas |
+
+Headers enviados em cada entrega:
+
+| Header | Valor |
+| ------ | ----- |
+| `Content-Type` | `application/json` |
+| `X-Webhook-Id` | Mesmo valor de `id` no corpo |
+| `X-Webhook-Event` | Mesmo valor de `event` no corpo |
+| `X-Webhook-Signature` | `sha256=<hex>` — ver [Verificação e segurança](./security) |
+
+Os `headers` definidos no cadastro do webhook são aplicados por último: um header customizado com um desses nomes **sobrescreve** o nosso. Use nomes distintos.
+
+`data` é um retrato do recurso no instante do evento, não uma leitura atual. Em `charge.paid`, por exemplo, `status` já é `paid`, mas `splits` ainda pode vir vazio; consulte a [cobrança](../charges/get) quando precisar do estado atual.
+
+## Assinar eventos
+
+Informe em `events` ao menos um evento ao [criar](./create) ou [atualizar](./update) o webhook. Um webhook só recebe os eventos listados e enquanto `active` for `true`. Um valor fora da lista abaixo é rejeitado com erro de validação.
+
+## Eventos
+
+Uma mudança de status dispara **dois** eventos: o específico e o `*.updated` correspondente (por exemplo `charge.paid` e `charge.updated`). Assine só um deles, a menos que queira tratar os dois.
+
+### Cobranças
+
+| Evento | Quando |
+| ------ | ------ |
+| `charge.created` | Cobrança criada |
+| `charge.paid` | Cobrança paga |
+| `charge.expired` | Cobrança expirou sem pagamento |
+| `charge.refunded` | Cobrança estornada por completo |
+| `charge.partially_refunded` | Estorno parcial |
+| `charge.failed` | Cartão: pagamento recusado ou captura falhou |
+| `charge.in_review` | Cartão: autorizada e retida para análise antifraude |
+| `charge.chargeback` | Cartão: chargeback aberto pelo portador |
+| `charge.updated` | Qualquer mudança de status, junto do evento específico |
+
+`data`: [Payload cobrança](./payload-charge).
+
+### Clientes
+
+| Evento | Quando |
+| ------ | ------ |
+| `customer.created` | Cliente criado (inclui criação inline numa cobrança) |
+| `customer.updated` | Cliente atualizado |
+
+`data`: [Payload cliente](./payload-customer).
+
+### Transferências
+
+| Evento | Quando |
+| ------ | ------ |
+| `transfer.created` | Transferência criada, em qualquer direção |
+| `transfer.processing` | Pix enviado ao provedor, aguardando liquidação |
+| `transfer.completed` | Transferência liquidada |
+| `transfer.failed` | Transferência rejeitada pelo provedor |
+| `transfer.updated` | Qualquer mudança de status, junto do evento específico |
+
+`data`: [Payload transferência](./payload-transfer).
+
+<Note>
+  Um Pix recebido direto numa das suas chaves, sem cobrança, vira uma transferência com `direction: "in"`: dispara `transfer.created`, `transfer.completed` e `transfer.updated` em sequência (sem `transfer.processing`). Só o Pix que quita uma cobrança sua dispara `charge.paid`. Para detectar entrada de dinheiro, assine também `transfer.completed`.
+</Note>
+
+### Estornos
+
+| Evento | Quando |
+| ------ | ------ |
+| `refund.created` | Estorno criado |
+| `refund.processing` | Estorno aceito pelo provedor, aguardando liquidação |
+| `refund.completed` | Estorno liquidado |
+| `refund.failed` | Estorno rejeitado; o valor reservado é liberado |
+| `refund.updated` | Qualquer mudança de status, junto do evento específico |
+
+`data`: [Payload estorno](./payload-refund).
+
+### Contestações
+
+| Evento | Quando |
+| ------ | ------ |
+| `dispute.created` | Contestação aberta |
+| `dispute.resolved` | Contestação finalizada (`won` ou `lost`) |
+| `dispute.updated` | Qualquer mudança de status, junto do evento específico |
+
+`data`: [Payload contestação](./payload-dispute).
+
+### Faturas
+
+| Evento | Quando |
+| ------ | ------ |
+| `invoice.created` | Fatura criada, já com seus itens |
+| `invoice.opened` | Fatura aberta |
+| `invoice.paid` | Fatura paga |
+| `invoice.voided` | Fatura anulada |
+| `invoice.uncollectible` | Fatura marcada como incobrável |
+| `invoice.payment_failed` | Tentativa de pagamento da fatura falhou |
+
+`data`: [Payload fatura](./payload-invoice).
+
+### Assinaturas
+
+| Evento | Quando |
+| ------ | ------ |
+| `subscription.created` | Assinatura criada (seguido de `subscription.incomplete`) |
+| `subscription.active` | Assinatura ativa |
+| `subscription.trialing` | Assinatura em período de teste |
+| `subscription.trial_ending` | Faltam 3 dias para o fim do teste; enviado uma vez por teste |
+| `subscription.past_due` | Assinatura em atraso |
+| `subscription.incomplete` | Assinatura incompleta |
+| `subscription.paused` | Assinatura pausada |
+| `subscription.canceled` | Assinatura cancelada |
+| `subscription.void` | Assinatura anulada |
+
+`data`: [Payload assinatura](./payload-subscription).
+
+### Sessões de checkout
+
+| Evento | Quando |
+| ------ | ------ |
+| `checkout-session.created` | Sessão criada |
+| `checkout-session.completed` | Pagador concluiu o checkout |
+| `checkout-session.expired` | Sessão expirou |
+
+`data`: [Payload checkout](./payload-checkout).
+
+<Warning>
+  A API aceita em `events` alguns nomes que **não são emitidos hoje**: `charge.pending`, `invoice.updated`, `invoice.drafted`, `subscription.updated`, `checkout-session.opened`, `checkout-session.updated`, além dos prefixos legados `payment.*`, `product.*` e `price.*`. Inscrever-se neles não gera entregas. Não dependa deles.
+</Warning>
+
+## Entrega e novas tentativas
+
+- Cada evento gera **uma tentativa** de `POST` por webhook ativo inscrito. Não há retentativa automática.
+- Qualquer status **2xx** é sucesso. Outro status, timeout ou falha de conexão grava a tentativa como falha no [log de entrega](../webhook-logs/list).
+- Reenvie uma tentativa falha com [Reprocessar log](../webhook-logs/reprocess). O reenvio usa o mesmo `id` e o mesmo corpo, assinado de novo com o `secret` atual, e grava um novo log.
+- Entregas são independentes: **não há garantia de ordem** entre eventos. Use `updatedAt` em `data` para descartar retratos mais antigos.
+
+## Idempotência
+
+Deduplique por `id` (ou pelo header `X-Webhook-Id`) antes de qualquer efeito colateral. Um reenvio reaproveita o `id` original.
+
+- Devolva **2xx** só depois de persistir ou enfileirar o trabalho; handlers lentos viram entregas falhas.
+- Campos novos podem aparecer em `data` sem aviso: leia só o que você usa.
+
+```javascript
+const deliveryId = body.id;
+if (await processed.has(deliveryId)) return res.sendStatus(200);
+await enqueue(body);
+await processed.add(deliveryId);
+return res.sendStatus(200);
+```
+
+## Referência de payloads
+
+<CardGroup cols={3}>
+  <Card title="Cobrança" icon="qrcode" href="./payload-charge">
+    Eventos `charge.*`.
+  </Card>
+  <Card title="Transferência" icon="arrow-right-arrow-left" href="./payload-transfer">
+    Eventos `transfer.*`.
+  </Card>
+  <Card title="Cliente" icon="user" href="./payload-customer">
+    Eventos `customer.*`.
+  </Card>
+  <Card title="Estorno" icon="rotate-left" href="./payload-refund">
+    Eventos `refund.*`.
+  </Card>
+  <Card title="Contestação" icon="gavel" href="./payload-dispute">
+    Eventos `dispute.*`.
+  </Card>
+  <Card title="Fatura" icon="file-invoice" href="./payload-invoice">
+    Eventos `invoice.*`.
+  </Card>
+  <Card title="Assinatura" icon="repeat" href="./payload-subscription">
+    Eventos `subscription.*`.
+  </Card>
+  <Card title="Checkout" icon="cart-shopping" href="./payload-checkout">
+    Eventos `checkout-session.*`.
+  </Card>
+</CardGroup>
+
+Objeto webhook na API: [Referência](./reference). Validação no SDK: [SDK servidor](../sdk/server).

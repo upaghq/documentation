@@ -1,0 +1,58 @@
+---
+title: 'Payload contestação'
+description: 'Campo data nos eventos dispute.*'
+icon: 'gavel'
+sidebarTitle: 'Contestação'
+---
+
+Eventos: `dispute.created`, `dispute.resolved` e `dispute.updated`.
+
+`data` é a contestação (Pix MED), no formato de evento:
+
+```json
+{
+  "id": "880e8400-e29b-41d4-a716-446655440000",
+  "event": "dispute.created",
+  "createdAt": "2026-03-18T13:00:00.123Z",
+  "data": {
+    "id": "dd1e8400-e29b-41d4-a716-446655440000",
+    "type": "med",
+    "direction": "incoming",
+    "status": "needs_response",
+    "reason": "fraudulent",
+    "description": "Pagamento não reconhecido",
+    "endToEndId": "E12345678202603181200000000000000",
+    "protocolId": null,
+    "amount": 15000,
+    "counterparty": {
+      "name": "João Pagador",
+      "taxNumber": "52998224725"
+    },
+    "responseDeadline": null,
+    "evidenceDeadlineAt": "2026-03-28T13:00:00.000Z",
+    "createdAt": "2026-03-18T13:00:00.000Z",
+    "updatedAt": "2026-03-18T13:00:00.000Z"
+  }
+}
+```
+
+## Campos
+
+| Campo | Tipo | Descrição |
+| ----- | ---- | --------- |
+| `id` | `string (uuid)` | Contestação |
+| `type` | `string` | `med` (Mecanismo Especial de Devolução do Pix) |
+| `direction` | `string` | `incoming` (aberta contra você) ou `outgoing` (aberta por você) |
+| `status` | `string` | `needs_response`, `under_review`, `won` ou `lost` |
+| `reason` | `string` | `scam`, `fraudulent_access`, `other`, `coercion`, `unknown`, `account_takeover`, `fraudulent`, `product_not_received`, `product_unacceptable`, `duplicate` ou `subscription_canceled` |
+| `description` | `string` | Descrição da contestação |
+| `endToEndId` | `string` | Identificador fim a fim do Pix contestado |
+| `protocolId` | `string \| null` | Protocolo, quando informado |
+| `amount` | `integer` | Valor em centavos |
+| `counterparty` | `object` | `name` e `taxNumber` da contraparte (ambos podem ser `null`) |
+| `responseDeadline` | `string \| null` | ISO 8601, prazo de resposta |
+| `evidenceDeadlineAt` | `string \| null` | ISO 8601, prazo para enviar evidências |
+| `createdAt` | `string` | ISO 8601 |
+| `updatedAt` | `string` | ISO 8601 |
+
+`dispute.resolved` dispara quando o status passa a `won` ou `lost`, junto de `dispute.updated`.

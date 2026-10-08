@@ -1,0 +1,194 @@
+---
+title: 'Checkout hospedado'
+description: 'Crie um link de pagamento, abra a sessão do pagador e confirme com Pix ou cartão'
+icon: 'cart-shopping'
+---
+
+Use quando o pagador paga numa página de checkout, sem você tokenizar cartão no seu servidor. O fluxo parte de um **link de pagamento**: ele guarda o que você vende e, a cada visita, vira uma **sessão de checkout** com um `clientSecret`, a única credencial que o navegador usa para ler e pagar aquela sessão.
+
+```mermaid
+sequenceDiagram
+  participant Loja
+  participant API as Upag API
+  participant Pagador
+  Loja->>API: POST /payment-links
+  API-->>Loja: url (…/buy/{code})
+  Loja->>Pagador: envia o link
+  Pagador->>API: POST /checkout/payment-links/{code}/sessions
+  API-->>Pagador: sessão + clientSecret
+  Pagador->>API: POST /checkout/sessions/{id}/confirm
+  API-->>Pagador: charge (QR code Pix ou resultado do cartão)
+  API-->>Loja: webhooks checkout-session.completed e charge.paid
+```
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`) com `sk_test_…` e `pk_test_…`. Em produção use `https://api.upag.io/v1` com `sk_live_…` e `pk_live_…`. Os SDKs escolhem o host pelo prefixo da chave.
+</Note>
+
+## 1. Criar o link de pagamento
+
+No servidor, com a chave secreta. Os preços vêm de [Produtos](../products/reference) e [Preços](../prices/reference) (valores em centavos).
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/payment-links \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Curso de Culinária",
+    "items": [
+      { "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61", "quantity": 1 }
+    ],
+    "paymentMethods": ["pix", "card"],
+    "successUrl": "https://exemplo.com.br/obrigado",
+    "cancelUrl": "https://exemplo.com.br/carrinho"
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const link = await upag.paymentLinks.create({
+  name: 'Curso de Culinária',
+  items: [{ price: '3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61', quantity: 1 }],
+  paymentMethods: ['pix', 'card'],
+  successUrl: 'https://exemplo.com.br/obrigado',
+  cancelUrl: 'https://exemplo.com.br/carrinho',
+});
+
+console.log(link.url);
+```
+</CodeGroup>
+
+O `url` do link tem a forma `…/buy/{code}`. O `code` (o último trecho) é o que o navegador usa para abrir a sessão:
+
+```javascript
+const code = new URL(link.url).pathname.split('/').pop();
+```
+
+Referência: [Criar link de pagamento](../payment-links/create). Para vender com teste grátis, veja [Teste grátis](./free-trial).
+
+## 2. Abrir a sessão no navegador
+
+Com o `upag-js` e **só a chave publicável**. Um link inativo responde `410` (`PAYMENT_LINK_INACTIVE`).
+
+```javascript upag-js
+import { UpagJs } from 'upag-js';
+
+const upag = new UpagJs('pk_test_your_public_key');
+
+const session = await upag.checkout.start(code, { utmSource: 'instagram' });
+const { id, clientSecret } = session;
+```
+
+Guarde `id` e `clientSecret` (só vem nesta resposta). Se você só quer levar o pagador à página hospedada, `await upag.checkout.redirectToCheckout(code)` abre a sessão e redireciona para `url`.
+
+A resposta já traz o que a página precisa: itens, `amount` em centavos, e as opções de parcelamento por método em `paymentMethods`. Para recarregar depois: `upag.checkout.retrieve(id, clientSecret)`. Referência: [Iniciar sessão](../checkout-sessions/start) e [Obter sessão (pagador)](../checkout-sessions/retrieve).
+
+## 3. Confirmar o pagamento
+
+### Pix
+
+```javascript upag-js
+const paid = await upag.checkout.confirm(id, clientSecret, {
+  customer: {
+    name: 'Maria Pagadora',
+    email: 'maria@example.com',
+    document: { type: 'cpf', number: '39053344705' },
+  },
+  charge: { method: 'pix' },
+});
+
+// Mostre o QR code / copia e cola
+console.log(paid.charge.pix.copyPaste, paid.charge.pix.expiresAt);
+```
+
+A sessão fica `open` até o Pix ser pago. Para atualizar a tela, consulte `upag.checkout.retrieve(id, clientSecret)` de tempos em tempos até `status === 'complete'` (o servidor também recebe os webhooks do passo 4).
+
+### Cartão
+
+Tokenize o cartão no navegador (o número nunca passa pelo seu servidor) e confirme com o `id`:
+
+```javascript upag-js
+const card = await upag.cards.create({
+  number: '4242424242424242',
+  expirationMonth: 12,
+  expirationYear: 2030,
+  cvv: '123',
+  holderName: 'Maria Pagadora',
+});
+
+const paid = await upag.checkout.confirm(id, clientSecret, {
+  customer: {
+    name: 'Maria Pagadora',
+    document: { type: 'cpf', number: '39053344705' },
+  },
+  charge: { method: 'card', card: card.id, installments: 1 },
+});
+
+if (paid.status === 'complete') {
+  window.location.href = paid.successUrl;
+} else if (paid.charge?.error) {
+  // recusado: a sessão segue open, deixe o pagador tentar de novo
+  console.log(paid.charge.error.message);
+}
+```
+
+O cartão responde na hora: aprovado, a sessão fica `complete`; recusado, continua `open` e dá para tentar de novo (a mesma fatura é paga outra vez, e o pagador pode trocar para Pix). Com 3D Secure habilitado (`session.account.threeDSecureEnabled`), abra antes a [sessão 3DS do checkout](../checkout-sessions/three-d-secure) e envie `threeDSecureSession` no `charge`. Veja [Cartão com 3DS](./card-3ds).
+
+Cupom: se o link tem `couponEnabled`, use `upag.checkout.applyCoupon(id, clientSecret, { code })` antes de confirmar ([Aplicar cupom](../checkout-sessions/apply-coupon)).
+
+Referência: [Confirmar sessão](../checkout-sessions/confirm).
+
+## 4. Receber os webhooks
+
+O redirect sozinho não prova que o pagamento foi feito: confirme no servidor pelos [webhooks](../webhooks/overview). Trate `checkout-session.completed` (a sessão foi paga) e, se quiser o detalhe do pagamento, `charge.paid` e `invoice.paid`. Numa compra com itens recorrentes, `subscription.active` também chega.
+
+```javascript Node.js SDK
+import express from 'express';
+import { Upag } from 'upag';
+
+const upag = new Upag(process.env.UPAG_SECRET_KEY);
+const app = express();
+
+app.post('/webhooks/upag', express.raw({ type: '*/*' }), async (req, res) => {
+  const valid = upag.webhooks.validateSignature(
+    req.body,
+    req.headers['x-webhook-signature'],
+    process.env.UPAG_WEBHOOK_SECRET,
+  );
+  if (!valid) return res.sendStatus(401);
+
+  const { id, event, data } = JSON.parse(req.body.toString('utf8'));
+  if (await alreadyProcessed(id)) return res.sendStatus(200);
+
+  if (event === 'checkout-session.completed') {
+    // data.id é a sessão. Para ler invoice e subscription, consulte GET /checkout/sessions/{id}
+    await markOrderAsPaid(data.id);
+  }
+
+  return res.sendStatus(200);
+});
+```
+
+Valide a assinatura e deduplique pelo `id` da entrega: [Segurança](../webhooks/security). Payloads: [checkout](../webhooks/payload-checkout), [cobrança](../webhooks/payload-charge) e [fatura](../webhooks/payload-invoice).
+
+## Pagar do seu servidor (sem página)
+
+Se você mesmo coleta os dados do pagador, pule o link: crie a sessão com a chave secreta ([Criar sessão](../checkout-sessions/create)) e pague com [Confirmar](../checkout-sessions/confirm), passando o UUID de um cliente ou os dados dele. A sessão criada assim não tem `clientSecret`.
+
+```javascript Node.js SDK
+const session = await upag.checkoutSessions.create({
+  items: [{ price: '3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61', quantity: 1 }],
+  paymentMethods: ['pix'],
+});
+
+const result = await upag.checkoutSessions.confirm(session.id, {
+  customer: '8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83',
+  charge: { method: 'pix' },
+});
+
+console.log(result.charge.pix.qrCode);
+```

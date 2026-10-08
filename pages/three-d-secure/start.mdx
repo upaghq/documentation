@@ -1,0 +1,81 @@
+---
+title: 'Iniciar sessão 3DS'
+description: 'Chamado pelo browser: entrega o necessário para autenticar o portador'
+sidebarTitle: 'Iniciar'
+api: 'POST https://api.upag.io/v1/3ds/sessions/start'
+---
+
+Endpoint **chamado pelo browser**. O `upag-js` o usa dentro de `threeDSecure.authenticate`; chame direto só se não usar o SDK.
+
+Autentica com **chave publicável** (`pk_…`) e é provado pelo `clientSecret` da sessão. Chave secreta é recusada. Não exige permissão.
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `pk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/3ds/sessions/start \
+  -H "Authorization: Bearer pk_test_your_public_key" \
+  -H "Content-Type: application/json" \
+  -d '{ "clientSecret": "4fJq8Wm2Xc7Nb1Rt5Yh9Lk3Vd0Ze6Sa7Xp2Qn9Rt5Yh1Lk3V" }'
+```
+
+```javascript upag-js
+import { UpagJs } from 'upag-js';
+
+const upag = new UpagJs('pk_test_your_public_key');
+
+// start e complete são chamados por authenticate()
+const { sessionId } = await upag.threeDSecure.authenticate(
+  { clientSecret },
+  { onStatusChange: (status) => console.log(status) },
+);
+
+// envie sessionId ao seu servidor, que o passa em threeDSecureSession na cobrança
+```
+</CodeGroup>
+
+O SDK Node.js não tem método para este endpoint: ele pertence ao browser.
+
+## Parâmetros
+
+<ParamField body="clientSecret" type="string" required>
+  O `clientSecret` devolvido na [criação da sessão](./create) (1 a 512 caracteres). Identifica a sessão: a chamada não leva ID.
+</ParamField>
+
+## Resposta
+
+`200 OK`. Enquanto a sessão precisa do browser, `nextAction` traz o necessário para a autenticação:
+
+```json Response
+{
+  "id": "9b7c1e52-3f0a-4d86-a1c4-6e2d8f35b790",
+  "status": "requires_action",
+  "nextAction": {
+    "type": "browser_authentication",
+    "token": "eyJhbGciOi...",
+    "environment": "sandbox",
+    "payload": { "...": "..." }
+  }
+}
+```
+
+`nextAction.token` é uma credencial de curta duração para o módulo de autenticação: trate como segredo. `payload` é opaco e deve ser repassado como veio.
+
+Se a sessão já está `completed`, a resposta traz `"nextAction": null`. Chamar `start` de novo enquanto a sessão aguarda é seguro (idempotente).
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `400` | `invalid_params` | Corpo malformado |
+| `401` | `unauthorized` | `clientSecret` desconhecido, substituído por um mais novo ou de outra conta |
+| `403` | — | Chave secreta usada neste endpoint (exige chave publicável) |
+| `404` | `not_found` | 3D Secure não está habilitado neste ambiente |
+| `409` | `invalid_session_state` | O estado da sessão não permite iniciar (ex.: `failed` ou `canceled`) |
+| `410` | `session_expired` | A sessão expirou |
+| `429` | `too_many_attempts` | Mais de 20 chamadas por minuto do mesmo IP |
+| `502` | `authentication_unavailable` | Não foi possível preparar a autenticação; tente de novo |

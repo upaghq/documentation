@@ -1,0 +1,94 @@
+---
+title: 'Criar produto'
+description: 'Cria um produto, opcionalmente com seu preço padrão'
+sidebarTitle: 'Criar'
+api: 'POST https://api.upag.io/v1/products'
+---
+
+Cria um produto da conta. Se `defaultPrice` for enviado, o preço é criado junto com o produto.
+
+Permissão: `product.write` (chave secreta; chave publicável não é aceita).
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/products \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Plano Pro",
+    "description": "Acesso completo à plataforma",
+    "image": "https://example.com/plano-pro.png",
+    "defaultPrice": {
+      "name": "Mensal",
+      "amount": 4990,
+      "currency": "brl",
+      "billingType": "recurring",
+      "interval": "month",
+      "intervalCount": 1
+    }
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const product = await upag.products.create({
+  name: 'Plano Pro',
+  description: 'Acesso completo à plataforma',
+  image: 'https://example.com/plano-pro.png',
+  defaultPrice: {
+    name: 'Mensal',
+    amount: 4990,
+    currency: 'brl',
+    billingType: 'recurring',
+    interval: 'month',
+    intervalCount: 1,
+  },
+});
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`.
+</Note>
+
+## Parâmetros
+
+<ParamField body="name" type="string" required>
+  Nome do produto (mínimo 1 caractere).
+</ParamField>
+
+<ParamField body="description" type="string" required>
+  Descrição (mínimo 1 caractere).
+</ParamField>
+
+<ParamField body="image" type="string">
+  URL da imagem.
+</ParamField>
+
+<ParamField body="defaultPrice" type="object">
+  Preço criado junto com o produto. Mesmos campos de [Criar preço](../prices/create), exceto `metadata`: `name`, `amount` (centavos, mínimo 100), `currency` (`brl` ou `usd`), `billingType` (`one_time` ou `recurring`) e, se recorrente, `interval` (`day`, `week`, `month`, `year`) e `intervalCount` (inteiro ≥ 1).
+</ParamField>
+
+## Resposta
+
+`201 Created`
+
+A resposta traz apenas o produto; o preço padrão é listado em [Listar preços](../prices/list).
+
+```json Response
+{
+  "id": "0b9c1f3e-6a4d-4c1e-9d55-3f1f6a7c2e10",
+  "name": "Plano Pro",
+  "description": "Acesso completo à plataforma",
+  "image": "https://example.com/plano-pro.png",
+  "createdAt": "2026-03-18T11:00:00.000Z",
+  "updatedAt": "2026-03-18T11:00:00.000Z"
+}
+```
+
+Corpo inválido retorna `422`. Campos: [Referência de produtos](./reference).

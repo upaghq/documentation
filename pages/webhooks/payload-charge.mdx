@@ -1,0 +1,101 @@
+---
+title: 'Payload cobrança'
+description: 'Campo data nos eventos charge.*'
+icon: 'qrcode'
+sidebarTitle: 'Cobrança'
+---
+
+Eventos: `charge.created`, `charge.paid`, `charge.expired`, `charge.refunded`, `charge.partially_refunded`, `charge.failed`, `charge.in_review`, `charge.chargeback` e `charge.updated`.
+
+`data` é a cobrança no formato de evento. Só o bloco do método da própria cobrança aparece: `pix` **ou** `card`. `customer` é sempre o id (UUID), nunca o objeto.
+
+## Pix
+
+Exemplo de `charge.paid`:
+
+```json
+{
+  "id": "880e8400-e29b-41d4-a716-446655440000",
+  "event": "charge.paid",
+  "createdAt": "2026-03-18T12:05:00.123Z",
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "type": "pix",
+    "status": "paid",
+    "amount": 9900,
+    "failureCode": null,
+    "description": "Pedido #10482",
+    "meta": { "order": "10482" },
+    "customer": "660e8400-e29b-41d4-a716-446655440001",
+    "pix": {
+      "reference": "tx-qr-1",
+      "qrCode": "00020126580014br.gov.bcb.pix...",
+      "expiresAt": "2026-03-19T11:50:00.000Z"
+    },
+    "splits": [],
+    "ipAddress": null,
+    "paidAt": "2026-03-18T12:05:00.000Z",
+    "createdAt": "2026-03-18T11:50:00.000Z",
+    "updatedAt": "2026-03-18T12:05:00.000Z"
+  }
+}
+```
+
+## Cartão
+
+Exemplo de `charge.failed`:
+
+```json
+{
+  "id": "990e8400-e29b-41d4-a716-446655440000",
+  "event": "charge.failed",
+  "createdAt": "2026-03-18T12:10:00.123Z",
+  "data": {
+    "id": "551e8400-e29b-41d4-a716-446655440000",
+    "type": "card",
+    "status": "failed",
+    "amount": 10000,
+    "failureCode": "card_declined",
+    "description": "Pedido #10483",
+    "meta": null,
+    "customer": "660e8400-e29b-41d4-a716-446655440001",
+    "card": {
+      "id": "aa1e8400-e29b-41d4-a716-446655440000",
+      "installments": 3,
+      "nsu": "123456",
+      "authorizationCode": null,
+      "acquirerStatusCode": "51"
+    },
+    "splits": [],
+    "ipAddress": "203.0.113.10",
+    "paidAt": null,
+    "createdAt": "2026-03-18T12:09:58.000Z",
+    "updatedAt": "2026-03-18T12:10:00.000Z"
+  }
+}
+```
+
+## Campos
+
+| Campo | Tipo | Descrição |
+| ----- | ---- | --------- |
+| `id` | `string (uuid)` | Cobrança |
+| `type` | `string` | `pix` ou `card` |
+| `status` | `string` | `pending`, `paid`, `expired`, `refunded`, `partially_refunded`, `failed`, `in_review` ou `chargeback` |
+| `amount` | `integer` | Valor em centavos (preço da cobrança, sem juros de parcelamento) |
+| `failureCode` | `string \| null` | Motivo da falha, em cobranças de cartão recusadas |
+| `description` | `string \| null` | Descrição |
+| `meta` | `object \| null` | Metadados enviados na criação |
+| `customer` | `string \| null` | Id do cliente |
+| `pix` | `object` | Só em `type: "pix"`: `reference`, `qrCode` (copia e cola), `expiresAt` |
+| `card` | `object` | Só em `type: "card"`: `id` (cartão), `installments`, `nsu`, `authorizationCode`, `acquirerStatusCode` |
+| `splits` | `array` | Repasses: `id`, `type` (`mdr` ou `account`), `status`, `amount`, `account` (só em `type: "account"`), `createdAt`, `updatedAt` |
+| `items` | `array` | Itens informativos, quando a cobrança os tem: `id`, `externalId`, `kind`, `sku`, `name`, `url`, `quantity`, `unitAmount`, `amount`, `createdAt` |
+| `ipAddress` | `string \| null` | IP do pagador |
+| `paidAt` | `string \| null` | ISO 8601 do pagamento |
+| `createdAt` | `string` | ISO 8601 |
+| `updatedAt` | `string` | ISO 8601 |
+
+O payload de evento não traz os campos de taxa (`mdr`, `interest`, `gross`, `net`). Consulte a [cobrança](../charges/get) quando precisar deles.
+
+Em `charge.paid`, `splits` pode vir vazio: os repasses são liquidados depois do evento. Detalhes da cobrança: [Referência de cobranças](../charges/reference).

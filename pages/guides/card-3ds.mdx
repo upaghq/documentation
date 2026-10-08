@@ -1,0 +1,185 @@
+---
+title: 'Cartão com 3DS'
+description: 'Tokenize o cartão no browser, autentique com 3D Secure e crie a cobrança de cartão no servidor.'
+icon: 'credit-card'
+keywords: ['upag', 'cartão', '3ds', '3d secure', 'tokenização', 'upag-js']
+---
+
+O número do cartão nunca precisa passar pelo seu servidor. O browser tokeniza o cartão com a chave publicável, seu servidor abre uma sessão 3D Secure com a chave secreta e cria a cobrança com o `id` do cartão.
+
+```mermaid
+sequenceDiagram
+  participant Browser as Browser (upag-js)
+  participant Server as Seu servidor
+  participant API as Upag API
+  Browser->>API: POST /cards (pk_)
+  API-->>Browser: card.id
+  Browser->>Server: card.id
+  Server->>API: POST /3ds/sessions (sk_)
+  API-->>Server: session.id, clientSecret
+  Server->>Browser: clientSecret
+  Browser->>API: threeDSecure.authenticate({ clientSecret })
+  API-->>Browser: sessionId
+  Browser->>Server: sessionId
+  Server->>API: POST /charges (card + threeDSecureSession)
+  API-->>Server: charge (paid | in_review | failed)
+```
+
+<Note>
+  Exemplos no sandbox (`https://api.upag.dev/v1`) com `sk_test_` e `pk_test_`. Em produção use `https://api.upag.io/v1` com `sk_live_` e `pk_live_`. Para testar cenários de aprovação, recusa e desafio, veja o [Simulador](../simulator).
+</Note>
+
+## 1. Tokenizar no browser
+
+<CodeGroup>
+```javascript upag-js
+import { UpagJs } from 'upag-js';
+
+const upag = new UpagJs('pk_test_your_public_key');
+
+const card = await upag.cards.create(
+  {
+    number: '4242424242424242',
+    expirationMonth: 12,
+    expirationYear: 2030,
+    cvv: '123',
+    holderName: 'Maria Silva',
+  },
+  { idempotencyKey: 'checkout-10482-card' },
+);
+
+// envie card.id ao seu servidor
+```
+
+```bash cURL
+curl -X POST https://api.upag.dev/v1/cards \
+  -H "Authorization: Bearer pk_test_your_public_key" \
+  -H "Idempotency-Key: checkout-10482-card" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "number": "4242424242424242",
+    "expirationMonth": 12,
+    "expirationYear": 2030,
+    "cvv": "123",
+    "holderName": "Maria Silva"
+  }'
+```
+</CodeGroup>
+
+Número e CVV nunca voltam na resposta. Referência: [Criar cartão](../cards/create).
+
+## 2. Abrir a sessão 3DS no servidor
+
+O `amount` deve ser exatamente o valor da cobrança (centavos), e `installments` o mesmo número de parcelas.
+
+<CodeGroup>
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const session = await upag.threeDSecure.createSession(
+  {
+    amount: 10000,
+    installments: 3,
+    card: cardId,
+    customer: customerId,
+  },
+  { idempotencyKey: 'order-10482' },
+);
+
+// devolva session.clientSecret ao browser
+```
+
+```bash cURL
+curl -X POST https://api.upag.dev/v1/3ds/sessions \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Idempotency-Key: order-10482" \
+  -H "Content-Type: application/json" \
+  -d '{ "amount": 10000, "installments": 3, "card": "<card id>", "customer": "<customer id>" }'
+```
+</CodeGroup>
+
+O cliente precisa ter `email` e `phone`. Referência: [Criar sessão 3DS](../three-d-secure/create).
+
+## 3. Autenticar no browser
+
+O `upag-js` coleta os dados do dispositivo e, se o banco exigir, abre a janela de desafio.
+
+```javascript upag-js
+try {
+  const { sessionId } = await upag.threeDSecure.authenticate(
+    { clientSecret },
+    { onStatusChange: (status) => console.log(status) },
+  );
+  // envie sessionId ao seu servidor
+} catch (error) {
+  if (error.code === 'authentication_canceled') {
+    // o comprador fechou a janela do banco
+  }
+}
+```
+
+Chame `authenticate` apenas no browser (não em SSR) e uma autenticação por vez. Códigos de erro em [SDK browser](../sdk/frontend#erros).
+
+## 4. Criar a cobrança
+
+<CodeGroup>
+```javascript Node.js SDK
+const charge = await upag.charges.create({
+  type: 'card',
+  amount: 10000,
+  installments: 3,
+  card: cardId,
+  customer: customerId,
+  threeDSecureSession: sessionId,
+  ipAddress: '203.0.113.10',
+  meta: { session_id: deviceSessionId },
+});
+```
+
+```bash cURL
+curl -X POST https://api.upag.dev/v1/charges \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "card",
+    "amount": 10000,
+    "installments": 3,
+    "card": "<card id>",
+    "customer": "<customer id>",
+    "threeDSecureSession": "<session id>"
+  }'
+```
+</CodeGroup>
+
+A cobrança é processada na hora: `status` volta `paid`, `in_review` ou `failed` (com `failureCode`). A sessão autentica um cartão para um valor e um número de parcelas, e só pode ser usada por **uma** cobrança.
+
+Para antifraude, envie o IP do pagador (`ipAddress`) e o identificador de dispositivo gerado por `upag.antifraud.sessionId()` em `meta.session_id`. Gere um novo a cada tentativa (`upag.antifraud.rotate()`).
+
+## Limites
+
+| Endpoint | Limite |
+| -------- | ------ |
+| `POST /3ds/sessions` | 100 por minuto, por conta |
+| `POST /3ds/sessions/start` e `/complete` (browser) | 20 por minuto, por IP |
+| `POST /cards` com chave publicável | 10 por minuto por IP, 200 por hora por conta |
+
+Ao estourar, a API responde `429 too_many_attempts` com `Retry-After`.
+
+## Referências
+
+<CardGroup cols={2}>
+  <Card title="Cobranças" icon="money-bill" href="../charges/create">
+    Criar cobrança de cartão.
+  </Card>
+  <Card title="3D Secure" icon="shield" href="../three-d-secure/reference">
+    Sessões e estados.
+  </Card>
+  <Card title="SDK browser" icon="browser" href="../sdk/frontend">
+    `cards`, `threeDSecure` e `antifraud`.
+  </Card>
+  <Card title="Simulador" icon="flask" href="../simulator">
+    Cartões de teste.
+  </Card>
+</CardGroup>

@@ -1,0 +1,81 @@
+---
+title: 'Próxima fatura'
+description: 'Pré-visualiza a fatura que a assinatura gera na próxima renovação'
+sidebarTitle: 'Próxima fatura'
+api: 'GET https://api.upag.io/v1/invoices/upcoming'
+---
+
+Mostra quanto e o que a [assinatura](../subscriptions/reference) vai cobrar quando o período atual (ou o período de teste) terminar. É só uma prévia: nada é criado nem salvo.
+
+Permissão: `invoice.read`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -G https://api.upag.dev/v1/invoices/upcoming \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -d "subscription=9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const preview = await upag.invoices.upcoming({
+  subscription: '9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36',
+});
+```
+</CodeGroup>
+
+## Query
+
+<ParamField query="subscription" type="string (uuid)" required>
+  ID da assinatura.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "subscription": "9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36",
+  "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "currency": "brl",
+  "periodStart": "2026-11-07T19:00:00.000Z",
+  "periodEnd": "2026-12-07T19:00:00.000Z",
+  "amountDue": 9900,
+  "items": [
+    {
+      "product": "7d2b5e90-1c34-4a68-b9f7-0e3a6c8d1f25",
+      "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61",
+      "name": "Plano mensal",
+      "amount": 9900,
+      "quantity": 1,
+      "totalAmount": 9900
+    }
+  ]
+}
+```
+
+| Campo | Descrição |
+| ----- | --------- |
+| `periodStart` | Início do período cobrado: o fim do teste (`trialing`) ou o fim do período atual |
+| `periodEnd` | Fim desse período, somando o intervalo da assinatura a `periodStart` |
+| `amountDue` | Total em centavos: soma dos itens da assinatura |
+| `items[]` | `product`, `price`, `name`, `amount` (unitário), `quantity` e `totalAmount`, em centavos |
+
+A prévia usa os itens atuais da assinatura; mudanças [agendadas](../subscriptions/scheduled-changes) para o fim do período não entram.
+
+## Erros
+
+| Status | Código | Quando |
+| ------ | ------ | ------ |
+| `404` | `SUBSCRIPTION_NOT_FOUND` | A assinatura não existe ou é de outra conta |
+| `400` | `SUBSCRIPTION_NO_UPCOMING_INVOICE` | A assinatura não vai renovar: está `canceled`, `incomplete`, `paused` ou `void`, ou tem `cancelAtPeriodEnd: true` |

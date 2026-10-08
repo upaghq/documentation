@@ -1,0 +1,105 @@
+---
+title: 'Simulador'
+description: 'Cartões de teste para simular aprovação, recusa, revisão e desafio 3D Secure no sandbox da API Upag.'
+icon: 'flask'
+boost: 0.5
+keywords: ['upag', 'simulador', 'sandbox', 'cartão de teste', '3ds']
+---
+
+O sandbox (`https://api.upag.dev/v1`, com chaves `sk_test_` e `pk_test_`) permite exercitar os fluxos de cartão sem cobrança real. O resultado é decidido pelo **número do cartão**: use um dos cartões abaixo, com validade futura e qualquer CVV de 3 dígitos.
+
+<Note>
+  O simulador existe só no sandbox. Em produção (`https://api.upag.io/v1`) os cartões abaixo não têm efeito e as transações seguem a adquirente real.
+</Note>
+
+## Cartões de teste
+
+Todos são Visa com dígito verificador válido, então passam pela validação da [tokenização](./cards/create). Use o número ao criar o cartão e depois crie a [cobrança](./charges/create) normalmente.
+
+| Número | Cenário | Resultado da cobrança |
+| ------ | ------- | --------------------- |
+| `4242424242424242` | Aprovado | `status: "paid"` |
+| `4000000000000002` | Recusa: transação não aprovada pelo banco | `status: "failed"`, `failureCode: "card_declined"` |
+| `4000000000000127` | Recusa: dados incorretos do cartão | `status: "failed"`, `failureCode: "card_invalid"` |
+| `4000000000009995` | Recusa: saldo insuficiente | `status: "failed"`, `failureCode: "insufficient_funds"` |
+| `4000000000000119` | Recusa: erro bancário genérico | `status: "failed"`, `failureCode: "card_declined"` |
+| `4000000000009987` | Em revisão (análise antifraude) | `status: "in_review"` |
+| `4000000000009979` | Autorizado sem captura | `status: "in_review"` (reservado no cartão, ainda não capturado) |
+| `4000000000000069` | Falha na adquirente | `status: "failed"`, sem código do emissor: `failureCode: "processing_error"` |
+| `4000002760003184` | Força desafio 3D Secure | Veja [3D Secure](#3d-secure) |
+
+Qualquer outro cartão válido é aprovado. O código bruto do emissor fica em `card.acquirerStatusCode`. A lista completa de códigos está em [Códigos de falha](./charges/reference#códigos-de-falha).
+
+<CodeGroup>
+```bash cURL
+# 1. tokenizar o cartão de saldo insuficiente
+curl -X POST https://api.upag.dev/v1/cards \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "number": "4000000000009995",
+    "expirationMonth": 12,
+    "expirationYear": 2032,
+    "cvv": "123",
+    "holderName": "Maria Silva"
+  }'
+
+# 2. cobrar com o id retornado
+curl -X POST https://api.upag.dev/v1/charges \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "card",
+    "amount": 10000,
+    "card": "<card id>",
+    "customer": "<customer id>"
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const card = await upag.cards.create({
+  number: '4000000000009995',
+  expirationMonth: 12,
+  expirationYear: 2032,
+  cvv: '123',
+  holderName: 'Maria Silva',
+});
+
+const charge = await upag.charges.create({
+  type: 'card',
+  amount: 10000,
+  card: card.id,
+  customer: '<customer id>',
+});
+
+console.log(charge.status, charge.failureCode); // failed insufficient_funds
+```
+</CodeGroup>
+
+Recusa não é erro HTTP: a resposta é `201` com `status: "failed"`. Você também recebe o webhook correspondente ([payload de cobrança](./webhooks/payload-charge)).
+
+## 3D Secure
+
+O cartão `4000002760003184` faz o [3D Secure](./three-d-secure/reference) do sandbox **sempre exigir o desafio**, para você testar a janela do banco no `upag-js` (`threeDSecure.authenticate`). Crie a sessão com esse cartão:
+
+```javascript Node.js SDK
+const session = await upag.threeDSecure.createSession({
+  amount: 10000,
+  card: challengeCard.id, // 4000002760003184
+  customer: '<customer id>',
+});
+```
+
+Os demais cartões seguem o fluxo normal de autenticação do ambiente de teste. Veja o passo a passo em [Cartão com 3DS](./guides/card-3ds).
+
+## Pix
+
+Cobranças Pix e transferências no sandbox não têm cartões ou valores mágicos: a cobrança nasce `pending` e muda de status conforme o provedor do ambiente de teste. Use [webhooks](./webhooks/overview) (`charge.paid`, `charge.expired`, `transfer.completed`, `transfer.failed`) para acompanhar o resultado em vez de depender de um valor específico.
+
+## Checkout e assinaturas
+
+Links de pagamento, sessões de checkout, faturas e assinaturas usam as mesmas regras: ao pagar com cartão em modo de teste, o cenário vem do número do cartão da tabela acima.

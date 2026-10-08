@@ -1,38 +1,39 @@
 # Upag Documentation
 
-> Dois produtos no mesmo site Mintlify: **Billing** (gateway) e **Core** (conta digital / banking API). Índice para LLMs: `/llm.txt` (link no header da docs).
+> Uma única API Upag: Pix, cartão com 3D Secure, checkout, assinaturas, transferências, subcontas e webhooks. Índice para LLMs: `/llm.txt` (link no header da docs).
 
-## Hosts
+## Hosts e autenticação
 
-- **Billing API:** `https://api.billing.upag.io/v1`
-- **Core API:** `https://api.upag.io/v1` — autenticação `Authorization: Bearer sk_...`
+- **Produção:** `https://api.upag.io/v1` (chaves `sk_live_...` / `pk_live_...`)
+- **Sandbox:** `https://api.upag.dev/v1` (chaves `sk_test_...` / `pk_test_...`)
+- `Authorization: Bearer sk_...` no servidor; `pk_...` só tokeniza cartões e conclui 3D Secure no browser.
+- Valores em centavos, ids em UUID, datas ISO 8601, listas `{ data, count }`.
 
-## Billing
+## SDKs
 
-- Abas: **Guias**, **Referência**, **Webhooks**, **SDK**, **Simulador**
-- Guias: `pages/billing/guides/` (quickstart, checkout-hosted, subscription-recurring)
-- Referência: endpoints REST em `pages/billing/{customers,payments,...}/`
-- SDK: índice `pages/billing/sdk/overview.mdx`; detalhes `server.mdx` (npm upag), `frontend.mdx` (npm upag-js)
+- `upag` (npm, Node.js, chave `sk_`): `pages/sdk/server.mdx`
+- `upag-js` (npm, browser, chave `pk_`): `pages/sdk/frontend.mdx`
+- Índice: `pages/sdk/overview.mdx`. Os SDKs escolhem o host pela chave.
 
-## Core
+## Abas
 
-- Abas: **Guias**, **Referência**, **Webhooks** (sem SDK)
-- Guias: `pages/core/guides/` (quickstart, pix-charge, pix-transfer)
-- Referência: `pages/core/{charges,transfers,customers,sub-accounts}/`
+- **Guias** (`pages/guides/`): quickstart, authentication, conventions, errors; fluxos pix-charge, pix-transfer, card-3ds, checkout-hosted, subscription-recurring, free-trial
+- **Referência** (`pages/<recurso>/`): charges, cards, three-d-secure, customers, products, prices, coupons, invoices, subscriptions, payment-links, checkout-sessions, checkout-layouts, transfers, sub-accounts, apps, me
+- **Webhooks** (`pages/webhooks/`, `pages/webhook-logs/`): visão geral, referência, segurança, endpoints, payloads, logs de entrega
+- **SDK**: `pages/sdk/`
+- **Simulador**: `pages/simulator.mdx` (cartões de teste no sandbox)
 
 ## Navegação
 
-`docs.json` → `navigation.products` (switcher Billing / Core).
+`docs.json` → `navigation.tabs`. Os URLs antigos `pages/core/*` e `pages/billing/*` redirecionam para `pages/<recurso>/*` (`redirects` no `docs.json`). `/payments` e `/payment-methods` não existem mais: use [cobranças](pages/charges/reference.mdx) e [cartões](pages/cards/reference.mdx).
 
 ## SEO e busca (Mintlify)
 
 - `seo.metatags.canonical`: `https://docs.upag.io` (ajustar se o domínio publicado for outro).
-- Busca in-product: `boost` em guias quickstart (4), SDK index (3), simulador (0.5). Grupos **Primeiros passos** / **SDKs** também têm `boost` no `docs.json`.
-- Endpoints de referência: frontmatter `api: 'METHOD https://host/v1/...'` (URL completa; Billing `api.billing.upag.io`, Core `api.upag.io`). Playground Mintlify em `docs.json` → `api.playground.display: interactive`, auth Bearer.
-- Sem `icon` nessas páginas; `searchable: false` só se quiser ocultar da busca interna (não afeta Google).
+- Busca in-product: `boost` no grupo **Primeiros passos** (4), SDKs (3) e simulador (0.5).
+- Endpoints de referência: frontmatter `api: 'METHOD https://api.upag.io/v1/...'` (URL completa). Os exemplos usam o sandbox (`api.upag.dev`). Playground Mintlify em `docs.json` → `api.playground.display: interactive`, auth Bearer.
+- Sem `icon` nas páginas de endpoint; `searchable: false` só se quiser ocultar da busca interna.
 
 ## Uso para assistentes
 
-Integração ponta a ponta → aba **Guias**. Campos e contratos HTTP → aba **Referência**. Eventos → aba **Webhooks**: mesma ordem de grupos **Visão geral → Referência → Segurança → Payloads** (Core acrescenta **Endpoints** e **Logs de entrega**).
-
-Sidebar (estilo Abacate): **sem** `icon` em tabs/grupos no `docs.json`. Endpoints com `api` no frontmatter → badge HTTP, sem `icon`. **Com** `icon` apenas em subpáginas: guias, payloads de webhook, `sdk/server` e `sdk/frontend`. Sem ícone em `reference.mdx`, overview/security de webhooks, índice SDK ou simulador.
+Integração ponta a ponta → aba **Guias**. Campos e contratos HTTP → aba **Referência**. Eventos → aba **Webhooks**: ordem de grupos **Visão geral → Referência → Segurança → Endpoints → Payloads → Logs de entrega**. Cada endpoint traz exemplos em cURL e no SDK `upag` (Node.js); chamadas do browser trazem também `upag-js`.

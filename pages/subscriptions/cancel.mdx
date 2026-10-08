@@ -1,0 +1,111 @@
+---
+title: 'Cancelar assinatura'
+description: 'Cancela uma assinatura agora ou ao fim do período atual'
+sidebarTitle: 'Cancelar'
+api: 'POST https://api.upag.io/v1/subscriptions/{subscriptionId}/cancel'
+---
+
+Cancela a assinatura. Sem corpo, o cancelamento é imediato: a assinatura vai para `canceled`, com `canceledAt` e `endDate` preenchidos. Com `atPeriodEnd: true`, ela só é marcada (`cancelAtPeriodEnd: true`) e continua ativa até o fim do período atual, quando é cancelada em vez de renovar. Para desfazer o agendamento, use [`cancelAtPeriodEnd: false`](./update).
+
+Permissão: `subscription.write`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/subscriptions/9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36/cancel \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "atPeriodEnd": false,
+    "reason": "too_expensive"
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+// Imediato
+const canceled = await upag.subscriptions.cancel('9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36', {
+  reason: 'too_expensive',
+});
+
+// Ao fim do período
+const scheduled = await upag.subscriptions.cancel('9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36', {
+  atPeriodEnd: true,
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="subscriptionId" type="string (uuid)" required>
+  ID da assinatura.
+</ParamField>
+
+<ParamField body="atPeriodEnd" type="boolean" default="false">
+  `true` cancela só ao fim do período atual; `false` cancela agora.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  Motivo do cancelamento: `low_quality`, `missing_features`, `other`, `switched_service`, `too_complex`, `too_expensive` ou `unused`. Fica em `cancellationReason`.
+</ParamField>
+
+## Resposta
+
+`200 OK` com a [assinatura](./reference).
+
+```json Response
+{
+  "id": "9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36",
+  "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "paymentMethod": "card",
+  "card": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
+  "status": "canceled",
+  "currency": "brl",
+  "interval": "month",
+  "intervalCount": 1,
+  "cancelAtPeriodEnd": false,
+  "startDate": "2026-10-07T19:00:00.000Z",
+  "endDate": "2026-10-12T14:20:00.000Z",
+  "trialStartDate": null,
+  "trialEndDate": null,
+  "trialEndBehavior": null,
+  "currentPeriodStart": "2026-10-07T19:00:00.000Z",
+  "currentPeriodEnd": "2026-11-07T19:00:00.000Z",
+  "canceledAt": "2026-10-12T14:20:00.000Z",
+  "cancellationReason": "too_expensive",
+  "items": [
+    {
+      "id": "c6d2f9a4-7e18-4b35-9a60-3f1e8d5b2c07",
+      "product": "7d2b5e90-1c34-4a68-b9f7-0e3a6c8d1f25",
+      "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61",
+      "name": "Plano mensal",
+      "amount": 9900,
+      "quantity": 1,
+      "totalAmount": 9900,
+      "createdAt": "2026-10-07T19:00:00.000Z",
+      "updatedAt": "2026-10-07T19:00:00.000Z"
+    }
+  ],
+  "createdAt": "2026-10-07T19:00:00.000Z",
+  "updatedAt": "2026-10-12T14:20:00.000Z"
+}
+```
+
+O cancelamento imediato dispara o webhook `subscription.canceled`. O agendado só o dispara quando o período acaba. Cancelar não reembolsa faturas já pagas.
+
+## Erros
+
+| Status | Código | Quando |
+| ------ | ------ | ------ |
+| `404` | `SUBSCRIPTION_NOT_FOUND` | A assinatura não existe ou é de outra conta |
+| `400` | `SUBSCRIPTION_ALREADY_CANCELED` | A assinatura já está `canceled` |
+| `400` | `SUBSCRIPTION_NOT_EDITABLE` | A assinatura está `void` |
+| `422` | `VALIDATION_FAILED` | `reason` fora da lista (inclusive `missing_payment_method`, que só o sistema define) |

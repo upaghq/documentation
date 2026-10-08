@@ -1,0 +1,79 @@
+---
+title: 'Obter log de entrega'
+description: 'Inspeciona uma tentativa de entrega de webhook'
+sidebarTitle: 'Obter'
+api: 'GET https://api.upag.io/v1/webhooks/{webhookId}/logs/{logId}'
+---
+
+Permissão: `webhook.read`
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.dev/v1/webhooks/aa0e8400-e29b-41d4-a716-446655440000/logs/bb0e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const log = await upag.webhooks.logs.retrieve(
+  'aa0e8400-e29b-41d4-a716-446655440000',
+  'bb0e8400-e29b-41d4-a716-446655440000',
+);
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`. O SDK escolhe o host pela chave.
+</Note>
+
+## Parâmetros
+
+<ParamField path="webhookId" type="string (uuid)" required>
+  ID do webhook.
+</ParamField>
+
+<ParamField path="logId" type="string (uuid)" required>
+  ID do log. Deve pertencer ao webhook informado.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "id": "bb0e8400-e29b-41d4-a716-446655440000",
+  "webhook": "aa0e8400-e29b-41d4-a716-446655440000",
+  "event": "charge.paid",
+  "method": "POST",
+  "url": "https://example.com/webhooks",
+  "statusCode": 500,
+  "duration": 120,
+  "request": "{\"id\":\"880e8400-e29b-41d4-a716-446655440000\",\"event\":\"charge.paid\",\"createdAt\":\"2026-03-18T12:10:00.000Z\",\"data\":{}}",
+  "response": "Internal Server Error",
+  "retryCount": 0,
+  "success": false,
+  "createdAt": "2026-03-18T12:10:00.000Z"
+}
+```
+
+| Campo | Descrição |
+| ----- | --------- |
+| `webhook` | ID do webhook |
+| `event` | Evento entregue |
+| `method` | Sempre `POST` |
+| `url` | URL usada na tentativa |
+| `statusCode` | Status HTTP devolvido; `null` se não houve resposta (timeout, falha de conexão) |
+| `duration` | Duração da tentativa em milissegundos |
+| `request` | Corpo enviado, como string JSON (o envelope da entrega) |
+| `response` | Corpo da resposta como texto; em falha de conexão, a mensagem de erro; `null` se ausente |
+| `retryCount` | `0` na entrega original; cada [reprocessamento](./reprocess) soma 1 |
+| `success` | `true` se `statusCode` é 2xx |
+| `createdAt` | ISO 8601 da tentativa |
+
+Log inexistente ou de outro webhook retorna `404` (`WEBHOOK_LOG_NOT_FOUND`).

@@ -1,0 +1,279 @@
+---
+title: 'Criar cobrança'
+description: 'Cria uma cobrança Pix ou de cartão na conta da chave de API'
+sidebarTitle: 'Criar'
+api: 'POST https://api.upag.io/v1/charges'
+---
+
+Cria uma cobrança Pix (`type: "pix"`) ou de cartão (`type: "card"`). Pix dinâmico exige `customer`; cartão exige `card` (UUID de um [cartão tokenizado](../cards/create)) e `customer`.
+
+Permissão: `charge.write`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+### Pix
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/charges \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "pix",
+    "amount": 12550,
+    "description": "Pedido #10482",
+    "pix": { "method": "dynamic", "dueDate": "2026-07-28T12:00:00.000Z" },
+    "customer": {
+      "name": "Maria Pagadora",
+      "document": { "type": "cpf", "number": "39053344705" }
+    }
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const charge = await upag.charges.create({
+  type: 'pix',
+  amount: 12550,
+  description: 'Pedido #10482',
+  pix: { method: 'dynamic', dueDate: '2026-07-28T12:00:00.000Z' },
+  customer: {
+    name: 'Maria Pagadora',
+    document: { type: 'cpf', number: '39053344705' },
+  },
+});
+```
+</CodeGroup>
+
+### Cartão
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/charges \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "card",
+    "amount": 10000,
+    "installments": 3,
+    "card": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
+    "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+    "threeDSecureSession": "9b7c1e52-3f0a-4d86-a1c4-6e2d8f35b790",
+    "ipAddress": "203.0.113.10",
+    "meta": { "session_id": "7f3b2a91-5c4d-4e8f-b0a1-2d6c9e1f4a73" }
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const charge = await upag.charges.create({
+  type: 'card',
+  amount: 10000,
+  installments: 3,
+  card: '5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15',
+  customer: '8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83',
+  threeDSecureSession: '9b7c1e52-3f0a-4d86-a1c4-6e2d8f35b790',
+  ipAddress: '203.0.113.10',
+  meta: { session_id: '7f3b2a91-5c4d-4e8f-b0a1-2d6c9e1f4a73' },
+});
+```
+</CodeGroup>
+
+A cobrança de cartão é processada na hora: a resposta já traz o resultado (`paid`, `in_review` ou `failed`). O `card` precisa pertencer à conta; veja o fluxo completo em [Cartão com 3DS](../guides/card-3ds).
+
+## Parâmetros
+
+### Comuns
+
+<ParamField body="type" type="string" required>
+  `pix` ou `card`.
+</ParamField>
+
+<ParamField body="amount" type="integer" required>
+  Valor em centavos, maior que zero. Em cartão parcelado, é o preço cheio: os juros de parcelamento não entram aqui.
+</ParamField>
+
+<ParamField body="description" type="string">
+  1 a 140 caracteres. Uso interno (conciliação); não vai no QR code nem o pagador vê.
+</ParamField>
+
+<ParamField body="meta" type="object">
+  Até 50 chaves (1 a 40 caracteres), valores string de até 500 caracteres. Devolvido como enviado em respostas e webhooks. Em cartão, `session_id` é lido pela plataforma como a sessão de dispositivo do pagador (antifraude), veja [Antifraude](#antifraude).
+</ParamField>
+
+<ParamField body="items" type="array">
+  Até 100 itens informativos (não alteram valor nem taxas):
+
+  - `name` (obrigatório, 1 a 255 caracteres)
+  - `quantity` (obrigatório, inteiro de 1 a 9999)
+  - `unitAmount` (obrigatório, inteiro ≥ 0, em centavos)
+  - `kind`: `physical`, `digital`, `shipping` ou `other` (padrão)
+  - `sku` (até 64), `externalId` (até 255), `url` (HTTP/HTTPS, até 255)
+
+  `quantity × unitAmount` deve caber em inteiro de 32 bits (2.147.483.647). Em cartão, os itens também seguem junto com o pagamento.
+</ParamField>
+
+<ParamField body="splits" type="array">
+  Repasses para outras contas: `{ "account": "uuid", "amount": centavos }` (`amount` inteiro maior que zero). A soma dos splits precisa ser menor que o valor líquido da cobrança (`amount` menos a taxa da plataforma). A conta recebedora precisa estar ativa e não pode ser a sua.
+</ParamField>
+
+### Pix (`type: "pix"`)
+
+<ParamField body="pix" type="object">
+  Configuração do QR code. Padrão: dinâmico, vencendo em 10 minutos.
+
+  - `method`: `dynamic` (padrão) ou `static`.
+  - `dueDate` (só `dynamic`): vencimento, data ISO 8601. Padrão: 10 minutos a partir de agora.
+</ParamField>
+
+<ParamField body="customer" type="string | object">
+  Obrigatório no Pix dinâmico; opcional no estático. UUID de um cliente existente ou um objeto cliente inline (mesmos campos de [Criar cliente](../customers/create)). No objeto inline, o `document.number` identifica o cliente: se já existir na conta, é reutilizado e os demais valores enviados o atualizam; campos omitidos ou `null` não apagam nada.
+</ParamField>
+
+### Cartão (`type: "card"`)
+
+<ParamField body="card" type="string" required>
+  UUID de um [cartão tokenizado](../cards/create) da conta.
+</ParamField>
+
+<ParamField body="customer" type="string | object" required>
+  UUID do cliente ou objeto cliente inline (aceita também `ipAddress`, com o mesmo sentido do campo da cobrança; se ambos forem enviados, vale o do cliente, e ele nunca é gravado no cadastro). O cliente precisa ter `email` e `phone`.
+</ParamField>
+
+<ParamField body="installments" type="integer">
+  1 a 12. Padrão `1`. Acima de 1 exige parcelamento habilitado na conta, respeitando o máximo configurado. Com sessão 3DS, deve ser igual ao da sessão.
+</ParamField>
+
+<ParamField body="threeDSecureSession" type="string">
+  UUID de uma [sessão 3D Secure](../three-d-secure/reference) concluída para este cartão, valor e parcelas. A sessão é consumida pela cobrança, qualquer que seja o resultado, e o cartão é cobrado no `finalAmount` da sessão. Sem ela, o cartão é cobrado sem 3DS.
+</ParamField>
+
+<ParamField body="ipAddress" type="string">
+  IPv4 ou IPv6 público do pagador. Não é aceito em Pix.
+</ParamField>
+
+<ParamField body="location" type="object">
+  Localização do pagador resolvida a partir do IP: `city` (até 50), `state` (2 letras), `country` (2 letras), `zip` (até 9). Usada só para completar o endereço de cobrança exigido pela adquirente; nunca é gravada no cliente.
+</ParamField>
+
+<ParamField body="softDescriptor" type="string">
+  Texto na fatura do pagador, 1 a 13 caracteres. Padrão: o descritivo da conta.
+</ParamField>
+
+## Antifraude
+
+Em cobranças de cartão, envie `meta.session_id` com o identificador da sessão de dispositivo do pagador e `ipAddress` com o IP dele. No browser, o `upag-js` gera o identificador e carrega o coletor de dispositivo:
+
+```javascript upag-js
+import { UpagJs } from 'upag-js';
+
+const upag = new UpagJs('pk_test_your_public_key');
+
+// envie ao seu servidor junto com o card e o clientSecret/sessão 3DS
+const sessionId = upag.antifraud.sessionId();
+
+// antes de uma nova tentativa de pagamento
+upag.antifraud.rotate();
+```
+
+Gere um `session_id` novo a cada tentativa de pagamento: reutilizar reduz a aprovação. Mais detalhes em [SDK frontend](../sdk/frontend).
+
+## Resposta
+
+`201 Created`
+
+<CodeGroup>
+```json Pix
+{
+  "id": "1f7d3c8a-4b52-4c9e-8a11-6d0e2f5b7c34",
+  "type": "pix",
+  "status": "pending",
+  "amount": 12550,
+  "failureCode": null,
+  "description": "Pedido #10482",
+  "meta": null,
+  "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "pix": {
+    "reference": "9d4c2b7f6a1e40538c9b2d7f1a6e0c34",
+    "qrCode": "00020101021226930014br.gov.bcb.pix...",
+    "expiresAt": "2026-07-28T12:00:00.000Z"
+  },
+  "splits": [
+    {
+      "id": "b0a9c7d4-2e51-4c8f-9a3b-7d5e1f0c6a92",
+      "type": "mdr",
+      "status": "pending",
+      "amount": 126,
+      "createdAt": "2026-07-27T18:06:02.113Z",
+      "updatedAt": "2026-07-27T18:06:02.113Z"
+    }
+  ],
+  "items": [],
+  "ipAddress": null,
+  "paidAt": null,
+  "createdAt": "2026-07-27T18:06:02.113Z",
+  "updatedAt": "2026-07-27T18:06:02.113Z"
+}
+```
+
+```json Cartão
+{
+  "id": "c2a5e8d1-3b47-4f90-a6d2-9e1f0b7c4a58",
+  "type": "card",
+  "status": "paid",
+  "amount": 10000,
+  "failureCode": null,
+  "description": null,
+  "meta": { "session_id": "7f3b2a91-5c4d-4e8f-b0a1-2d6c9e1f4a73" },
+  "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "card": {
+    "id": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
+    "installments": 3,
+    "nsu": "284751",
+    "authorizationCode": "A1B2C3",
+    "acquirerStatusCode": "0000"
+  },
+  "splits": [],
+  "items": [],
+  "ipAddress": "203.0.113.10",
+  "paidAt": "2026-07-27T18:06:04.331Z",
+  "createdAt": "2026-07-27T18:06:02.113Z",
+  "updatedAt": "2026-07-27T18:06:04.331Z"
+}
+```
+</CodeGroup>
+
+Se a adquirente recusar, a resposta continua `201`, com `status: "failed"` e `failureCode` preenchido (ver [códigos de falha](./reference#códigos-de-falha)). Campos completos em [Referência de cobranças](./reference).
+
+## Erros
+
+| Status | Mensagem / código | Causa |
+| ------ | ----------------- | ----- |
+| `400` | `Account is not active` | Conta ainda não pode receber |
+| `400` | `Splits exceed the charge amount` | Splits (mais taxa) não cabem no valor |
+| `400` | `Split recipient cannot be the charged account` | Split para a própria conta |
+| `400` | `Split recipient account not found or inactive` | Recebedor do split inexistente ou inativo |
+| `400` | `Installments are not enabled for this account` | Parcelamento desabilitado |
+| `400` | `Installments exceed the maximum of N for this account` | Parcelas acima do máximo da conta |
+| `400` | `Card is not active` / `Card is expired` | Cartão inutilizável |
+| `400` | `Customer is missing fields required for card payments: …` | Cliente sem `email` e/ou `phone` |
+| `404` | `Customer not found` | UUID de cliente inexistente na conta |
+| `404` | `Card not found` | Cartão inexistente, removido ou de outra conta |
+| `404` | `Pix key not found` | A conta não tem chave Pix para receber |
+| `404` | `session_not_found` | Sessão 3DS inexistente na conta |
+| `409` | `invalid_session_state` | Sessão 3DS não concluída ou já usada |
+| `409` | `threeds_session_mismatch` | Sessão autenticada para outro cartão, valor ou parcelas |
+| `410` | `session_expired` | Sessão 3DS expirada |
+| `422` | `VALIDATION_FAILED` | Corpo inválido, inclusive Pix dinâmico sem `customer` |
+
+Formato dos erros em [Erros](../guides/errors).

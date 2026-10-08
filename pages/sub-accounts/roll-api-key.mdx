@@ -1,0 +1,63 @@
+---
+title: 'Rotacionar chave da subconta'
+description: 'Gera nova chave secreta para a subconta (titular)'
+sidebarTitle: 'Rotacionar chave'
+api: 'POST https://api.upag.io/v1/sub-accounts/{subAccountId}/api-key/roll'
+---
+
+Invalida a chave anterior da subconta e retorna o novo `secret` (exibido apenas nesta resposta).
+
+Permissão: `sub_account.write` (chave secreta da conta titular).
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/sub-accounts/880e8400-e29b-41d4-a716-446655440000/api-key/roll \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const apiKey = await upag.subAccounts.rollApiKey('880e8400-e29b-41d4-a716-446655440000');
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`.
+</Note>
+
+## Parâmetros
+
+<ParamField path="subAccountId" type="string (uuid)" required>
+  ID da subconta.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "id": "aa0e8400-e29b-41d4-a716-446655440000",
+  "type": "secret",
+  "secret": "sk_test_new_rotated_secret...",
+  "description": "Sub-account João Silva",
+  "permissions": [
+    "customer.read",
+    "customer.write",
+    "charge.read",
+    "charge.write",
+    "transfer.read",
+    "transfer.write",
+    "api_key.read"
+  ],
+  "createdAt": "2026-03-18T10:00:00.000Z",
+  "updatedAt": "2026-03-18T14:00:00.000Z"
+}
+```
+
+`404` — `SUB_ACCOUNT_NOT_FOUND` ou `SUB_ACCOUNT_API_KEY_NOT_FOUND`.

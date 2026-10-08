@@ -1,0 +1,48 @@
+---
+title: 'Remover sessão de checkout'
+description: 'Remove uma sessão de checkout aberta'
+sidebarTitle: 'Remover'
+api: 'DELETE https://api.upag.io/v1/checkout/sessions/{sessionId}'
+---
+
+Remove uma sessão `open`. Sessões `complete` ou `expired` não podem ser removidas: elas ficam como histórico.
+
+Permissão: `checkout_session.write`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE https://api.upag.dev/v1/checkout/sessions/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+await upag.checkoutSessions.delete('4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26');
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="sessionId" type="string (uuid)" required>
+  ID da sessão.
+</ParamField>
+
+## Resposta
+
+`204 No Content`, sem corpo.
+
+## Erros
+
+| Status | Código | Quando |
+| ------ | ------ | ------ |
+| `404` | `CHECKOUT_SESSION_NOT_FOUND` | A sessão não existe ou é de outra conta |
+| `409` | `CHECKOUT_SESSION_NOT_OPEN` | A sessão já está `complete` ou `expired` |

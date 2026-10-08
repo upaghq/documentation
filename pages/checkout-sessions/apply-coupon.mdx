@@ -1,0 +1,95 @@
+---
+title: 'Aplicar cupom'
+description: 'Aplica um cupom a uma sessão de checkout aberta'
+sidebarTitle: 'Aplicar cupom'
+api: 'POST https://api.upag.io/v1/checkout/sessions/{sessionId}/coupon'
+---
+
+Aplica um [cupom](../coupons/reference) a uma sessão `open` que tenha `couponEnabled: true`. O desconto é calculado por item elegível e a resposta traz os novos `discounts`, `discountAmount` e `amount`. Aplicar outro cupom substitui o anterior. Itens recorrentes sob um teste não recebem desconto, porque nada é cobrado hoje por eles.
+
+Permissão: `checkout_session.write`. Aceita a chave secreta ou o `clientSecret` da sessão. Limite do navegador: 20 por minuto por IP, para que os códigos não sejam adivinhados.
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`; no navegador, o `upag-js` usa só a chave pública.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/checkout/sessions/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26/coupon \
+  -H "Authorization: Bearer Zk3v0pQ8xJ2mR7cYt1LwN5dHs9uAeB4gXo6iFqVjT0E" \
+  -H "Content-Type: application/json" \
+  -d '{ "code": "BEMVINDO10" }'
+```
+
+```javascript upag-js
+import { UpagJs } from 'upag-js';
+
+const upag = new UpagJs('pk_test_your_public_key');
+
+const session = await upag.checkout.applyCoupon(id, clientSecret, { code: 'BEMVINDO10' });
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const session = await upag.checkoutSessions.applyCoupon('4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26', {
+  code: 'BEMVINDO10',
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="sessionId" type="string (uuid)" required>
+  ID da sessão.
+</ParamField>
+
+<ParamField body="code" type="string" required>
+  Código do cupom, com pelo menos 3 caracteres. Maiúsculas e minúsculas não importam.
+</ParamField>
+
+## Resposta
+
+`200 OK`. Com o `clientSecret`, é a [visão do pagador](./retrieve); com a chave secreta, é a [sessão](./reference) do servidor. Trecho da visão do pagador:
+
+```json Response
+{
+  "id": "4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26",
+  "status": "open",
+  "currency": "brl",
+  "subtotal": 19900,
+  "discountAmount": 1990,
+  "amount": 17910,
+  "discounts": [
+    {
+      "id": "0d6f3a82-5e19-4b47-a3c8-7f1b9e2d4c60",
+      "item": "b7e1c4a9-3d52-4f08-86a1-2c9d5e7f0b34",
+      "coupon": "a58c2e14-9d70-4f36-b1e5-3c8a6d0f7b92",
+      "type": "coupon",
+      "amount": 1990
+    }
+  ],
+  "couponEnabled": true,
+  "couponCode": "BEMVINDO10"
+}
+```
+
+A resposta completa traz também os demais campos da sessão; aqui estão os que mudam.
+
+## Erros
+
+| Status | Código | Quando |
+| ------ | ------ | ------ |
+| `404` | `CHECKOUT_SESSION_NOT_FOUND` | Do servidor: a sessão não existe ou é de outra conta |
+| `404` | `COUPON_NOT_FOUND` | Nenhum cupom com esse código na conta |
+| `409` | `CHECKOUT_SESSION_NOT_OPEN` | A sessão já está `complete` ou `expired` |
+| `400` | `COUPON_NOT_ENABLED` | A sessão não permite cupom (`couponEnabled: false`) |
+| `400` | `COUPON_NOT_ACTIVE` | O cupom está inativo |
+| `400` | `COUPON_EXPIRED` | O cupom venceu |
+| `400` | `COUPON_MAX_USES_REACHED` | O cupom esgotou os usos |
+| `422` | `VALIDATION_FAILED` | `code` com menos de 3 caracteres |
+| `429` | n/a | Do navegador: mais de 20 tentativas por minuto pelo mesmo IP |

@@ -1,0 +1,202 @@
+---
+title: 'Node.js'
+description: 'upag (upag-node): SDK servidor da API Upag para cobranças, cartões, checkout, assinaturas e webhooks'
+icon: 'node-js'
+---
+
+<Card title="upag (upag-node)" icon="npm" href="https://www.npmjs.com/package/upag">
+  Pacote npm oficial para Node.js e TypeScript. Código em [github.com/upaghq/upag-node](https://github.com/upaghq/upag-node).
+</Card>
+
+## Requisitos
+
+- Node.js 16 ou superior
+- Chave secreta de teste ou produção (`sk_test_...` / `sk_live_...`)
+
+## Instalação
+
+<CodeGroup>
+```bash npm
+npm install upag
+```
+```bash yarn
+yarn add upag
+```
+```bash pnpm
+pnpm add upag
+```
+</CodeGroup>
+
+## Autenticação e host
+
+Carregue a chave do ambiente (nunca hardcode):
+
+```bash
+# .env
+UPAG_SECRET_KEY=sk_test_your_api_key
+```
+
+```javascript
+import { Upag } from 'upag';
+
+const upag = new Upag(process.env.UPAG_SECRET_KEY);
+
+// ou com opções
+const upagWithOptions = new Upag({
+  apiKey: process.env.UPAG_SECRET_KEY,
+  timeout: 30000,
+  // baseURL: 'http://localhost:3000/v1',
+});
+```
+
+`sk_test_` usa `https://api.upag.dev/v1`. Qualquer outra chave usa `https://api.upag.io/v1`. `baseURL` sobrescreve o host.
+
+Valores são inteiros em centavos, ids são UUIDs, datas são strings ISO 8601 e listas retornam `{ data, count }`. Veja [Convenções](../guides/conventions).
+
+## Exemplo: cobrança Pix
+
+```javascript
+const charge = await upag.charges.create({
+  type: 'pix',
+  amount: 9900,
+  pix: { method: 'dynamic' },
+  customer: {
+    name: 'Maria Silva',
+    email: 'maria@example.com',
+    document: { type: 'cpf', number: '12345678909' },
+  },
+});
+
+console.log(charge.pix.qrCode);
+```
+
+## Exemplo: cartão com 3D Secure
+
+Tokenize no browser com o [`upag-js`](./frontend). No servidor:
+
+```javascript
+const session = await upag.threeDSecure.createSession(
+  { amount: 10000, installments: 1, card: cardId, customer: customerId },
+  { idempotencyKey: 'order-123' },
+);
+// entregue session.clientSecret ao browser e receba o sessionId após authenticate
+
+const charge = await upag.charges.create({
+  type: 'card',
+  amount: 10000,
+  card: cardId,
+  customer: customerId,
+  threeDSecureSession: sessionId,
+});
+```
+
+Fluxo completo em [Cartão com 3DS](../guides/card-3ds).
+
+## Recursos
+
+| Recurso | Métodos |
+| ------- | ------- |
+| `charges` | `create`, `retrieve`, `list` |
+| `cards` | `create`, `list`, `retrieve`, `remove` |
+| `threeDSecure` | `createSession`, `retrieveSession` |
+| `customers` | `create`, `retrieve`, `update`, `delete`, `list` |
+| `products` | `create`, `retrieve`, `update`, `list` |
+| `prices` | `create(productId, params)`, `retrieve`, `update`, `list` |
+| `coupons` | `create`, `retrieve`, `update`, `delete`, `list` |
+| `invoices` | `create`, `retrieve`, `update`, `list`, `pay`, `markAsPaid`, `upcoming`, `createItem`, `updateItem`, `deleteItem` |
+| `subscriptions` | `create`, `retrieve`, `update`, `cancel`, `list`, `createItem`, `updateItem`, `deleteItem`, `listScheduledChanges`, `deleteScheduledChange` |
+| `paymentLinks` | `create`, `retrieve`, `update`, `list`, `createItem`, `updateItem`, `deleteItem`, `createBump`, `updateBump`, `deleteBump` |
+| `checkoutSessions` | `create`, `retrieve`, `update`, `delete`, `list`, `confirm`, `createThreeDSecureSession`, `applyCoupon`, `removeCoupon`, `listApps` |
+| `checkoutLayouts` | `create`, `retrieve`, `update`, `delete`, `list` |
+| `transfers` | `lookup`, `create`, `retrieve`, `list`, `receipt` |
+| `subAccounts` | `create`, `retrieve`, `list`, `rollApiKey` |
+| `apps` | `create`, `retrieve`, `update`, `delete`, `list`, `install`, `verifyScript`, `uninstall`; `apps.logs.list`, `apps.logs.retrieve` |
+| `webhooks` | `create`, `retrieve`, `update`, `delete`, `list`, `validateSignature`; `webhooks.logs.list`, `retrieve`, `reprocess` |
+| `me` | `retrieve` |
+
+<Note>
+  `subAccounts`, `apps`, `webhooks.validateSignature` e os campos de teste grátis estão no `Unreleased` do changelog do `upag-node`. Confira a versão instalada.
+</Note>
+
+Cada página da Referência traz o exemplo do método correspondente.
+
+## Idempotência
+
+`cards.create` e `threeDSecure.createSession` aceitam `{ idempotencyKey }` como último argumento (header `Idempotency-Key`):
+
+```javascript
+await upag.cards.create(card, { idempotencyKey: 'card-order-123' });
+```
+
+## Webhooks: validar a assinatura
+
+A assinatura (`X-Webhook-Signature`) cobre o **corpo cru**. Não use `express.json()` nesta rota: reserializar o JSON muda o payload e quebra a comparação.
+
+```javascript
+import express from 'express';
+
+app.post('/webhooks', express.raw({ type: '*/*' }), (req, res) => {
+  const ok = upag.webhooks.validateSignature(
+    req.body, // Buffer cru
+    req.headers['x-webhook-signature'],
+    process.env.UPAG_WEBHOOK_SECRET,
+  );
+  if (!ok) return res.sendStatus(401);
+
+  const { id, event, data } = JSON.parse(req.body.toString('utf8'));
+  // processe o evento e deduplique pelo id
+  res.sendStatus(200);
+});
+```
+
+Detalhes em [Segurança de webhooks](../webhooks/security).
+
+## Erros
+
+Falhas da API são lançadas como `UpagError` com `message`, `code`, `statusCode`, `details` e `meta`:
+
+```javascript
+try {
+  await upag.customers.create({
+    name: 'John Doe',
+    document: { type: 'cpf', number: 'invalid' },
+  });
+} catch (error) {
+  console.error(error.statusCode, error.code, error.message);
+  console.error(error.details, error.meta);
+}
+```
+
+`code` inclui `NETWORK_ERROR` e `CLIENT_ERROR` (falhas sem resposta da API), `VALIDATION_FAILED` e os códigos específicos da API. Veja [Erros](../guides/errors).
+
+## TypeScript
+
+A biblioteca é escrita em TypeScript e exporta os tipos:
+
+```typescript
+import { Upag, CreateChargeParams, CreateCustomerParams } from 'upag';
+
+const params: CreateChargeParams = {
+  type: 'pix',
+  amount: 1000,
+  pix: { method: 'dynamic' },
+  customer: { name: 'Test', document: { type: 'cpf', number: '12345678909' } },
+};
+```
+
+## Onde ir depois
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="../guides/quickstart">
+    Primeira cobrança.
+  </Card>
+  <Card title="Referência HTTP" icon="book-open" href="../charges/reference">
+    Parâmetros e respostas de cada endpoint.
+  </Card>
+  <Card title="SDK browser" icon="browser" href="./frontend">
+    Cartão, 3DS e checkout com `pk_...`.
+  </Card>
+  <Card title="Índice de SDKs" icon="code" href="./overview">
+    Comparativo `upag` / `upag-js`.
+  </Card>
+</CardGroup>

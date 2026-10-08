@@ -1,0 +1,337 @@
+---
+title: 'Criar subconta'
+description: 'Abre subconta PF ou PJ em análise e retorna a chave secreta única'
+sidebarTitle: 'Criar'
+api: 'POST https://api.upag.io/v1/sub-accounts'
+---
+
+A subconta nasce `pending`, com a entidade legal em `under_review` (KYC). Guarde `apiKey.secret`: ele só é exibido na criação (e em [Rotacionar chave](./roll-api-key)).
+
+Permissão: `sub_account.write` (chave secreta; chave publicável não é aceita).
+
+## Endpoint — pessoa física
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/sub-accounts \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "individual",
+    "name": "João Silva",
+    "email": "joao@example.com",
+    "document": { "type": "cpf", "number": "39053344705" },
+    "phone": { "countryCode": "55", "areaCode": "11", "number": "999998888" },
+    "birthDate": "1990-01-01",
+    "motherName": "Maria Silva",
+    "publicPerson": false,
+    "address": {
+      "street": "Rua A",
+      "number": "10",
+      "complement": null,
+      "neighborhood": "Centro",
+      "city": "São Paulo",
+      "state": "SP",
+      "country": "BR",
+      "zip": "01001000"
+    }
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const subAccount = await upag.subAccounts.create({
+  type: 'individual',
+  name: 'João Silva',
+  email: 'joao@example.com',
+  document: { type: 'cpf', number: '39053344705' },
+  phone: { countryCode: '55', areaCode: '11', number: '999998888' },
+  birthDate: '1990-01-01',
+  motherName: 'Maria Silva',
+  publicPerson: false,
+  address: {
+    street: 'Rua A',
+    number: '10',
+    complement: null,
+    neighborhood: 'Centro',
+    city: 'São Paulo',
+    state: 'SP',
+    country: 'BR',
+    zip: '01001000',
+  },
+});
+
+// Guarde a chave: o secret só aparece aqui.
+console.log(subAccount.apiKey.secret);
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`.
+</Note>
+
+## Endpoint — pessoa jurídica
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/sub-accounts \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "company",
+    "activity": "saas",
+    "legalName": "Acme Tecnologia LTDA",
+    "tradingName": "Acme",
+    "legalNature": "ltda",
+    "constitutionDate": "2018-05-10",
+    "email": "financeiro@acme.com.br",
+    "document": { "type": "cnpj", "number": "11222333000181" },
+    "phone": { "countryCode": "55", "areaCode": "11", "number": "33334444" },
+    "url": "https://acme.com.br",
+    "statementDescriptor": "ACME",
+    "monthlyIncome": 5000000,
+    "address": {
+      "street": "Av. Paulista",
+      "number": "1000",
+      "complement": "Sala 10",
+      "neighborhood": "Bela Vista",
+      "city": "São Paulo",
+      "state": "SP",
+      "country": "BR",
+      "zip": "01310100"
+    },
+    "representatives": [
+      {
+        "name": "Maria Souza",
+        "email": "maria@acme.com.br",
+        "document": { "type": "cpf", "number": "98765432100" },
+        "phone": { "countryCode": "55", "areaCode": "11", "number": "988887777" },
+        "birthDate": "1985-03-20",
+        "motherName": "Ana Souza",
+        "publicPerson": false,
+        "address": {
+          "street": "Rua B",
+          "number": "20",
+          "complement": null,
+          "neighborhood": "Centro",
+          "city": "São Paulo",
+          "state": "SP",
+          "country": "BR",
+          "zip": "01001000"
+        },
+        "role": "partner",
+        "ownershipPercentage": 100,
+        "isLegalRepresentative": true
+      }
+    ]
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const subAccount = await upag.subAccounts.create({
+  type: 'company',
+  activity: 'saas',
+  legalName: 'Acme Tecnologia LTDA',
+  tradingName: 'Acme',
+  legalNature: 'ltda',
+  constitutionDate: '2018-05-10',
+  email: 'financeiro@acme.com.br',
+  document: { type: 'cnpj', number: '11222333000181' },
+  phone: { countryCode: '55', areaCode: '11', number: '33334444' },
+  url: 'https://acme.com.br',
+  statementDescriptor: 'ACME',
+  monthlyIncome: 5000000, // centavos
+  address: {
+    street: 'Av. Paulista',
+    number: '1000',
+    complement: 'Sala 10',
+    neighborhood: 'Bela Vista',
+    city: 'São Paulo',
+    state: 'SP',
+    country: 'BR',
+    zip: '01310100',
+  },
+  representatives: [
+    {
+      name: 'Maria Souza',
+      email: 'maria@acme.com.br',
+      document: { type: 'cpf', number: '98765432100' },
+      phone: { countryCode: '55', areaCode: '11', number: '988887777' },
+      birthDate: '1985-03-20',
+      motherName: 'Ana Souza',
+      publicPerson: false,
+      address: {
+        street: 'Rua B',
+        number: '20',
+        complement: null,
+        neighborhood: 'Centro',
+        city: 'São Paulo',
+        state: 'SP',
+        country: 'BR',
+        zip: '01001000',
+      },
+      role: 'partner',
+      ownershipPercentage: 100,
+      isLegalRepresentative: true,
+    },
+  ],
+});
+```
+</CodeGroup>
+
+## Parâmetros comuns
+
+<ParamField body="type" type="string" required>
+  `individual` ou `company`.
+</ParamField>
+
+<ParamField body="email" type="string" required>
+  E-mail válido.
+</ParamField>
+
+<ParamField body="document" type="object" required>
+  `{ "type": "cpf", "number": "..." }` para `individual` (CPF com 11 dígitos); `{ "type": "cnpj", "number": "..." }` para `company` (CNPJ com 14 caracteres, incluindo o formato alfanumérico). Pontuação (`.`, `/`, `-`) é removida.
+</ParamField>
+
+<ParamField body="phone" type="object" required>
+  `countryCode` (2 dígitos), `areaCode` (2 dígitos) e `number` (8 ou 9 dígitos).
+</ParamField>
+
+<ParamField body="address" type="object" required>
+  `street` (até 200), `number` (até 20), `complement` (até 100, ou `null` — obrigatório informar a chave), `neighborhood` (até 100), `city` (até 100), `state` (2 letras), `country` (2 letras) e `zip` (8 dígitos).
+</ParamField>
+
+<ParamField body="paymentMethodConfigurations" type="array">
+  Tarifas por método de pagamento na subconta. Métodos omitidos usam o padrão da plataforma. Cada item:
+
+  - `paymentMethodType`: `pix` ou `card` (sem repetir o método).
+  - `installments`: tabela de taxas, de 1 até 12 parcelas × bandeira, sem duplicar a mesma combinação. Cada linha: `installmentNumber` (1–12), `mdrRateBasisPoints` (0–10000, obrigatório), `brand` (bandeira do cartão ou `null` para todas; padrão `null`), `mdrRateFixedAmount` (centavos, 0–10000; padrão 0), `interestRateBasisPoints` (0–10000; padrão 0), `interestResponsibility` (`merchant` ou `buyer`; padrão `buyer`) e `settlementDays` (0–365; padrão 0). Para `pix` só vale uma linha de `installmentNumber: 1` sem `brand`.
+  - `name` (1–100 caracteres; padrão o próprio método), `active` (padrão `true`), `settlementBusinessDays` (padrão `false`), `acceptInstallments` (padrão `false`) e `maxInstallments` (1–12; padrão 1).
+</ParamField>
+
+## Parâmetros de pessoa física
+
+<ParamField body="name" type="string" required>
+  Nome completo (até 200 caracteres).
+</ParamField>
+
+<ParamField body="birthDate" type="string (data)" required>
+  Data de nascimento, ex.: `1990-01-01`.
+</ParamField>
+
+<ParamField body="motherName" type="string" required>
+  Nome da mãe (até 200 caracteres).
+</ParamField>
+
+<ParamField body="publicPerson" type="boolean" required>
+  Se é pessoa politicamente exposta.
+</ParamField>
+
+<ParamField body="maritalStatus" type="string" default="unknown">
+  `single`, `married`, `divorced`, `widowed`, `separated`, `couple`, `other` ou `unknown`.
+</ParamField>
+
+<ParamField body="gender" type="string" default="unknown">
+  `male`, `female` ou `unknown`.
+</ParamField>
+
+## Parâmetros de pessoa jurídica
+
+<ParamField body="legalName" type="string" required>
+  Razão social (até 200 caracteres).
+</ParamField>
+
+<ParamField body="tradingName" type="string" required>
+  Nome fantasia (até 200 caracteres).
+</ParamField>
+
+<ParamField body="legalNature" type="string" required>
+  `mei`, `ltda` ou `sa`.
+</ParamField>
+
+<ParamField body="constitutionDate" type="string (data)" required>
+  Data de constituição.
+</ParamField>
+
+<ParamField body="activity" type="string" required>
+  `payment_gateway`, `digital_products`, `saas`, `ecommerce`, `professional_services`, `health_wellness`, `beauty`, `education`, `food_service`, `retail`, `events`, `nonprofit` ou `other`.
+</ParamField>
+
+<ParamField body="url" type="string (url)" required>
+  Site da empresa.
+</ParamField>
+
+<ParamField body="statementDescriptor" type="string" required>
+  Descritivo na fatura (1 a 22 caracteres).
+</ParamField>
+
+<ParamField body="monthlyIncome" type="integer" required>
+  Faturamento mensal em centavos (inteiro ≥ 0).
+</ParamField>
+
+<ParamField body="representatives" type="array" required>
+  Mínimo 1. Cada item tem os campos de pessoa física (`name`, `email`, `document` CPF, `phone`, `birthDate`, `motherName`, `publicPerson`, `address`, `maritalStatus`, `gender`) mais `role` (`partner`, `administrator` ou `holder`), `ownershipPercentage` (0–100) e `isLegalRepresentative` (boolean).
+</ParamField>
+
+## Resposta
+
+`201 Created`
+
+```json Response
+{
+  "id": "880e8400-e29b-41d4-a716-446655440000",
+  "status": "pending",
+  "legalEntity": {
+    "id": "990e8400-e29b-41d4-a716-446655440000",
+    "type": "individual",
+    "status": "under_review",
+    "documentType": "cpf",
+    "documentNumber": "39053344705",
+    "legalName": "João Silva",
+    "tradingName": "João Silva",
+    "email": "joao@example.com",
+    "phone": "5511999998888"
+  },
+  "account": {
+    "id": "880e8400-e29b-41d4-a716-446655440000",
+    "name": "João Silva",
+    "status": "pending",
+    "bankCode": "450",
+    "branch": null,
+    "number": null,
+    "digit": null
+  },
+  "apiKey": {
+    "id": "aa0e8400-e29b-41d4-a716-446655440000",
+    "type": "secret",
+    "secret": "sk_test_abc123...",
+    "description": "Sub-account João Silva",
+    "permissions": [
+      "customer.read",
+      "customer.write",
+      "charge.read",
+      "charge.write",
+      "transfer.read",
+      "transfer.write",
+      "api_key.read"
+    ],
+    "createdAt": "2026-03-18T10:00:00.000Z",
+    "updatedAt": "2026-03-18T10:00:00.000Z"
+  },
+  "paymentMethodConfigurations": [],
+  "createdAt": "2026-03-18T10:00:00.000Z",
+  "updatedAt": "2026-03-18T10:00:00.000Z"
+}
+```
+
+A chave da subconta tem as permissões listadas acima (clientes, cobranças, transferências e leitura de chaves), não inclui `sub_account.*`. Guarde `apiKey.secret`: ele não é exibido de novo.
+
+- `403` — a chave não tem `sub_account.write`.
+- `422` — corpo inválido (por exemplo, CPF/CNPJ inválido).

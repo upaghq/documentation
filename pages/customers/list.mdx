@@ -1,0 +1,76 @@
+---
+title: 'Listar clientes'
+description: 'Lista os clientes da conta, mais recentes primeiro'
+sidebarTitle: 'Listar'
+api: 'GET https://api.upag.io/v1/customers'
+---
+
+Lista os clientes da conta, do mais recente para o mais antigo. Clientes excluídos não aparecem.
+
+Permissão: `customer.read`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -G https://api.upag.dev/v1/customers \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -d "page=1" \
+  -d "limit=15"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const { data, count } = await upag.customers.list({ page: 1, limit: 15 });
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField query="page" type="integer" default="1">
+  Página, a partir de 1.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="15">
+  Itens por página, mínimo 1.
+</ParamField>
+
+## Resposta
+
+`200 OK`. `count` é o total de clientes da conta.
+
+```json Response
+{
+  "data": [
+    {
+      "id": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+      "name": "Maria Souza",
+      "email": "maria@example.com",
+      "document": { "number": "12345678909", "type": "cpf" },
+      "phone": { "countryCode": "55", "areaCode": "11", "number": "999998888" },
+      "address": {
+        "street": "Avenida Paulista",
+        "number": "1578",
+        "complement": null,
+        "neighborhood": "Bela Vista",
+        "city": "São Paulo",
+        "state": "SP",
+        "country": "BR",
+        "zip": "01310200"
+      },
+      "createdAt": "2026-07-27T18:04:11.482Z",
+      "updatedAt": "2026-07-27T18:04:11.482Z"
+    }
+  ],
+  "count": 1
+}
+```
+
+Campos em [Referência](./reference).

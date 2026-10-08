@@ -1,0 +1,81 @@
+---
+title: 'Iniciar checkout Shopify'
+description: 'Transforma o carrinho de uma loja Shopify em uma sessão e devolve a URL do checkout'
+sidebarTitle: 'Checkout Shopify'
+api: 'POST https://api.upag.io/v1/checkout/shopify/sessions'
+---
+
+Usado pelo snippet da loja Shopify: recebe a chave publicável e o carrinho (variantes e quantidades) e devolve a URL do checkout hospedado, que já embute o `clientSecret` da sessão criada. Não há cabeçalho de autenticação: a conta é a da chave publicável enviada no corpo.
+
+A Upag consulta a Shopify (app ativo da conta) para calcular os valores do carrinho e cria, para cada variante, um produto e um preço `one_time` (reaproveitados nas próximas vezes, com o valor atualizado). A sessão aceita `pix` e `card`, não tem cupom e vence em 24 horas.
+
+Limite: 20 sessões por minuto por IP.
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`) com `pk_test_…`. Em produção use `https://api.upag.io/v1` com `pk_live_…`. O `upag-js` escolhe o host pela chave.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/checkout/shopify/sessions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "publishableKey": "pk_test_your_public_key",
+    "items": [
+      { "variantId": "gid://shopify/ProductVariant/44120398217", "quantity": 2 }
+    ]
+  }'
+```
+
+```javascript upag-js
+import { UpagJs } from 'upag-js';
+
+const upag = new UpagJs('pk_test_your_public_key');
+
+const { url } = await upag.checkout.startShopify({
+  items: [{ variantId: 'gid://shopify/ProductVariant/44120398217', quantity: 2 }],
+});
+
+window.location.href = url;
+```
+</CodeGroup>
+
+O `upag-js` já envia a chave publicável com a qual foi inicializado.
+
+## Parâmetros
+
+<ParamField body="publishableKey" type="string" required>
+  Chave publicável da conta (`pk_…`).
+</ParamField>
+
+<ParamField body="items" type="array" required>
+  De 1 a 50 itens do carrinho.
+
+  - `variantId` (obrigatório): ID da variante na Shopify.
+  - `quantity` (obrigatório): inteiro de 1 a 999.
+</ParamField>
+
+## Resposta
+
+`201 Created`
+
+```json Response
+{
+  "url": "https://checkout.upag.io/cs/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26/Zk3v0pQ8xJ2mR7cYt1LwN5dHs9uAeB4gXo6iFqVjT0E"
+}
+```
+
+O final da URL é o `clientSecret`: trate a URL como credencial e não a registre em logs.
+
+## Erros
+
+| Status | Código | Quando |
+| ------ | ------ | ------ |
+| `401` | `SHOPIFY_PUBLISHABLE_KEY_INVALID` | A chave não existe ou não é publicável |
+| `400` | `SHOPIFY_NOT_CONNECTED` | A conta não tem um app Shopify ativo |
+| `400` | `CHECKOUT_URL_NOT_CONFIGURED` | O checkout hospedado não está configurado |
+| `422` | `VALIDATION_FAILED` | `publishableKey` sem o prefixo `pk_`, ou `items` fora dos limites |
+| `401` / `422` | `SHOPIFY_*` | A Shopify recusou o token do app (por exemplo `SHOPIFY_INVALID_CLIENT` ou `SHOPIFY_APP_NOT_INSTALLED`) |
+| `429` | n/a | Mais de 20 sessões por minuto pelo mesmo IP |

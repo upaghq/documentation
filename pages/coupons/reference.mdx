@@ -1,0 +1,67 @@
+---
+title: 'Referência'
+description: 'Objeto Cupom (coupon)'
+sidebarTitle: 'Visão geral'
+---
+
+Um cupom dá desconto percentual ou de valor fixo em um checkout. Para o comprador usá-lo, o [link de pagamento](../payment-links/reference) ou a sessão de checkout precisa ter cupons habilitados (`couponEnabled`).
+
+## Estrutura
+
+```json
+{
+  "id": "a3c4d5e6-7f80-4912-8abc-0d1e2f3a4b5c",
+  "name": "Black Friday",
+  "description": "20% em todos os produtos",
+  "active": true,
+  "type": "percentage",
+  "code": "BLACK20",
+  "currency": null,
+  "amountOff": null,
+  "percentOff": 20,
+  "uses": 0,
+  "maxUses": 100,
+  "appliesTo": "all",
+  "appliesToProducts": null,
+  "expiresAt": "2026-12-01T00:00:00.000Z",
+  "createdAt": "2026-03-18T11:10:00.000Z",
+  "updatedAt": "2026-03-18T11:10:00.000Z"
+}
+```
+
+## Atributos
+
+<AccordionGroup>
+  <Accordion title="type">
+    `percentage` (usa `percentOff`, inteiro de 1 a 100) ou `fixed` (usa `amountOff` em centavos e `currency`). O campo do outro tipo vem `null`.
+  </Accordion>
+  <Accordion title="code">
+    Código digitado pelo comprador (mínimo 3 caracteres). É normalizado para maiúsculas, sem espaços nas pontas, e é único por conta. Não pode ser alterado depois de criado.
+  </Accordion>
+  <Accordion title="amountOff / currency">
+    Só em `fixed`. `amountOff` em centavos (inteiro ≥ 1); `currency` é `brl` ou `usd`. Um cupom fixo só desconta quando a moeda bate com a da cobrança.
+  </Accordion>
+  <Accordion title="uses / maxUses">
+    `uses` é quantas vezes o cupom foi usado. `maxUses` (inteiro ≥ 1, ou `null` para ilimitado) é o teto de usos.
+  </Accordion>
+  <Accordion title="appliesTo / appliesToProducts">
+    `all` ou `specific`. Em `specific`, `appliesToProducts` é a lista de UUIDs de produtos elegíveis (obrigatória e não vazia). Em `all` vem `null`.
+  </Accordion>
+  <Accordion title="active / expiresAt">
+    Cupom inativo ou expirado é recusado na aplicação. `expiresAt` é uma data ISO 8601 ou `null`.
+  </Accordion>
+</AccordionGroup>
+
+## Endpoints
+
+- [Criar cupom](./create)
+- [Listar cupons](./list)
+- [Obter cupom](./get)
+- [Atualizar cupom](./update)
+- [Excluir cupom](./delete)
+
+Todos exigem chave secreta (`sk_`).
+
+## Erros ao aplicar um cupom
+
+Ao aplicar o cupom em um checkout, a API pode responder `400` com `COUPON_NOT_ENABLED`, `COUPON_NOT_ACTIVE`, `COUPON_EXPIRED` ou `COUPON_MAX_USES_REACHED`.

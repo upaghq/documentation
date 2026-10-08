@@ -1,0 +1,163 @@
+---
+title: 'Iniciar sessão de checkout'
+description: 'Abre uma sessão a partir do código de um link de pagamento e devolve o clientSecret'
+sidebarTitle: 'Iniciar'
+api: 'POST https://api.upag.io/v1/checkout/payment-links/{code}/sessions'
+---
+
+Abre uma sessão de checkout a partir de um [link de pagamento](../payment-links/reference). É o primeiro passo do checkout no navegador: o `code` do link identifica a conta, então **não há autenticação**.
+
+A sessão é uma cópia do link no momento da abertura (itens, bumps, métodos de pagamento, layout, URLs e teste). Editar o link depois não muda uma sessão já aberta. Ela fica `open` por 24 horas.
+
+A resposta traz o `clientSecret`, **uma única vez**: só o hash dele é guardado e ele não pode ser recuperado. Use-o como `Authorization: Bearer <clientSecret>` para [obter](./retrieve), [confirmar](./confirm) e mexer em [cupom](./apply-coupon) daquela sessão, e nada mais. Outras sessões da conta ficam fora do alcance dele.
+
+Limite: 20 sessões por minuto por IP. Excedido, a API responde `429`.
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`; no navegador, o `upag-js` usa só a chave pública (`pk_test_…` / `pk_live_…`) e escolhe o host por ela.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/checkout/payment-links/curso-culinaria/sessions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "utmSource": "instagram",
+    "utmCampaign": "lancamento"
+  }'
+```
+
+```javascript upag-js
+import { UpagJs } from 'upag-js';
+
+const upag = new UpagJs('pk_test_your_public_key');
+
+const session = await upag.checkout.start('curso-culinaria', {
+  utmSource: 'instagram',
+  utmCampaign: 'lancamento',
+});
+
+const { id, clientSecret } = session;
+```
+</CodeGroup>
+
+Para só levar o navegador à página hospedada, use `upag.checkout.redirectToCheckout('curso-culinaria')`: ele chama este endpoint e redireciona para `url`.
+
+## Parâmetros
+
+<ParamField path="code" type="string" required>
+  Código do link de pagamento (até 32 caracteres).
+</ParamField>
+
+O corpo é opcional. Todos os campos servem para atribuição de marketing e só são gravados se pelo menos um vier preenchido.
+
+<ParamField body="utmSource" type="string | null">
+  Até 255 caracteres.
+</ParamField>
+
+<ParamField body="utmMedium" type="string | null">
+  Até 255 caracteres.
+</ParamField>
+
+<ParamField body="utmCampaign" type="string | null">
+  Até 255 caracteres.
+</ParamField>
+
+<ParamField body="utmTerm" type="string | null">
+  Até 255 caracteres.
+</ParamField>
+
+<ParamField body="utmContent" type="string | null">
+  Até 255 caracteres.
+</ParamField>
+
+<ParamField body="clickId" type="string | null">
+  Identificador do clique do anúncio, até 255 caracteres.
+</ParamField>
+
+## Resposta
+
+`201 Created`. É a [visão do pagador](./retrieve) com `clientSecret` preenchido.
+
+```json Response
+{
+  "id": "4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26",
+  "status": "open",
+  "url": "https://checkout.upag.io/cs/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26",
+  "paymentLink": "c3f81a5e-2b94-4d70-a6e3-9d0b7c1f4a58",
+  "expiresAt": "2026-10-08T19:00:00.000Z",
+  "createdAt": "2026-10-07T19:00:00.000Z",
+  "updatedAt": "2026-10-07T19:00:00.000Z",
+  "currency": "brl",
+  "subtotal": 19900,
+  "discountAmount": 0,
+  "amount": 19900,
+  "items": [
+    {
+      "id": "b7e1c4a9-3d52-4f08-86a1-2c9d5e7f0b34",
+      "quantity": 1,
+      "price": {
+        "id": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61",
+        "name": "Curso de Culinária",
+        "billingType": "one_time",
+        "interval": null,
+        "intervalCount": null,
+        "currency": "brl",
+        "amount": 19900,
+        "product": {
+          "id": "7d2b5e90-1c34-4a68-b9f7-0e3a6c8d1f25",
+          "name": "Curso de Culinária",
+          "description": "12 aulas em vídeo",
+          "image": null
+        }
+      }
+    }
+  ],
+  "bumps": [],
+  "discounts": [],
+  "couponEnabled": true,
+  "couponCode": null,
+  "billingAddressCollection": "auto",
+  "trial": null,
+  "paymentMethodCollection": "always",
+  "successUrl": "https://exemplo.com.br/obrigado",
+  "cancelUrl": "https://exemplo.com.br/carrinho",
+  "layout": null,
+  "paymentMethods": [
+    {
+      "type": "card",
+      "interestRate": 2.99,
+      "installments": [
+        { "count": 1, "amount": 19900, "total": 19900 },
+        { "count": 2, "amount": 10070, "total": 20140 }
+      ]
+    },
+    {
+      "type": "pix",
+      "interestRate": 0,
+      "installments": [{ "count": 1, "amount": 19900, "total": 19900 }]
+    }
+  ],
+  "customer": null,
+  "charge": null,
+  "invoice": null,
+  "clientSecret": "Zk3v0pQ8xJ2mR7cYt1LwN5dHs9uAeB4gXo6iFqVjT0E",
+  "account": {
+    "displayName": "Loja Exemplo",
+    "legalName": "Loja Exemplo Ltda",
+    "publishableKey": "pk_test_your_public_key",
+    "threeDSecureEnabled": false
+  }
+}
+```
+
+## Erros
+
+| Status | Código | Quando |
+| ------ | ------ | ------ |
+| `404` | `PAYMENT_LINK_NOT_FOUND` | Nenhum link com esse `code` |
+| `410` | `PAYMENT_LINK_INACTIVE` | O link foi desativado |
+| `422` | `VALIDATION_FAILED` | Algum campo de atribuição passa de 255 caracteres |
+| `429` | n/a | Mais de 20 sessões por minuto pelo mesmo IP |

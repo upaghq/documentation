@@ -1,0 +1,64 @@
+---
+title: 'Obter preço'
+description: 'Consulta um preço de um produto'
+sidebarTitle: 'Obter'
+api: 'GET https://api.upag.io/v1/products/{productId}/prices/{priceId}'
+---
+
+Permissão: `price.read` (chave secreta).
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.dev/v1/products/0b9c1f3e-6a4d-4c1e-9d55-3f1f6a7c2e10/prices/5f2d7a90-3b1c-4e8a-8f6d-1c9e4b7a2d33 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+// upag.prices.retrieve(productId, priceId)
+const price = await upag.prices.retrieve(
+  '0b9c1f3e-6a4d-4c1e-9d55-3f1f6a7c2e10',
+  '5f2d7a90-3b1c-4e8a-8f6d-1c9e4b7a2d33',
+);
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`.
+</Note>
+
+## Parâmetros
+
+<ParamField path="productId" type="string (uuid)" required>
+  ID do produto.
+</ParamField>
+
+<ParamField path="priceId" type="string (uuid)" required>
+  ID do preço.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "id": "5f2d7a90-3b1c-4e8a-8f6d-1c9e4b7a2d33",
+  "name": "Mensal",
+  "billingType": "recurring",
+  "interval": "month",
+  "intervalCount": 1,
+  "currency": "brl",
+  "amount": 4990,
+  "metadata": { "tier": "pro" },
+  "createdAt": "2026-03-18T11:05:00.000Z",
+  "updatedAt": "2026-03-18T11:05:00.000Z"
+}
+```
+
+`404` — `PRODUCT_NOT_FOUND` ou `PRICE_NOT_FOUND` (preço que não pertence ao produto informado).

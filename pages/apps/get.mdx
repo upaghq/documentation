@@ -1,0 +1,57 @@
+---
+title: 'Obter app'
+description: 'Consulta um app pelo ID'
+sidebarTitle: 'Obter'
+api: 'GET https://api.upag.io/v1/apps/{appId}'
+---
+
+Permissão: `app.read` (chave secreta).
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.dev/v1/apps/b7c8d9e0-f1a2-4b3c-8d4e-5f6a7b8c9d01 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const app = await upag.apps.retrieve('b7c8d9e0-f1a2-4b3c-8d4e-5f6a7b8c9d01');
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`.
+</Note>
+
+## Parâmetros
+
+<ParamField path="appId" type="string (uuid)" required>
+  ID do app.
+</ParamField>
+
+## Resposta
+
+`200 OK` — segredos em `config` vêm mascarados.
+
+```json Response
+{
+  "id": "b7c8d9e0-f1a2-4b3c-8d4e-5f6a7b8c9d01",
+  "type": "integration",
+  "provider": "meta",
+  "scope": "public",
+  "name": "Meta Pixel",
+  "config": { "pixelId": "123456789", "accessToken": "********oken" },
+  "active": true,
+  "appliesTo": "all",
+  "appliesToProducts": null,
+  "createdAt": "2026-03-18T11:30:00.000Z",
+  "updatedAt": "2026-03-18T11:30:00.000Z"
+}
+```
+
+`404` (`APP_NOT_FOUND`) se o app não existir ou pertencer a outra conta.

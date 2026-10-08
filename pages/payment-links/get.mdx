@@ -1,0 +1,75 @@
+---
+title: 'Obter link de pagamento'
+description: 'Consulta um link de pagamento pelo ID'
+sidebarTitle: 'Obter'
+api: 'GET https://api.upag.io/v1/payment-links/{paymentLinkId}'
+---
+
+Permissão: `payment_link.read` (chave secreta).
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.dev/v1/payment-links/d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const link = await upag.paymentLinks.retrieve('d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70');
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`.
+</Note>
+
+## Parâmetros
+
+<ParamField path="paymentLinkId" type="string (uuid)" required>
+  ID do link de pagamento.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "id": "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70",
+  "name": "Plano Pro com trial",
+  "description": null,
+  "checkoutLayout": null,
+  "active": true,
+  "amount": 4990,
+  "url": "https://checkout.upag.io/buy/Xk3mPq9RtVw2Zd7B",
+  "paymentMethods": ["pix", "card"],
+  "couponEnabled": false,
+  "billingAddressCollection": "auto",
+  "successUrl": "https://example.com/obrigado",
+  "cancelUrl": null,
+  "subscriptionData": {
+    "trial": { "interval": "day", "intervalCount": 14 },
+    "trialSettings": { "endBehavior": { "missingPaymentMethod": "cancel" } }
+  },
+  "paymentMethodCollection": "always",
+  "items": [
+    {
+      "id": "e5f6a7b8-c9d0-4e1f-8a2b-3c4d5e6f7a81",
+      "product": "0b9c1f3e-6a4d-4c1e-9d55-3f1f6a7c2e10",
+      "price": "5f2d7a90-3b1c-4e8a-8f6d-1c9e4b7a2d33",
+      "quantity": 1,
+      "amount": 4990
+    }
+  ],
+  "bumps": [],
+  "createdAt": "2026-03-18T11:20:00.000Z",
+  "updatedAt": "2026-03-18T11:20:00.000Z"
+}
+```
+
+`404` (`PAYMENT_LINK_NOT_FOUND`) se o link não existir ou pertencer a outra conta.

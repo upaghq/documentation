@@ -1,0 +1,87 @@
+---
+title: 'Obter assinatura'
+description: 'Consulta uma assinatura com seus itens'
+sidebarTitle: 'Obter'
+api: 'GET https://api.upag.io/v1/subscriptions/{subscriptionId}'
+---
+
+Retorna uma assinatura com seus itens ativos.
+
+Permissão: `subscription.read`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.dev/v1/subscriptions/9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const subscription = await upag.subscriptions.retrieve('9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36');
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="subscriptionId" type="string (uuid)" required>
+  ID da assinatura.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "id": "9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36",
+  "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "paymentMethod": "card",
+  "card": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
+  "status": "trialing",
+  "currency": "brl",
+  "interval": "month",
+  "intervalCount": 1,
+  "cancelAtPeriodEnd": false,
+  "startDate": null,
+  "endDate": null,
+  "trialStartDate": "2026-10-07T19:00:00.000Z",
+  "trialEndDate": "2026-10-21T19:00:00.000Z",
+  "trialEndBehavior": null,
+  "currentPeriodStart": null,
+  "currentPeriodEnd": null,
+  "canceledAt": null,
+  "cancellationReason": null,
+  "items": [
+    {
+      "id": "c6d2f9a4-7e18-4b35-9a60-3f1e8d5b2c07",
+      "product": "7d2b5e90-1c34-4a68-b9f7-0e3a6c8d1f25",
+      "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61",
+      "name": "Plano mensal",
+      "amount": 9900,
+      "quantity": 1,
+      "totalAmount": 9900,
+      "createdAt": "2026-10-07T19:00:00.000Z",
+      "updatedAt": "2026-10-07T19:00:00.000Z"
+    }
+  ],
+  "createdAt": "2026-10-07T19:00:00.000Z",
+  "updatedAt": "2026-10-07T19:00:00.000Z"
+}
+```
+
+Durante o teste (`trialing`), `startDate`, `currentPeriodStart` e `currentPeriodEnd` são `null`: o primeiro período só começa quando o teste acaba.
+
+## Erros
+
+| Status | Código | Quando |
+| ------ | ------ | ------ |
+| `404` | `SUBSCRIPTION_NOT_FOUND` | A assinatura não existe ou é de outra conta |

@@ -1,0 +1,69 @@
+---
+title: 'Referência'
+description: 'Objeto Webhook da API Upag'
+sidebarTitle: 'Referência'
+---
+
+## Estrutura
+
+```json
+{
+  "id": "aa0e8400-e29b-41d4-a716-446655440000",
+  "description": "Order events",
+  "active": true,
+  "url": "https://example.com/webhooks",
+  "headers": { "X-Custom": "value" },
+  "events": ["charge.paid", "transfer.completed"],
+  "secret": "whsec_abc123...",
+  "createdAt": "2026-03-18T09:00:00.000Z",
+  "updatedAt": "2026-03-18T09:00:00.000Z"
+}
+```
+
+| Campo | Tipo | Descrição |
+| ----- | ---- | --------- |
+| `id` | `string (uuid)` | Identificador do webhook |
+| `description` | `string \| null` | Rótulo interno |
+| `active` | `boolean` | Só webhooks ativos recebem entregas |
+| `url` | `string` | URL que recebe o `POST` de cada evento |
+| `headers` | `object` | Headers extras enviados em cada entrega (`string` → `string`) |
+| `events` | `string[]` | Eventos assinados; catálogo em [Webhooks](./overview#eventos) |
+| `secret` | `string` | Segredo de assinatura (`whsec_...`) |
+| `createdAt` | `string` | ISO 8601 |
+| `updatedAt` | `string` | ISO 8601 |
+
+O `secret` é gerado na [criação](./create) e retornado em todas as leituras. Use-o para [validar a assinatura](./security) de cada entrega. Ele não pode ser trocado por `PATCH`.
+
+## Objeto de entrega
+
+Corpo do `POST` que sua URL recebe:
+
+```json
+{
+  "id": "880e8400-e29b-41d4-a716-446655440000",
+  "event": "charge.paid",
+  "createdAt": "2026-03-18T12:05:00.000Z",
+  "data": { }
+}
+```
+
+Envelope, headers e semântica de entrega em [Webhooks](./overview#envelope).
+
+## Log de entrega
+
+Cada tentativa de entrega gera um log consultável em [Logs de entrega](../webhook-logs/list).
+
+## Endpoints
+
+| Ação | Rota |
+| ---- | ---- |
+| [Criar](./create) | `POST /v1/webhooks` |
+| [Listar](./list) | `GET /v1/webhooks` |
+| [Obter](./get) | `GET /v1/webhooks/{webhookId}` |
+| [Atualizar](./update) | `PATCH /v1/webhooks/{webhookId}` |
+| [Excluir](./delete) | `DELETE /v1/webhooks/{webhookId}` |
+| [Listar logs](../webhook-logs/list) | `GET /v1/webhooks/{webhookId}/logs` |
+| [Obter log](../webhook-logs/get) | `GET /v1/webhooks/{webhookId}/logs/{logId}` |
+| [Reprocessar log](../webhook-logs/reprocess) | `POST /v1/webhooks/{webhookId}/logs/{logId}/reprocess` |
+
+Permissões: `webhook.read` para leituras, `webhook.write` para criar, atualizar, excluir e reprocessar.

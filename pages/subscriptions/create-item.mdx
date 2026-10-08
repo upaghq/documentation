@@ -1,0 +1,106 @@
+---
+title: 'Adicionar item'
+description: 'Adiciona um preço recorrente à assinatura, agora ou na próxima renovação'
+sidebarTitle: 'Adicionar item'
+api: 'POST https://api.upag.io/v1/subscriptions/{subscriptionId}/items'
+---
+
+Adiciona um preço `recurring` à assinatura. Com `applyAt: "now"` (padrão) o item entra na hora; com `applyAt: "period_end"` a adição fica registrada como uma [mudança agendada](./scheduled-changes) e é aplicada na próxima renovação.
+
+Adicionar um item não gera fatura nem cobrança proporcional: o novo valor passa a valer na próxima renovação.
+
+Permissão: `subscription.write`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/subscriptions/9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36/items \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "price": "b2e7a05c-9d41-4c38-8f6a-1e0d5c3b7a92",
+    "quantity": 2,
+    "applyAt": "now"
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const item = await upag.subscriptions.createItem('9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36', {
+  price: 'b2e7a05c-9d41-4c38-8f6a-1e0d5c3b7a92',
+  quantity: 2,
+  applyAt: 'now',
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="subscriptionId" type="string (uuid)" required>
+  ID da assinatura.
+</ParamField>
+
+<ParamField body="price" type="string (uuid)" required>
+  UUID de um [preço](../prices/reference) `recurring`, com o mesmo `interval`, `intervalCount` e moeda da assinatura, e que ainda não esteja nela.
+</ParamField>
+
+<ParamField body="quantity" type="integer" default="1">
+  Quantidade, mínimo 1.
+</ParamField>
+
+<ParamField body="applyAt" type="string" default="now">
+  `now` ou `period_end`.
+</ParamField>
+
+## Resposta
+
+`201 Created`. O corpo depende de `applyAt`.
+
+Com `now`, é o item criado:
+
+```json Response (applyAt: now)
+{
+  "id": "d4a8c1e6-2f90-4b57-9e13-8a6c0b7d5f24",
+  "product": "f19c3b82-6a05-4d7e-b4c1-2e8a9d0f6b37",
+  "price": "b2e7a05c-9d41-4c38-8f6a-1e0d5c3b7a92",
+  "name": "Usuário adicional",
+  "amount": 2900,
+  "quantity": 2,
+  "totalAmount": 5800,
+  "createdAt": "2026-10-12T14:20:00.000Z",
+  "updatedAt": "2026-10-12T14:20:00.000Z"
+}
+```
+
+Com `period_end`, é a [mudança agendada](./scheduled-changes):
+
+```json Response (applyAt: period_end)
+{
+  "id": "6e3b9d07-1c52-4a84-b0f6-9d2a7c4e1b58",
+  "subscription": "9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36",
+  "operation": "add",
+  "item": null,
+  "price": "b2e7a05c-9d41-4c38-8f6a-1e0d5c3b7a92",
+  "quantity": 2,
+  "createdAt": "2026-10-12T14:20:00.000Z"
+}
+```
+
+## Erros
+
+| Status | Código | Quando |
+| ------ | ------ | ------ |
+| `404` | `SUBSCRIPTION_NOT_FOUND` | A assinatura não existe ou é de outra conta |
+| `404` | `PRICE_NOT_FOUND` / `PRODUCT_NOT_FOUND` | O preço, ou o produto dele, não existe na conta |
+| `400` | `SUBSCRIPTION_NOT_EDITABLE` | A assinatura está `canceled` ou `void` |
+| `400` | `SUBSCRIPTION_PRICE_NOT_RECURRING` | O preço não é `recurring` |
+| `400` | `SUBSCRIPTION_PRICE_MISMATCH` | Intervalo ou moeda diferentes da assinatura |
+| `400` | `SUBSCRIPTION_DUPLICATE_PRICE` | O preço já está na assinatura; altere a quantidade do item existente |

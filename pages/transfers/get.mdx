@@ -1,0 +1,75 @@
+---
+title: 'Obter transferência'
+description: 'Consulta uma transferência pelo ID'
+sidebarTitle: 'Obter'
+api: 'GET https://api.upag.io/v1/transfers/{transferId}'
+---
+
+Permissão: `transfer.read`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.dev/v1/transfers/770e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const transfer = await upag.transfers.retrieve('770e8400-e29b-41d4-a716-446655440000');
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="transferId" type="string (uuid)" required>
+  ID da transferência.
+</ParamField>
+
+## Resposta
+
+`200 OK`. Diferente da criação, não traz `transaction`.
+
+```json Response
+{
+  "id": "770e8400-e29b-41d4-a716-446655440000",
+  "status": "completed",
+  "direction": "out",
+  "type": "key",
+  "amount": 10000,
+  "pixKey": "55ce1aae-0d2b-4d76-bc77-294d6407349e",
+  "pixKeyType": "random",
+  "from": {
+    "name": "Acme LTDA",
+    "taxNumber": "12345678000199",
+    "bankName": "Upag"
+  },
+  "to": {
+    "name": "Maria Receiver",
+    "taxNumber": "111.444.777-35",
+    "bankName": "FitBank"
+  },
+  "endToEndId": "E12345678202603181200000000000000",
+  "providerTransactionId": "555",
+  "url": null,
+  "createdAt": "2026-03-18T12:00:00.000Z",
+  "updatedAt": "2026-03-18T12:01:00.000Z"
+}
+```
+
+Campos em [Referência](./reference).
+
+## Erros
+
+| Status | Mensagem | Causa |
+| ------ | -------- | ----- |
+| `404` | `Transfer not found` | Transferência inexistente ou de outra conta |
+| `422` | `VALIDATION_FAILED` | `transferId` não é UUID |

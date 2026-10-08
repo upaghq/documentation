@@ -1,0 +1,121 @@
+---
+title: 'Criar cliente'
+description: 'Cadastra um cliente na conta'
+sidebarTitle: 'Criar'
+api: 'POST https://api.upag.io/v1/customers'
+---
+
+Cadastra um cliente. O documento (CPF/CNPJ) é único por conta.
+
+Permissão: `customer.write`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/customers \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Maria Souza",
+    "email": "maria@example.com",
+    "document": { "type": "cpf", "number": "12345678909" },
+    "phone": { "countryCode": "55", "areaCode": "11", "number": "999998888" },
+    "address": {
+      "street": "Avenida Paulista",
+      "number": "1578",
+      "neighborhood": "Bela Vista",
+      "city": "São Paulo",
+      "state": "SP",
+      "country": "BR",
+      "zip": "01310200"
+    }
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const customer = await upag.customers.create({
+  name: 'Maria Souza',
+  email: 'maria@example.com',
+  document: { type: 'cpf', number: '12345678909' },
+  phone: { countryCode: '55', areaCode: '11', number: '999998888' },
+  address: {
+    street: 'Avenida Paulista',
+    number: '1578',
+    neighborhood: 'Bela Vista',
+    city: 'São Paulo',
+    state: 'SP',
+    country: 'BR',
+    zip: '01310200',
+  },
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField body="name" type="string" required>
+  Nome (mínimo 1 caractere).
+</ParamField>
+
+<ParamField body="document" type="object" required>
+  Documento do cliente.
+
+  - `type`: `cpf` ou `cnpj`.
+  - `number`: CPF com 11 dígitos, ou CNPJ válido (inclusive o alfanumérico). Pontos, barra e hífen são removidos.
+</ParamField>
+
+<ParamField body="email" type="string | null">
+  E-mail válido. String vazia é tratada como ausente.
+</ParamField>
+
+<ParamField body="phone" type="object | null">
+  `countryCode`, `areaCode` e `number` (strings não vazias). Os três são obrigatórios quando `phone` é enviado.
+</ParamField>
+
+<ParamField body="address" type="object | null">
+  `street`, `number`, `complement`, `neighborhood`, `city`, `state`, `country`, `zip`. Todos opcionais e anuláveis; string vazia vira `null`.
+</ParamField>
+
+## Resposta
+
+`201 Created`
+
+```json Response
+{
+  "id": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "name": "Maria Souza",
+  "email": "maria@example.com",
+  "document": { "number": "12345678909", "type": "cpf" },
+  "phone": { "countryCode": "55", "areaCode": "11", "number": "999998888" },
+  "address": {
+    "street": "Avenida Paulista",
+    "number": "1578",
+    "complement": null,
+    "neighborhood": "Bela Vista",
+    "city": "São Paulo",
+    "state": "SP",
+    "country": "BR",
+    "zip": "01310200"
+  },
+  "createdAt": "2026-07-27T18:04:11.482Z",
+  "updatedAt": "2026-07-27T18:04:11.482Z"
+}
+```
+
+Campos em [Referência](./reference).
+
+## Erros
+
+| Status | Mensagem | Causa |
+| ------ | -------- | ----- |
+| `409` | `Customer with this document number already exists` | Já existe cliente com esse documento na conta |
+| `422` | `VALIDATION_FAILED` | Corpo inválido (documento, e-mail, telefone incompleto…) |

@@ -1,0 +1,144 @@
+---
+title: 'Criar link de pagamento'
+description: 'Cria um link de pagamento com itens e bumps opcionais'
+sidebarTitle: 'Criar'
+api: 'POST https://api.upag.io/v1/payment-links'
+---
+
+Permissão: `payment_link.write` (chave secreta; chave publicável não é aceita).
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/payment-links \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Plano Pro com trial",
+    "successUrl": "https://example.com/obrigado",
+    "items": [
+      { "price": "5f2d7a90-3b1c-4e8a-8f6d-1c9e4b7a2d33", "quantity": 1 }
+    ],
+    "subscriptionData": {
+      "trial": { "interval": "day", "intervalCount": 14 },
+      "trialSettings": { "endBehavior": { "missingPaymentMethod": "cancel" } }
+    },
+    "paymentMethodCollection": "always"
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const link = await upag.paymentLinks.create({
+  name: 'Plano Pro com trial',
+  successUrl: 'https://example.com/obrigado',
+  items: [{ price: '5f2d7a90-3b1c-4e8a-8f6d-1c9e4b7a2d33', quantity: 1 }],
+  subscriptionData: {
+    trial: { interval: 'day', intervalCount: 14 }, // day ≤ 730, week ≤ 104, month ≤ 24
+    trialSettings: { endBehavior: { missingPaymentMethod: 'cancel' } }, // ou 'create_invoice' (padrão)
+  },
+  paymentMethodCollection: 'always', // ou 'if_required'
+});
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`.
+</Note>
+
+## Parâmetros
+
+<ParamField body="name" type="string" required>
+  Nome do link (1 a 255 caracteres).
+</ParamField>
+
+<ParamField body="items" type="array" required>
+  Mínimo 1 item: `{ "price": "uuid", "quantity": inteiro ≥ 1 }`. O mesmo `price` não pode repetir.
+</ParamField>
+
+<ParamField body="description" type="string | null">
+  Descrição.
+</ParamField>
+
+<ParamField body="checkoutLayout" type="string (uuid) | null">
+  ID de um [layout de checkout](../checkout-layouts/reference) da conta.
+</ParamField>
+
+<ParamField body="paymentMethods" type="string[]" default='["pix", "card"]'>
+  `pix` e/ou `card` (mínimo 1).
+</ParamField>
+
+<ParamField body="billingAddressCollection" type="string" default="auto">
+  `auto`, `required` ou `none`.
+</ParamField>
+
+<ParamField body="successUrl" type="string (url) | null">
+  URL de redirecionamento após o pagamento.
+</ParamField>
+
+<ParamField body="cancelUrl" type="string (url) | null">
+  URL de redirecionamento se o comprador desistir.
+</ParamField>
+
+<ParamField body="subscriptionData" type="object">
+  Trial das assinaturas criadas pelo link. Todos os campos são opcionais.
+
+  - `trial`: `{ "interval": "day" | "week" | "month", "intervalCount": inteiro ≥ 1 }` (limites: `day` ≤ 730, `week` ≤ 104, `month` ≤ 24) ou `null` para sem trial.
+  - `trialSettings.endBehavior.missingPaymentMethod`: `create_invoice` (padrão) ou `cancel`.
+</ParamField>
+
+<ParamField body="paymentMethodCollection" type="string" default="always">
+  `always` ou `if_required`. Define se o comprador deve deixar um método de pagamento quando nada é cobrado hoje (trial).
+</ParamField>
+
+<ParamField body="bumps" type="array" default="[]">
+  Ofertas adicionais: `{ "price": "uuid", "quantity": inteiro ≥ 1 (padrão 1), "amount": centavos ≥ 0 (padrão preço × quantidade), "title": string até 255, "description": string }`.
+</ParamField>
+
+O link nasce `active: true` e `couponEnabled: false`; ajuste em [Atualizar link](./update).
+
+## Resposta
+
+`201 Created`
+
+```json Response
+{
+  "id": "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70",
+  "name": "Plano Pro com trial",
+  "description": null,
+  "checkoutLayout": null,
+  "active": true,
+  "amount": 4990,
+  "url": "https://checkout.upag.io/buy/Xk3mPq9RtVw2Zd7B",
+  "paymentMethods": ["pix", "card"],
+  "couponEnabled": false,
+  "billingAddressCollection": "auto",
+  "successUrl": "https://example.com/obrigado",
+  "cancelUrl": null,
+  "subscriptionData": {
+    "trial": { "interval": "day", "intervalCount": 14 },
+    "trialSettings": { "endBehavior": { "missingPaymentMethod": "cancel" } }
+  },
+  "paymentMethodCollection": "always",
+  "items": [
+    {
+      "id": "e5f6a7b8-c9d0-4e1f-8a2b-3c4d5e6f7a81",
+      "product": "0b9c1f3e-6a4d-4c1e-9d55-3f1f6a7c2e10",
+      "price": "5f2d7a90-3b1c-4e8a-8f6d-1c9e4b7a2d33",
+      "quantity": 1,
+      "amount": 4990
+    }
+  ],
+  "bumps": [],
+  "createdAt": "2026-03-18T11:20:00.000Z",
+  "updatedAt": "2026-03-18T11:20:00.000Z"
+}
+```
+
+- `404` — `PRICE_NOT_FOUND`, `PRODUCT_NOT_FOUND` ou `CHECKOUT_LAYOUT_NOT_FOUND`.
+- `400` — violações das [regras de consistência](./reference).
+- `422` — validação do corpo.

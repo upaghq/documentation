@@ -1,0 +1,63 @@
+---
+title: 'Verificar script'
+description: 'Confere se o script de checkout está instalado e acessível na loja Shopify'
+sidebarTitle: 'Verificar script'
+api: 'GET https://api.upag.io/v1/apps/{appId}/script'
+---
+
+Compara o ScriptTag esperado com o que existe na loja e testa se a URL do script responde. Também sincroniza o `scriptTagId` guardado na `config`. Só apps `shopify`.
+
+Permissão: `app.read` (chave secreta).
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.dev/v1/apps/c8d9e0f1-a2b3-4c4d-9e5f-6a7b8c9d0e12/script \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const result = await upag.apps.verifyScript('c8d9e0f1-a2b3-4c4d-9e5f-6a7b8c9d0e12');
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`.
+</Note>
+
+## Parâmetros
+
+<ParamField path="appId" type="string (uuid)" required>
+  ID do app Shopify.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "status": "ok",
+  "installed": true,
+  "expectedSrc": "https://assets.upag.io/v1/shopify/checkout.min.js?pk=pk_live_...&api=https%3A%2F%2Fapi.upag.io%2Fv1%2Fcheckout",
+  "found": [
+    { "id": "175450112345", "src": "https://assets.upag.io/v1/shopify/checkout.min.js?pk=pk_live_...&api=https%3A%2F%2Fapi.upag.io%2Fv1%2Fcheckout" }
+  ],
+  "reachability": { "ok": true, "status": 200, "reason": null }
+}
+```
+
+`status` pode ser:
+
+- `ok` — instalado, com a URL esperada e acessível (`installed: true`).
+- `not_installed` — nenhum ScriptTag encontrado.
+- `stale_src` — existe, mas com URL diferente da esperada; reinstale.
+- `duplicated` — mais de um ScriptTag; reinstale para deixar só um.
+- `unreachable` — a URL do script não é acessível (`reachability.reason` indica o motivo, por exemplo `not_https`, `private_host`, `bad_status`, `not_javascript`, `dns_not_found` ou `connection_refused`).
+
+Erros: `404` (`APP_NOT_FOUND`); `400` (`APP_SCRIPT_NOT_SUPPORTED` em apps que não são Shopify, `SHOPIFY_CREDENTIALS_INCOMPLETE`).

@@ -1,0 +1,223 @@
+---
+title: 'Referência'
+description: 'Objeto Sessão de checkout (checkout session): uma tentativa de compra com itens, pagador e pagamento'
+sidebarTitle: 'Visão geral'
+---
+
+Uma sessão de checkout representa uma compra em andamento: os itens, os métodos de pagamento aceitos, o pagador e, depois da confirmação, a fatura e a assinatura que ela gerou. Ela nasce de duas formas:
+
+- **Do seu servidor**, com a chave secreta: [Criar sessão](./create). Você paga a sessão por [Confirmar](./confirm), também no servidor.
+- **Do navegador do pagador**, a partir de um [link de pagamento](../payment-links/reference): [Iniciar sessão](./start). A sessão é uma cópia do link no momento da abertura (itens, bumps, métodos, URLs, trial); editar o link depois não muda uma sessão já aberta. A resposta traz o `clientSecret`, a única credencial que o navegador usa para ler e pagar aquela sessão.
+
+Uma sessão fica `open` por 24 horas (ou até `expiresAt`) e vira `complete` quando o pagamento é aprovado (ou, num teste sem nada a cobrar hoje, quando é confirmada).
+
+## Endpoints
+
+Gerenciamento, com chave secreta (`sk_…`):
+
+| Método | Path | Permissão |
+| ------ | ---- | --------- |
+| `POST` | `/v1/checkout/sessions` | `checkout_session.write` |
+| `GET` | `/v1/checkout/sessions` | `checkout_session.read` |
+| `PATCH` | `/v1/checkout/sessions/{sessionId}` | `checkout_session.write` |
+| `DELETE` | `/v1/checkout/sessions/{sessionId}` | `checkout_session.write` |
+
+Ler e pagar uma sessão: aceitam a chave secreta ou o `clientSecret` da própria sessão (`Authorization: Bearer <clientSecret>`):
+
+| Método | Path | Permissão |
+| ------ | ---- | --------- |
+| `GET` | `/v1/checkout/sessions/{sessionId}` | `checkout_session.read` |
+| `POST` | `/v1/checkout/sessions/{sessionId}/confirm` | `checkout_session.write` |
+| `POST` | `/v1/checkout/sessions/{sessionId}/3ds/session` | `checkout_session.write` |
+| `POST` | `/v1/checkout/sessions/{sessionId}/coupon` | `checkout_session.write` |
+| `DELETE` | `/v1/checkout/sessions/{sessionId}/coupon` | `checkout_session.write` |
+| `GET` | `/v1/checkout/sessions/{sessionId}/apps` | `checkout_session.read` |
+
+Públicos, sem autenticação:
+
+| Método | Path | Descrição |
+| ------ | ---- | --------- |
+| `POST` | `/v1/checkout/payment-links/{code}/sessions` | [Iniciar sessão](./start) a partir de um link |
+| `POST` | `/v1/checkout/shopify/sessions` | [Iniciar checkout Shopify](./shopify) |
+
+<Note>
+  Sandbox: `https://api.upag.dev/v1` com `sk_test_…`. Produção: `https://api.upag.io/v1` com `sk_live_…`. O `clientSecret` nunca vai para uma chave secreta nem para logs; trate-o como uma senha de uma sessão só.
+</Note>
+
+## Estrutura
+
+É o que o servidor devolve em [Criar](./create), [Listar](./list), [Obter](./get) e [Atualizar](./update):
+
+```json
+{
+  "id": "4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26",
+  "customer": null,
+  "checkoutLayout": null,
+  "paymentLink": null,
+  "paymentMethods": ["pix", "card"],
+  "subscriptionData": {
+    "trial": { "interval": "day", "intervalCount": 14 },
+    "trialEnd": null,
+    "trialSettings": {
+      "endBehavior": { "missingPaymentMethod": "create_invoice" }
+    }
+  },
+  "paymentMethodCollection": "always",
+  "status": "open",
+  "url": "https://checkout.upag.io/cs/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26",
+  "expiresAt": "2026-10-08T19:00:00.000Z",
+  "createdAt": "2026-10-07T19:00:00.000Z",
+  "updatedAt": "2026-10-07T19:00:00.000Z",
+  "billingAddressCollection": "auto",
+  "successUrl": "https://exemplo.com.br/obrigado",
+  "cancelUrl": "https://exemplo.com.br/carrinho",
+  "latitude": null,
+  "longitude": null,
+  "country": null,
+  "region": null,
+  "city": null,
+  "invoice": null,
+  "subscription": null,
+  "couponEnabled": true,
+  "couponCode": null,
+  "items": [
+    {
+      "id": "b7e1c4a9-3d52-4f08-86a1-2c9d5e7f0b34",
+      "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61",
+      "quantity": 1
+    }
+  ],
+  "bumps": [],
+  "discounts": []
+}
+```
+
+## Atributos
+
+<ParamField body="id" type="string">
+  UUID da sessão.
+</ParamField>
+
+<ParamField body="customer" type="string | null">
+  UUID do [cliente](../customers/reference) da sessão. `null` até você informar um (por [Criar](./create) ou [Atualizar](./update)) ou até o pagador confirmar.
+</ParamField>
+
+<ParamField body="checkoutLayout" type="string | null">
+  UUID do [layout de checkout](../checkout-layouts/reference) copiado do link. `null` em sessões criadas por [Criar](./create).
+</ParamField>
+
+<ParamField body="paymentLink" type="string | null">
+  UUID do [link de pagamento](../payment-links/reference) de origem. `null` em sessões criadas por [Criar](./create) e Shopify.
+</ParamField>
+
+<ParamField body="paymentMethods" type="array">
+  Métodos aceitos: `pix` e/ou `card`.
+</ParamField>
+
+<ParamField body="subscriptionData" type="object">
+  Como começa a assinatura que os itens recorrentes criam.
+
+  - `trial`: duração relativa do teste (`interval`: `day`, `week` ou `month`; `intervalCount`), contada a partir do momento em que a assinatura é criada. `null` sem teste.
+  - `trialEnd`: data fixa de fim do teste, em ISO 8601. `null` sem teste ou com `trial`.
+  - `trialSettings.endBehavior.missingPaymentMethod`: `create_invoice` (cobra o primeiro período por Pix) ou `cancel`, quando o teste acaba sem método de pagamento. Veja [Teste grátis](../guides/free-trial).
+</ParamField>
+
+<ParamField body="paymentMethodCollection" type="string">
+  `always` (padrão) ou `if_required`. Com `if_required`, uma sessão sem nada a pagar hoje (teste) pode terminar sem método de pagamento.
+</ParamField>
+
+<ParamField body="status" type="string">
+  `open`, `complete` ou `expired`.
+</ParamField>
+
+<ParamField body="url" type="string | null">
+  Endereço da página de checkout hospedada da sessão. `null` quando o checkout hospedado não está configurado.
+</ParamField>
+
+<ParamField body="expiresAt" type="string | null">
+  ISO 8601 do vencimento. Depois dele a sessão não aceita mais pagamento. `null` quando a sessão nunca expira.
+</ParamField>
+
+<ParamField body="createdAt" type="string">
+  ISO 8601.
+</ParamField>
+
+<ParamField body="updatedAt" type="string">
+  ISO 8601.
+</ParamField>
+
+<ParamField body="billingAddressCollection" type="string">
+  `auto`, `required` ou `none`: se a página pede o endereço de cobrança.
+</ParamField>
+
+<ParamField body="successUrl" type="string | null">
+  URL para onde o pagador volta depois de pagar.
+</ParamField>
+
+<ParamField body="cancelUrl" type="string | null">
+  URL para onde o pagador volta se desistir.
+</ParamField>
+
+<ParamField body="latitude" type="number | null">
+  Reservado para a localização do pagador. A API não preenche no momento (`null`), assim como `longitude`, `country`, `region` e `city`.
+</ParamField>
+
+<ParamField body="invoice" type="string | null">
+  UUID da [fatura](../invoices/reference) criada na primeira confirmação. `null` antes dela, e também numa sessão confirmada sem nada a cobrar hoje.
+</ParamField>
+
+<ParamField body="subscription" type="string | null">
+  UUID da [assinatura](../subscriptions/reference) criada quando a sessão tem itens recorrentes. `null` antes da confirmação.
+</ParamField>
+
+<ParamField body="couponEnabled" type="boolean">
+  Se o pagador pode aplicar um [cupom](../coupons/reference).
+</ParamField>
+
+<ParamField body="couponCode" type="string | null">
+  Código do cupom aplicado.
+</ParamField>
+
+<ParamField body="items" type="array">
+  Itens da sessão.
+
+  - `id`: UUID do item.
+  - `price`: UUID do [preço](../prices/reference).
+  - `quantity`: quantidade.
+</ParamField>
+
+<ParamField body="bumps" type="array">
+  Ofertas extras (order bumps) que o pagador pode aceitar na confirmação.
+
+  - `id`: UUID do bump.
+  - `price`: UUID do preço.
+  - `quantity`: quantidade.
+  - `amount`: `valor do preço × quantity`, em **centavos**, calculado quando a sessão foi criada.
+  - `title`, `description`: textos opcionais (`null` quando ausentes).
+</ParamField>
+
+<ParamField body="discounts" type="array">
+  Descontos aplicados por cupom, um por item elegível.
+
+  - `id`: UUID do desconto.
+  - `item`: UUID do item da sessão.
+  - `coupon`: UUID do cupom.
+  - `type`: `coupon`.
+  - `amount`: desconto em **centavos**.
+</ParamField>
+
+## Status
+
+| Status | Significado |
+| ------ | ----------- |
+| `open` | Esperando o pagador. É o único estado em que a sessão pode ser alterada, removida ou receber cupom. Um Pix gerado e ainda não pago, ou um cartão recusado, mantêm a sessão `open`. |
+| `complete` | Paga (ou, num teste sem nada a cobrar hoje, confirmada). |
+| `expired` | Passou do `expiresAt` sem ser paga. |
+
+## Visão do pagador
+
+As rotas que o navegador chama com o `clientSecret` ([Iniciar](./start), [Obter](./retrieve), [Confirmar](./confirm), [cupom](./apply-coupon)) devolvem uma visão achatada e pronta para a página de checkout, em vez da estrutura acima: itens com o preço e o produto expandidos, `subtotal`, `discountAmount` e `amount` (em centavos), opções de parcelamento por método, `trial`, `customer`, `charge`, `invoice` e dados da conta. A forma é a mesma em todas essas rotas; só `clientSecret` muda (vem preenchido apenas em Iniciar, `null` nas demais). Os campos estão em [Obter sessão (pagador)](./retrieve).
+
+## Webhooks
+
+As mudanças chegam por [webhooks de checkout](../webhooks/payload-checkout).

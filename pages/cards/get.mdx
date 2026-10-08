@@ -1,0 +1,69 @@
+---
+title: 'Obter cartão'
+description: 'Consulta um cartão tokenizado pelo ID'
+sidebarTitle: 'Obter'
+api: 'GET https://api.upag.io/v1/cards/{cardId}'
+---
+
+Retorna os dados não sensíveis de um cartão. Número completo e CVV nunca são devolvidos.
+
+Permissão: `card.read`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.dev/v1/cards/5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const card = await upag.cards.retrieve('5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15');
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="cardId" type="string (uuid)" required>
+  ID do cartão.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "id": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
+  "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "brand": "visa",
+  "firstDigits": "424242",
+  "lastDigits": "4242",
+  "holderName": "Luke Skywalker",
+  "expirationMonth": 11,
+  "expirationYear": 2031,
+  "funding": "credit",
+  "wallet": null,
+  "status": "active",
+  "createdAt": "2026-07-27T18:04:11.482Z",
+  "updatedAt": "2026-07-27T18:06:04.331Z"
+}
+```
+
+Campos em [Referência](./reference).
+
+## Erros
+
+| Status | Mensagem | Causa |
+| ------ | -------- | ----- |
+| `404` | `Card not found` | Cartão inexistente, removido ou de outra conta |
+| `403` | — | Chave publicável (exige chave secreta) ou sem a permissão `card.read` |
+| `422` | `VALIDATION_FAILED` | `cardId` não é UUID |

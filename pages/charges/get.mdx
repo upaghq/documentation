@@ -1,0 +1,108 @@
+---
+title: 'Obter cobrança'
+description: 'Consulta uma cobrança pelo ID'
+sidebarTitle: 'Obter'
+api: 'GET https://api.upag.io/v1/charges/{chargeId}'
+---
+
+Retorna a cobrança com seus `splits` e `items` (`[]` quando não há itens).
+
+Permissão: `charge.read`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -G https://api.upag.dev/v1/charges/1f7d3c8a-4b52-4c9e-8a11-6d0e2f5b7c34 \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -d "includes=customer"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const charge = await upag.charges.retrieve('1f7d3c8a-4b52-4c9e-8a11-6d0e2f5b7c34', {
+  includes: 'customer',
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="chargeId" type="string (uuid)" required>
+  ID da cobrança.
+</ParamField>
+
+<ParamField query="includes" type="string">
+  `customer` — devolve o objeto cliente em `customer` no lugar do UUID. `items` já vem sempre neste endpoint.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "id": "1f7d3c8a-4b52-4c9e-8a11-6d0e2f5b7c34",
+  "type": "pix",
+  "status": "paid",
+  "amount": 12550,
+  "failureCode": null,
+  "description": "Pedido #10482",
+  "meta": null,
+  "customer": {
+    "id": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+    "name": "Maria Pagadora",
+    "email": "maria@example.com",
+    "document": { "number": "39053344705", "type": "cpf" },
+    "phone": null,
+    "address": {
+      "street": null,
+      "number": null,
+      "complement": null,
+      "neighborhood": null,
+      "city": null,
+      "state": null,
+      "country": null,
+      "zip": null
+    },
+    "createdAt": "2026-07-27T18:04:11.482Z",
+    "updatedAt": "2026-07-27T18:04:11.482Z"
+  },
+  "pix": {
+    "reference": "9d4c2b7f6a1e40538c9b2d7f1a6e0c34",
+    "qrCode": "00020101021226930014br.gov.bcb.pix...",
+    "expiresAt": "2026-07-28T12:00:00.000Z"
+  },
+  "splits": [
+    {
+      "id": "b0a9c7d4-2e51-4c8f-9a3b-7d5e1f0c6a92",
+      "type": "mdr",
+      "status": "paid",
+      "amount": 126,
+      "createdAt": "2026-07-27T18:06:02.113Z",
+      "updatedAt": "2026-07-27T18:31:09.020Z"
+    }
+  ],
+  "items": [],
+  "ipAddress": null,
+  "paidAt": "2026-07-27T18:31:07.554Z",
+  "createdAt": "2026-07-27T18:06:02.113Z",
+  "updatedAt": "2026-07-27T18:31:07.554Z"
+}
+```
+
+Sem `includes=customer`, `customer` é só o UUID. Campos em [Referência](./reference).
+
+## Erros
+
+| Status | Mensagem | Causa |
+| ------ | -------- | ----- |
+| `404` | `Charge not found` | Cobrança inexistente ou de outra conta |
+| `422` | `VALIDATION_FAILED` | `chargeId` não é UUID, ou `includes` inválido |

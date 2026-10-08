@@ -1,0 +1,127 @@
+---
+title: 'Referência'
+description: 'Objeto Transferência (transfer): Pix de entrada e saída'
+sidebarTitle: 'Visão geral'
+---
+
+Transferências Pix (entrada e saída) da conta da chave de API. Com chave secreta, o Pix de saída **não exige PIN**.
+
+Todos os endpoints exigem **chave secreta** (`sk_…`). Valores sempre em **centavos**.
+
+| Método | Path | Permissão |
+| ------ | ---- | --------- |
+| `POST` | `/v1/transfers/lookup` | `transfer.read` |
+| `POST` | `/v1/transfers` | `transfer.write` |
+| `GET` | `/v1/transfers` | `transfer.read` |
+| `GET` | `/v1/transfers/{transferId}` | `transfer.read` |
+| `GET` | `/v1/transfers/{transferId}/receipt` | `transfer.read` |
+
+<Note>
+  Sandbox: `https://api.upag.dev/v1` com `sk_test_…`. Produção: `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Estrutura
+
+```json
+{
+  "id": "770e8400-e29b-41d4-a716-446655440000",
+  "status": "processing",
+  "direction": "out",
+  "type": "key",
+  "amount": 10000,
+  "pixKey": "55ce1aae-0d2b-4d76-bc77-294d6407349e",
+  "pixKeyType": "random",
+  "from": {
+    "name": "Acme LTDA",
+    "taxNumber": "12345678000199",
+    "bankName": "Upag"
+  },
+  "to": {
+    "name": "Maria Receiver",
+    "taxNumber": "111.444.777-35",
+    "bankName": "FitBank"
+  },
+  "endToEndId": null,
+  "providerTransactionId": "555",
+  "url": null,
+  "createdAt": "2026-03-18T12:00:00.000Z",
+  "updatedAt": "2026-03-18T12:00:00.000Z"
+}
+```
+
+Na criação (`POST /v1/transfers`) a resposta inclui também `transaction`, o lançamento contábil (ver [Criar transferência](./create)).
+
+## Atributos
+
+<ParamField body="id" type="string">
+  UUID da transferência.
+</ParamField>
+
+<ParamField body="status" type="string">
+  `awaiting_approval`, `pending`, `processing`, `completed`, `canceled` ou `failed`. Veja [Status](#status).
+</ParamField>
+
+<ParamField body="direction" type="string">
+  `in` (Pix recebido) ou `out` (Pix enviado).
+</ParamField>
+
+<ParamField body="type" type="string">
+  Como o destino foi resolvido: `key` (chave Pix), `hash` (copia-e-cola) ou `beneficiary` (conta salva). Pela chave de API só é possível criar `key` e `hash`.
+</ParamField>
+
+<ParamField body="amount" type="integer">
+  Valor em centavos.
+</ParamField>
+
+<ParamField body="pixKey" type="string | null">
+  Chave Pix do destino.
+</ParamField>
+
+<ParamField body="pixKeyType" type="string | null">
+  `email`, `phone`, `cpf`, `cnpj` ou `random`.
+</ParamField>
+
+<ParamField body="from" type="object">
+  Quem enviou: `name`, `taxNumber` (somente dígitos) e `bankName`.
+</ParamField>
+
+<ParamField body="to" type="object">
+  Quem recebeu: `name`, `taxNumber` (formatado nas respostas da API, ex.: `111.444.777-35`) e `bankName`. Nos [payloads de webhook](../webhooks/payload-transfer) o `taxNumber` vem só com dígitos.
+</ParamField>
+
+<ParamField body="endToEndId" type="string | null">
+  Identificador fim a fim do Pix, quando disponível.
+</ParamField>
+
+<ParamField body="providerTransactionId" type="string | null">
+  Referência da transação no provedor.
+</ParamField>
+
+<ParamField body="url" type="string | null">
+  Endereço do comprovante usado pelo dashboard (exige sessão de usuário). Com chave de API, use [Comprovante](./receipt).
+</ParamField>
+
+<ParamField body="createdAt" type="string">
+  ISO 8601.
+</ParamField>
+
+<ParamField body="updatedAt" type="string">
+  ISO 8601.
+</ParamField>
+
+## Status
+
+| Status | Significado |
+| ------ | ----------- |
+| `awaiting_approval` | Reservado: exige aprovação manual antes do envio |
+| `pending` | Criada, pronta para ser enviada ao provedor |
+| `processing` | Enviada ao provedor, aguardando liquidação |
+| `completed` | Liquidada |
+| `canceled` | Cancelada antes do envio |
+| `failed` | Recusada pelo provedor (o débito é estornado) |
+
+Acompanhe por [webhooks de transferência](../webhooks/payload-transfer).
+
+## Próximos passos
+
+- [Guia: transferência Pix](../guides/pix-transfer)

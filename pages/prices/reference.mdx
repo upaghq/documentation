@@ -1,0 +1,53 @@
+---
+title: 'Referência'
+description: 'Objeto Preço (price)'
+sidebarTitle: 'Visão geral'
+---
+
+Um preço define quanto e como um [produto](../products/reference) é cobrado: uma vez ou de forma recorrente. Todo preço pertence a um produto e as rotas ficam em `/products/{productId}/prices`.
+
+## Estrutura
+
+```json
+{
+  "id": "5f2d7a90-3b1c-4e8a-8f6d-1c9e4b7a2d33",
+  "name": "Mensal",
+  "billingType": "recurring",
+  "interval": "month",
+  "intervalCount": 1,
+  "currency": "brl",
+  "amount": 4990,
+  "metadata": { "tier": "pro" },
+  "createdAt": "2026-03-18T11:05:00.000Z",
+  "updatedAt": "2026-03-18T11:05:00.000Z"
+}
+```
+
+## Atributos
+
+<AccordionGroup>
+  <Accordion title="amount">
+    Valor em **centavos** (inteiro, mínimo 100).
+  </Accordion>
+  <Accordion title="currency">
+    `brl` ou `usd`.
+  </Accordion>
+  <Accordion title="billingType">
+    `one_time` (cobrança única) ou `recurring` (assinatura).
+  </Accordion>
+  <Accordion title="interval / intervalCount">
+    Só em preços recorrentes: `interval` é `day`, `week`, `month` ou `year`, e `intervalCount` é a quantidade de intervalos entre cobranças (inteiro ≥ 1). Em `one_time` ambos são `null`.
+  </Accordion>
+  <Accordion title="metadata">
+    Mapa de chaves e valores seus: até 10 chaves, chave com até 20 caracteres, valor string (até 255 caracteres) ou booleano.
+  </Accordion>
+</AccordionGroup>
+
+## Endpoints
+
+- [Criar preço](./create)
+- [Listar preços](./list)
+- [Obter preço](./get)
+- [Atualizar preço](./update)
+
+Todos exigem chave secreta (`sk_`). Não há endpoint para excluir preços. Preços são referenciados por UUID em itens de [links de pagamento](../payment-links/reference), [sessões de checkout](../checkout-sessions/reference) e [assinaturas](../subscriptions/reference) (campo `price`).

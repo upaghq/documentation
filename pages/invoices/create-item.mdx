@@ -1,0 +1,75 @@
+---
+title: 'Adicionar item'
+description: 'Adiciona um item a uma fatura em rascunho'
+sidebarTitle: 'Adicionar item'
+api: 'POST https://api.upag.io/v1/invoices/{invoiceId}/items'
+---
+
+Adiciona um [preço](../prices/reference) a uma fatura em `draft` e recalcula `amountDue`. O `name` e o `amount` do item são copiados do preço neste momento.
+
+Permissão: `invoice.write`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/invoices/5b0e8d3a-9c71-4e26-a8f4-1d7c3b6e9a02/items \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{ "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61", "quantity": 1 }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const item = await upag.invoices.createItem('5b0e8d3a-9c71-4e26-a8f4-1d7c3b6e9a02', {
+  price: '3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61',
+  quantity: 1,
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="invoiceId" type="string (uuid)" required>
+  ID da fatura. Precisa estar em `draft`.
+</ParamField>
+
+<ParamField body="price" type="string (uuid)" required>
+  UUID do preço. Precisa ter a mesma moeda da fatura.
+</ParamField>
+
+<ParamField body="quantity" type="integer" required>
+  Inteiro ≥ 1.
+</ParamField>
+
+## Resposta
+
+`201 Created` com o item (não a fatura inteira). Consulte a fatura para ver o novo `amountDue`.
+
+```json Response
+{
+  "id": "e4a1c7f8-2b95-4d03-8e6a-9f1b5d0c3a74",
+  "product": "7d2b5e90-1c34-4a68-b9f7-0e3a6c8d1f25",
+  "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61",
+  "name": "Plano mensal",
+  "amount": 4950,
+  "quantity": 1,
+  "totalAmount": 4950
+}
+```
+
+## Erros
+
+| Status | Código | Quando |
+| ------ | ------ | ------ |
+| `404` | `INVOICE_NOT_FOUND` | A fatura não existe ou é de outra conta |
+| `404` | `PRICE_NOT_FOUND` / `PRODUCT_NOT_FOUND` | O preço, ou o produto dele, não existe na conta |
+| `400` | `INVOICE_NOT_DRAFT` | A fatura já foi aberta |
+| `400` | `INVOICE_CURRENCY_MISMATCH` | O preço está em outra moeda |

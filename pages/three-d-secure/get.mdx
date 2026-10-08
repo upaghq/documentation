@@ -1,0 +1,61 @@
+---
+title: 'Obter sessão 3DS'
+description: 'Consulta uma sessão 3D Secure pelo ID'
+sidebarTitle: 'Obter'
+api: 'GET https://api.upag.io/v1/3ds/sessions/{sessionId}'
+---
+
+Retorna a sessão, sem o `clientSecret`. Uma sessão que passou de `expiresAt` sem ser finalizada é devolvida como `expired`.
+
+Permissão: `charge.read`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.dev/v1/3ds/sessions/9b7c1e52-3f0a-4d86-a1c4-6e2d8f35b790 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const session = await upag.threeDSecure.retrieveSession('9b7c1e52-3f0a-4d86-a1c4-6e2d8f35b790');
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="sessionId" type="string (uuid)" required>
+  ID da sessão.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "id": "9b7c1e52-3f0a-4d86-a1c4-6e2d8f35b790",
+  "status": "completed",
+  "finalAmount": 11016,
+  "card": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
+  "expiresAt": "2026-09-30T19:06:02.113Z"
+}
+```
+
+Campos em [Referência](./reference).
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `400` | `invalid_params` | `sessionId` não é UUID |
+| `404` | `session_not_found` | Sessão inexistente ou de outra conta |
+| `404` | `not_found` | 3D Secure não está habilitado neste ambiente |

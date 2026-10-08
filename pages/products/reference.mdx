@@ -1,0 +1,48 @@
+---
+title: 'Referência'
+description: 'Objeto Produto (product)'
+sidebarTitle: 'Visão geral'
+---
+
+Um produto descreve o que você vende. O valor e a recorrência ficam nos [preços](../prices/reference), que pertencem a um produto.
+
+## Estrutura
+
+```json
+{
+  "id": "0b9c1f3e-6a4d-4c1e-9d55-3f1f6a7c2e10",
+  "name": "Plano Pro",
+  "description": "Acesso completo à plataforma",
+  "image": "https://example.com/plano-pro.png",
+  "createdAt": "2026-03-18T11:00:00.000Z",
+  "updatedAt": "2026-03-18T11:00:00.000Z"
+}
+```
+
+## Atributos
+
+<AccordionGroup>
+  <Accordion title="id">
+    UUID do produto.
+  </Accordion>
+  <Accordion title="name / description">
+    Texto livre, ambos obrigatórios e com pelo menos 1 caractere.
+  </Accordion>
+  <Accordion title="image">
+    URL da imagem, ou `null`.
+  </Accordion>
+  <Accordion title="createdAt / updatedAt">
+    Datas em ISO 8601 (UTC).
+  </Accordion>
+</AccordionGroup>
+
+## Endpoints
+
+- [Criar produto](./create) — opcionalmente já com um preço padrão
+- [Listar produtos](./list)
+- [Obter produto](./get)
+- [Atualizar produto](./update)
+
+Não há endpoint para excluir produtos.
+
+Todos exigem chave secreta (`sk_`). Os preços ficam em `/products/{productId}/prices` — veja [Preços](../prices/reference).

@@ -1,0 +1,55 @@
+---
+title: 'Cancelar mudança agendada'
+description: 'Descarta uma mudança de item antes da próxima renovação'
+sidebarTitle: 'Cancelar mudança agendada'
+api: 'DELETE https://api.upag.io/v1/subscriptions/{subscriptionId}/scheduled-changes/{changeId}'
+---
+
+Descarta uma [mudança agendada](./scheduled-changes) antes que ela seja aplicada na renovação. Os itens da assinatura continuam como estão.
+
+Permissão: `subscription.write`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE https://api.upag.dev/v1/subscriptions/9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36/scheduled-changes/6e3b9d07-1c52-4a84-b0f6-9d2a7c4e1b58 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+await upag.subscriptions.deleteScheduledChange(
+  '9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36',
+  '6e3b9d07-1c52-4a84-b0f6-9d2a7c4e1b58',
+);
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="subscriptionId" type="string (uuid)" required>
+  ID da assinatura.
+</ParamField>
+
+<ParamField path="changeId" type="string (uuid)" required>
+  ID da mudança agendada.
+</ParamField>
+
+## Resposta
+
+`204 No Content`, sem corpo.
+
+## Erros
+
+| Status | Código | Quando |
+| ------ | ------ | ------ |
+| `404` | `SUBSCRIPTION_NOT_FOUND` | A assinatura não existe ou é de outra conta |
+| `404` | `SUBSCRIPTION_SCHEDULED_CHANGE_NOT_FOUND` | A mudança não existe ou é de outra assinatura |

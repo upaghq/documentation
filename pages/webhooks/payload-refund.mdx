@@ -1,0 +1,47 @@
+---
+title: 'Payload estorno'
+description: 'Campo data nos eventos refund.*'
+icon: 'rotate-left'
+sidebarTitle: 'Estorno'
+---
+
+Eventos: `refund.created`, `refund.processing`, `refund.completed`, `refund.failed` e `refund.updated`.
+
+`data` é o estorno, no mesmo formato retornado pela API:
+
+```json
+{
+  "id": "880e8400-e29b-41d4-a716-446655440000",
+  "event": "refund.completed",
+  "createdAt": "2026-03-18T12:20:00.123Z",
+  "data": {
+    "id": "cc1e8400-e29b-41d4-a716-446655440000",
+    "chargeId": "550e8400-e29b-41d4-a716-446655440000",
+    "status": "completed",
+    "amount": 4900,
+    "customerMessage": "Pedido cancelado",
+    "transferId": "770e8400-e29b-41d4-a716-446655440000",
+    "endToEndId": "D12345678202603181220000000000000",
+    "receiptUrl": null,
+    "createdAt": "2026-03-18T12:15:00.000Z",
+    "updatedAt": "2026-03-18T12:20:00.000Z"
+  }
+}
+```
+
+## Campos
+
+| Campo | Tipo | Descrição |
+| ----- | ---- | --------- |
+| `id` | `string (uuid)` | Estorno |
+| `chargeId` | `string \| null` | Cobrança estornada |
+| `status` | `string` | `pending`, `processing`, `completed` ou `failed` |
+| `amount` | `integer` | Valor em centavos |
+| `customerMessage` | `string \| null` | Mensagem enviada ao pagador |
+| `transferId` | `string \| null` | Transferência de devolução, quando já existe |
+| `endToEndId` | `string \| null` | Identificador fim a fim do Pix de devolução |
+| `receiptUrl` | `string \| null` | Comprovante, quando disponível |
+| `createdAt` | `string` | ISO 8601 |
+| `updatedAt` | `string` | ISO 8601 |
+
+Um estorno nasce `pending` (`refund.created`). Cada mudança de status dispara o evento específico e `refund.updated`. O estorno também reflete na cobrança, que dispara `charge.refunded` ou `charge.partially_refunded`.

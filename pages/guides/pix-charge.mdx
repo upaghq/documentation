@@ -1,0 +1,188 @@
+---
+title: 'Cobrança Pix'
+description: 'QR dinâmico, cliente inline, splits e confirmação via webhook'
+icon: 'qrcode'
+---
+
+Guia para receber via Pix: cobrança **dinâmica** (com vencimento e pagador) ou **estática** (valor fixo, cliente opcional).
+
+Autenticação: `Authorization: Bearer sk_...`. Valores em **centavos**.
+
+```mermaid
+sequenceDiagram
+  participant App
+  participant API
+  participant Pagador
+  App->>API: POST /v1/charges
+  API-->>App: pix.qrCode
+  App->>Pagador: exibe QR ou copia-e-cola
+  Pagador->>API: paga Pix
+  API-->>App: webhook charge.paid
+```
+
+<Note>
+  Exemplos no sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## 1. Criar cobrança dinâmica
+
+O pagador pode ser o UUID de um cliente existente ou um objeto inline (cria ou atualiza pelo documento).
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/charges \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "pix",
+    "amount": 9900,
+    "description": "Pedido #10482",
+    "pix": { "method": "dynamic" },
+    "customer": {
+      "name": "Maria Pagadora",
+      "document": { "type": "cpf", "number": "39053344705" }
+    }
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const charge = await upag.charges.create({
+  type: 'pix',
+  amount: 9900,
+  description: 'Pedido #10482',
+  pix: { method: 'dynamic' },
+  customer: {
+    name: 'Maria Pagadora',
+    document: { type: 'cpf', number: '39053344705' },
+  },
+});
+```
+</CodeGroup>
+
+Exiba `pix.qrCode` na UI. Guarde `id`: o status inicial é `pending`.
+
+## 2. Cobrança estática (opcional)
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/charges \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "pix",
+    "amount": 5000,
+    "pix": { "method": "static" }
+  }'
+```
+
+```javascript Node.js SDK
+const charge = await upag.charges.create({
+  type: 'pix',
+  amount: 5000,
+  pix: { method: 'static' },
+});
+```
+</CodeGroup>
+
+Cliente não é obrigatório para estática.
+
+## 3. Acompanhar o pagamento (polling)
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.dev/v1/charges/1f7d3c8a-4b52-4c9e-8a11-6d0e2f5b7c34 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+const charge = await upag.charges.retrieve('1f7d3c8a-4b52-4c9e-8a11-6d0e2f5b7c34');
+```
+</CodeGroup>
+
+Repita até `status` ser `paid` ou `expired`. Em produção, prefira webhook (passo 4).
+
+## 4. Webhook (recomendado)
+
+Registre o endpoint:
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/webhooks \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "description": "Cobranças Pix",
+    "url": "https://example.com/webhooks/upag",
+    "events": ["charge.paid", "charge.expired"]
+  }'
+```
+
+```javascript Node.js SDK
+const webhook = await upag.webhooks.create({
+  description: 'Cobranças Pix',
+  url: 'https://example.com/webhooks/upag',
+  events: ['charge.paid', 'charge.expired'],
+});
+```
+</CodeGroup>
+
+Handler de exemplo, validando a assinatura sobre o corpo cru (veja [Segurança](../webhooks/security)):
+
+```javascript Node.js SDK
+import express from 'express';
+
+app.post('/webhooks/upag', express.raw({ type: '*/*' }), (req, res) => {
+  const valid = upag.webhooks.validateSignature(
+    req.body,
+    req.headers['x-webhook-signature'],
+    process.env.UPAG_WEBHOOK_SECRET,
+  );
+  if (!valid) return res.sendStatus(401);
+
+  const { event, data } = JSON.parse(req.body.toString('utf8'));
+
+  if (event === 'charge.paid') {
+    console.log('Cobrança paga:', data.id, data.amount);
+    // liberar pedido / atualizar ERP
+  }
+
+  res.sendStatus(200);
+});
+```
+
+Payload: [charge.paid](../webhooks/payload-charge).
+
+## 5. Repasse para outras contas (splits)
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/charges \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "pix",
+    "amount": 10000,
+    "pix": { "method": "dynamic" },
+    "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+    "splits": [
+      { "account": "880e8400-e29b-41d4-a716-446655440000", "amount": 2000 }
+    ]
+  }'
+```
+
+```javascript Node.js SDK
+const charge = await upag.charges.create({
+  type: 'pix',
+  amount: 10000,
+  pix: { method: 'dynamic' },
+  customer: '8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83',
+  splits: [{ account: '880e8400-e29b-41d4-a716-446655440000', amount: 2000 }],
+});
+```
+</CodeGroup>
+
+Detalhes: [Criar cobrança](../charges/create). Para testar pagamentos no sandbox: [Simulador](../simulator).

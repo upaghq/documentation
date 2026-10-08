@@ -1,0 +1,56 @@
+---
+title: 'Remover item'
+description: 'Remove um item de uma fatura em rascunho'
+sidebarTitle: 'Remover item'
+api: 'DELETE https://api.upag.io/v1/invoices/{invoiceId}/items/{itemId}'
+---
+
+Remove um item de uma fatura em `draft` e recalcula `amountDue`. Uma fatura sem itens não pode ser aberta.
+
+Permissão: `invoice.write`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE https://api.upag.dev/v1/invoices/5b0e8d3a-9c71-4e26-a8f4-1d7c3b6e9a02/items/e4a1c7f8-2b95-4d03-8e6a-9f1b5d0c3a74 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+await upag.invoices.deleteItem(
+  '5b0e8d3a-9c71-4e26-a8f4-1d7c3b6e9a02',
+  'e4a1c7f8-2b95-4d03-8e6a-9f1b5d0c3a74',
+);
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="invoiceId" type="string (uuid)" required>
+  ID da fatura. Precisa estar em `draft`.
+</ParamField>
+
+<ParamField path="itemId" type="string (uuid)" required>
+  ID do item.
+</ParamField>
+
+## Resposta
+
+`204 No Content`, sem corpo.
+
+## Erros
+
+| Status | Código | Quando |
+| ------ | ------ | ------ |
+| `404` | `INVOICE_NOT_FOUND` | A fatura não existe ou é de outra conta |
+| `404` | `INVOICE_ITEM_NOT_FOUND` | O item não pertence à fatura |
+| `400` | `INVOICE_NOT_DRAFT` | A fatura já foi aberta |

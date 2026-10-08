@@ -1,0 +1,230 @@
+---
+title: 'Assinatura recorrente'
+description: 'Produto, preço recorrente, cliente e assinatura com cobrança automática por Pix ou cartão'
+icon: 'repeat'
+---
+
+Fluxo para SaaS e planos mensais: você cadastra o plano uma vez, assina o cliente e a Upag gera uma fatura a cada período e cobra pelo método da assinatura. Você acompanha tudo por [webhooks](../webhooks/overview).
+
+```mermaid
+sequenceDiagram
+  participant Loja
+  participant API as Upag API
+  Loja->>API: POST /products (com preço recorrente)
+  Loja->>API: POST /customers
+  Loja->>API: POST /subscriptions
+  API-->>Loja: subscription (incomplete ou active)
+  API-->>Loja: webhook subscription.active
+  Note over API: Cada renovação gera uma fatura e uma cobrança
+  API-->>Loja: webhooks invoice.paid / subscription.past_due
+```
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`) com `sk_test_…`. Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## 1. Criar produto e preço recorrente
+
+Valores em centavos (mínimo 100). A resposta de [Criar produto](../products/create) traz só o produto; o preço é lido em [Listar preços](../prices/list). Se preferir, crie o produto sem `defaultPrice` e use [Criar preço](../prices/create), que devolve o preço direto.
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/products/0b9c1f3e-6a4d-4c1e-9d55-3f1f6a7c2e10/prices \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Mensal",
+    "amount": 4990,
+    "currency": "brl",
+    "billingType": "recurring",
+    "interval": "month",
+    "intervalCount": 1
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const product = await upag.products.create({
+  name: 'Plano Pro',
+  description: 'Acesso completo à plataforma',
+});
+
+const price = await upag.prices.create(product.id, {
+  name: 'Mensal',
+  amount: 4990,
+  currency: 'brl',
+  billingType: 'recurring',
+  interval: 'month',
+  intervalCount: 1,
+});
+```
+</CodeGroup>
+
+## 2. Criar o cliente
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/customers \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Maria Souza",
+    "email": "maria@example.com",
+    "document": { "type": "cpf", "number": "12345678909" }
+  }'
+```
+
+```javascript Node.js SDK
+const customer = await upag.customers.create({
+  name: 'Maria Souza',
+  email: 'maria@example.com',
+  document: { type: 'cpf', number: '12345678909' },
+});
+```
+</CodeGroup>
+
+## 3. Criar a assinatura
+
+Escolha o método de cobrança. Os dois dependem do cliente do passo 2.
+
+### Pix
+
+Não precisa de nada além do cliente e do preço. A assinatura nasce `incomplete` e vira `active` quando o cliente paga a fatura do primeiro período.
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/subscriptions \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+    "paymentMethod": "pix",
+    "items": [{ "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61" }]
+  }'
+```
+
+```javascript Node.js SDK
+const subscription = await upag.subscriptions.create({
+  customer: customer.id,
+  paymentMethod: 'pix',
+  items: [{ price: price.id }],
+});
+```
+</CodeGroup>
+
+Para pegar o QR code do primeiro período, [liste as faturas](../invoices/list) do cliente (`status=open`), ache a de `subscription` igual ao ID e leia a cobrança em `payments[].charge` ([Obter cobrança](../charges/get)). Nas renovações, cada fatura nova traz um QR code com vencimento de 3 dias.
+
+### Cartão
+
+`POST /subscriptions` com `paymentMethod: "card"` exige um cartão ativo que **já pertença ao cliente**. Um cartão recém-tokenizado ([Criar cartão](../cards/create)) não pertence a ninguém; ele passa a ser do cliente quando é usado numa cobrança de cartão do cliente ([Criar cobrança](../charges/create)) ou numa confirmação de checkout. Usá-lo antes disso devolve `404 SUBSCRIPTION_CARD_NOT_FOUND`.
+
+Por isso, para o **primeiro cartão** de um cliente, o caminho é o [checkout](./checkout-hosted): crie um link de pagamento com o preço recorrente e deixe o pagador confirmar com o cartão. A confirmação cria a fatura, cobra, vincula o cartão ao cliente e cria a assinatura. Depois disso o cartão fica na conta do cliente:
+
+```javascript Node.js SDK
+const { data: cards } = await upag.cards.list({ customer: customer.id });
+```
+
+e pode ser usado em novas assinaturas:
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/subscriptions \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+    "paymentMethod": "card",
+    "card": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
+    "items": [{ "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61", "quantity": 1 }]
+  }'
+```
+
+```javascript Node.js SDK
+const subscription = await upag.subscriptions.create({
+  customer: customer.id,
+  paymentMethod: 'card',
+  card: cards[0].id,
+  items: [{ price: price.id, quantity: 1 }],
+});
+```
+</CodeGroup>
+
+Com cartão aprovado, a resposta já volta `active`. Se o cartão for recusado, a criação não falha: a assinatura fica `incomplete`. Todos os campos e erros: [Criar assinatura](../subscriptions/create).
+
+## 4. Acompanhar por webhook
+
+Valide a assinatura do webhook (`upag.webhooks.validateSignature` sobre o corpo cru, veja [Segurança](../webhooks/security)) e reaja aos eventos:
+
+| Evento | O que fazer |
+| ------ | ----------- |
+| `subscription.active` | Liberar o acesso |
+| `invoice.paid` | Registrar o pagamento do período |
+| `subscription.past_due` | A renovação falhou: avise o cliente; a Upag tenta de novo |
+| `subscription.canceled` | Revogar o acesso |
+
+```javascript Node.js SDK
+app.post('/webhooks/upag', express.raw({ type: '*/*' }), async (req, res) => {
+  const valid = upag.webhooks.validateSignature(
+    req.body,
+    req.headers['x-webhook-signature'],
+    process.env.UPAG_WEBHOOK_SECRET,
+  );
+  if (!valid) return res.sendStatus(401);
+
+  const { event, data } = JSON.parse(req.body.toString('utf8'));
+
+  if (event === 'subscription.active') await grantAccess(data.customer);
+  if (event === 'subscription.canceled') await revokeAccess(data.customer);
+
+  return res.sendStatus(200);
+});
+```
+
+Payloads: [assinatura](../webhooks/payload-subscription) e [fatura](../webhooks/payload-invoice).
+
+## Renovações
+
+A cada período a Upag cria a fatura e cobra: no cartão, à vista, e no Pix, com um novo QR code de 3 dias. Se a cobrança falhar, a assinatura vai para `past_due` e novas tentativas são feitas. Para ver o valor da próxima fatura antes de ela existir, use [Fatura futura](../invoices/upcoming):
+
+```javascript Node.js SDK
+const preview = await upag.invoices.upcoming({ subscription: subscription.id });
+```
+
+## Mudar itens
+
+Adicionar, alterar ou remover itens não gera fatura nem proporcional. Com `applyAt: 'now'` a mudança vale já; com `'period_end'` ela fica agendada e é aplicada na renovação.
+
+```javascript Node.js SDK
+// Agenda um item extra para a próxima renovação
+await upag.subscriptions.createItem(subscription.id, {
+  price: addonPrice.id,
+  quantity: 1,
+  applyAt: 'period_end',
+});
+```
+
+Veja [Criar item](../subscriptions/create-item), [Atualizar item](../subscriptions/update-item), [Remover item](../subscriptions/delete-item) e as [mudanças agendadas](../subscriptions/scheduled-changes).
+
+## Cancelar
+
+Por padrão o cancelamento é imediato. Para manter o acesso até o fim do período já pago, use `atPeriodEnd`:
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/subscriptions/9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36/cancel \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{ "atPeriodEnd": true }'
+```
+
+```javascript Node.js SDK
+await upag.subscriptions.cancel('9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36', {
+  atPeriodEnd: true,
+});
+```
+</CodeGroup>
+
+Cancelar não reembolsa faturas já pagas. Detalhes em [Cancelar assinatura](../subscriptions/cancel). Para dar um período grátis antes da primeira cobrança, veja [Teste grátis](./free-trial).

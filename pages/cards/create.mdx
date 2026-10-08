@@ -1,0 +1,140 @@
+---
+title: 'Criar cartão'
+description: 'Tokeniza um cartão e devolve um id para usar em cobranças'
+sidebarTitle: 'Criar'
+api: 'POST https://api.upag.io/v1/cards'
+---
+
+Tokeniza um cartão. Faça isso **no browser** com a chave publicável (`pk_…`) e o `upag-js`, para que o número do cartão nunca passe pelo seu servidor. Chave secreta também funciona, para quem já trata dados de cartão no servidor.
+
+Permissão: `card.write`. Aceita chave **secreta ou publicável**.
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…` / `pk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/cards \
+  -H "Authorization: Bearer pk_test_your_public_key" \
+  -H "Idempotency-Key: checkout-10482-card" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "number": "4242424242424242",
+    "expirationMonth": 11,
+    "expirationYear": 2031,
+    "cvv": "123",
+    "holderName": "Luke Skywalker"
+  }'
+```
+
+```javascript upag-js
+import { UpagJs } from 'upag-js';
+
+const upag = new UpagJs('pk_test_your_public_key');
+
+const card = await upag.cards.create(
+  {
+    number: '4242424242424242',
+    expirationMonth: 11,
+    expirationYear: 2031,
+    cvv: '123',
+    holderName: 'Luke Skywalker',
+  },
+  { idempotencyKey: 'checkout-10482-card' },
+);
+
+// envie card.id ao seu servidor
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const card = await upag.cards.create(
+  {
+    number: '4242424242424242',
+    expirationMonth: 11,
+    expirationYear: 2031,
+    cvv: '123',
+    holderName: 'Luke Skywalker',
+  },
+  { idempotencyKey: 'checkout-10482-card' },
+);
+```
+</CodeGroup>
+
+## Parâmetros
+
+Campos desconhecidos no corpo são rejeitados.
+
+<ParamField body="number" type="string" required>
+  Número do cartão, 13 a 19 dígitos, sem espaços ou traços.
+</ParamField>
+
+<ParamField body="expirationMonth" type="integer" required>
+  1 a 12.
+</ParamField>
+
+<ParamField body="expirationYear" type="integer" required>
+  Ano com 4 dígitos.
+</ParamField>
+
+<ParamField body="cvv" type="string" required>
+  Código de segurança, 3 ou 4 dígitos.
+</ParamField>
+
+<ParamField body="holderName" type="string" required>
+  Nome impresso no cartão: 2 a 64 caracteres, só letras sem acento e espaços.
+</ParamField>
+
+<ParamField header="Idempotency-Key" type="string">
+  Até 255 caracteres. Por 24 horas, a mesma chave com o mesmo cartão devolve o mesmo cartão em vez de tokenizar de novo; a mesma chave com outro cartão retorna `409`. A chave é isolada por conta e o CVV não entra na comparação.
+</ParamField>
+
+## Resposta
+
+`201 Created`
+
+```json Response
+{
+  "id": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
+  "customer": null,
+  "brand": "visa",
+  "firstDigits": "424242",
+  "lastDigits": "4242",
+  "holderName": "Luke Skywalker",
+  "expirationMonth": 11,
+  "expirationYear": 2031,
+  "funding": "credit",
+  "wallet": null,
+  "status": "active",
+  "createdAt": "2026-07-27T18:04:11.482Z",
+  "updatedAt": "2026-07-27T18:04:11.482Z"
+}
+```
+
+Número e CVV nunca voltam na resposta. Campos em [Referência](./reference).
+
+## Limites de requisição
+
+Chave publicável vive no browser, então tem um orçamento extra mais apertado. Ao estourar, a resposta é `429 too_many_attempts` com o header `Retry-After`.
+
+| Limite | Valor |
+| ------ | ----- |
+| Chave publicável, por IP do cliente | 10 por minuto |
+| Chave publicável, por conta | 200 por hora |
+| Qualquer chave (por chave de API) | 30 por minuto |
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `409` | `idempotency_key_reused` | A `Idempotency-Key` já foi usada com outro cartão |
+| `422` | `card_invalid` | Cartão não aceito: número inválido, vencido ou recusado. A mensagem é genérica de propósito, para o endpoint não servir para testar cartões |
+| `422` | `VALIDATION_FAILED` | Campo ausente ou malformado, ou `Idempotency-Key` com mais de 255 caracteres. As mensagens nunca repetem o que você enviou |
+| `429` | `too_many_attempts` | Limite de requisição atingido |
+| `502` | `ACQUIRER_UNAVAILABLE` | Não foi possível tokenizar agora; tente de novo |

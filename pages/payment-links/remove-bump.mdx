@@ -1,0 +1,49 @@
+---
+title: 'Remover bump do link'
+description: 'Remove um bump do link de pagamento'
+sidebarTitle: 'Remover bump'
+api: 'DELETE https://api.upag.io/v1/payment-links/{paymentLinkId}/bumps/{bumpId}'
+---
+
+Permissão: `payment_link.write` (chave secreta).
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE https://api.upag.dev/v1/payment-links/d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70/bumps/f6a7b8c9-d0e1-4f2a-9b3c-4d5e6f7a8b92 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+// upag.paymentLinks.deleteBump(paymentLinkId, bumpId)
+await upag.paymentLinks.deleteBump(
+  'd4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70',
+  'f6a7b8c9-d0e1-4f2a-9b3c-4d5e6f7a8b92',
+);
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`.
+</Note>
+
+## Parâmetros
+
+<ParamField path="paymentLinkId" type="string (uuid)" required>
+  ID do link de pagamento.
+</ParamField>
+
+<ParamField path="bumpId" type="string (uuid)" required>
+  ID do bump.
+</ParamField>
+
+## Resposta
+
+`204 No Content` — sem corpo em caso de sucesso.
+
+`404` — `PAYMENT_LINK_NOT_FOUND` ou `PAYMENT_LINK_BUMP_NOT_FOUND`.

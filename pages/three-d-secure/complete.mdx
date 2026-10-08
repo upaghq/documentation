@@ -1,0 +1,84 @@
+---
+title: 'Concluir sessão 3DS'
+description: 'Chamado pelo browser: informa como a autenticação terminou'
+sidebarTitle: 'Concluir'
+api: 'POST https://api.upag.io/v1/3ds/sessions/complete'
+---
+
+Endpoint **chamado pelo browser**. O `upag-js` o usa dentro de `threeDSecure.authenticate`; chame direto só se não usar o SDK.
+
+Autentica com **chave publicável** (`pk_…`) e é provado pelo `clientSecret` da sessão. Chave secreta é recusada. Não exige permissão.
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `pk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/3ds/sessions/complete \
+  -H "Authorization: Bearer pk_test_your_public_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "clientSecret": "4fJq8Wm2Xc7Nb1Rt5Yh9Lk3Vd0Ze6Sa7Xp2Qn9Rt5Yh1Lk3V",
+    "outcome": "completed",
+    "result": { "...": "resultado devolvido pela autenticação no browser" }
+  }'
+```
+
+```javascript upag-js
+import { UpagJs } from 'upag-js';
+
+const upag = new UpagJs('pk_test_your_public_key');
+
+// start e complete são chamados por authenticate()
+const { sessionId, status } = await upag.threeDSecure.authenticate({ clientSecret });
+```
+</CodeGroup>
+
+O SDK Node.js não tem método para este endpoint: ele pertence ao browser.
+
+## Parâmetros
+
+<ParamField body="clientSecret" type="string" required>
+  O `clientSecret` da sessão (1 a 512 caracteres).
+</ParamField>
+
+<ParamField body="outcome" type="string" required>
+  `completed`, `canceled`, `timeout` ou `failed`. `canceled` e `timeout` terminam em `canceled`.
+</ParamField>
+
+<ParamField body="result" type="object">
+  Obrigatório quando `outcome` é `completed`: o resultado da autenticação, exatamente como o browser o recebeu.
+</ParamField>
+
+<ParamField body="failureCode" type="string">
+  Só quando `outcome` não é `completed`: `authentication_failed`, `authentication_canceled`, `authentication_timeout` ou `authentication_unavailable` (o browser não conseguiu carregar o módulo de autenticação). Padrão: o código que corresponde ao `outcome`.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "id": "9b7c1e52-3f0a-4d86-a1c4-6e2d8f35b790",
+  "status": "completed",
+  "nextAction": null
+}
+```
+
+A resposta traz só `id` e `status`: o browser fica sabendo como a autenticação terminou, nada sobre a venda. Leia a sessão completa do servidor com [Obter sessão](./get). Repetir uma chamada que já surtiu efeito devolve a mesma resposta.
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `400` | `invalid_params` | Corpo malformado, ou `completed` sem `result` válido |
+| `401` | `unauthorized` | `clientSecret` desconhecido, substituído por um mais novo ou de outra conta |
+| `403` | — | Chave secreta usada neste endpoint (exige chave publicável) |
+| `404` | `not_found` | 3D Secure não está habilitado neste ambiente |
+| `409` | `invalid_session_state` | O estado da sessão não permite, ou o resultado pertence a outro cartão |
+| `410` | `session_expired` | A sessão expirou |
+| `429` | `too_many_attempts` | Mais de 20 chamadas por minuto do mesmo IP |

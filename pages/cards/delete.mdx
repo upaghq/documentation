@@ -1,0 +1,51 @@
+---
+title: 'Remover cartão'
+description: 'Remove um cartão tokenizado da conta'
+sidebarTitle: 'Remover'
+api: 'DELETE https://api.upag.io/v1/cards/{cardId}'
+---
+
+Remove o cartão (exclusão lógica) e, se ele era o cartão padrão do cliente, limpa esse padrão. O cartão deixa de poder ser cobrado e de aparecer em consultas e listagens.
+
+A operação é idempotente: remover um cartão já removido também retorna sucesso.
+
+Permissão: `card.write`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE https://api.upag.dev/v1/cards/5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+await upag.cards.remove('5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15');
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="cardId" type="string (uuid)" required>
+  ID do cartão.
+</ParamField>
+
+## Resposta
+
+`204 No Content`, sem corpo.
+
+## Erros
+
+| Status | Mensagem | Causa |
+| ------ | -------- | ----- |
+| `404` | `Card not found` | Cartão inexistente ou de outra conta |
+| `403` | — | Chave publicável (exige chave secreta) ou sem a permissão `card.write` |
+| `422` | `VALIDATION_FAILED` | `cardId` não é UUID |

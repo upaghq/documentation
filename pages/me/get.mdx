@@ -1,0 +1,70 @@
+---
+title: 'Identificar chave'
+description: 'Retorna a conta, o tipo e as permissões da chave de API usada'
+sidebarTitle: 'Identificar chave'
+api: 'GET https://api.upag.io/v1/me'
+---
+
+Informa a quem a chave de API pertence: a conta, o tipo da chave (`secret` ou `publishable`) e as permissões dela. Útil para validar uma chave recebida de um merchant.
+
+Sem permissão específica: **qualquer chave** válida, secreta ou publicável, pode perguntar quem ela é.
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.dev/v1/me \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const me = await upag.me.retrieve();
+```
+</CodeGroup>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "account": "a3d5e7f9-1b2c-4d6e-8f01-2a3b4c5d6e7f",
+  "type": "secret",
+  "permissions": [
+    "charge.read",
+    "charge.write",
+    "customer.read",
+    "customer.write",
+    "card.read",
+    "card.write",
+    "transfer.read",
+    "transfer.write"
+  ]
+}
+```
+
+<ParamField body="account" type="string">
+  UUID da conta dona da chave.
+</ParamField>
+
+<ParamField body="type" type="string">
+  `secret` ou `publishable`.
+</ParamField>
+
+<ParamField body="permissions" type="string[]">
+  Permissões da chave, no formato `recurso.read` / `recurso.write`.
+</ParamField>
+
+## Erros
+
+| Status | Causa |
+| ------ | ----- |
+| `401` | Chave ausente, desconhecida ou revogada |

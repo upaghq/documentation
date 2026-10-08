@@ -1,0 +1,72 @@
+---
+title: 'Remover cupom'
+description: 'Remove o cupom de uma sessão de checkout aberta'
+sidebarTitle: 'Remover cupom'
+api: 'DELETE https://api.upag.io/v1/checkout/sessions/{sessionId}/coupon'
+---
+
+Remove o cupom e os descontos de uma sessão `open`. Sem cupom aplicado, a chamada não faz nada e responde normalmente.
+
+Permissão: `checkout_session.write`. Aceita a chave secreta ou o `clientSecret` da sessão.
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`; no navegador, o `upag-js` usa só a chave pública.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE https://api.upag.dev/v1/checkout/sessions/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26/coupon \
+  -H "Authorization: Bearer Zk3v0pQ8xJ2mR7cYt1LwN5dHs9uAeB4gXo6iFqVjT0E"
+```
+
+```javascript upag-js
+import { UpagJs } from 'upag-js';
+
+const upag = new UpagJs('pk_test_your_public_key');
+
+const session = await upag.checkout.removeCoupon(id, clientSecret);
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const session = await upag.checkoutSessions.removeCoupon('4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26');
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="sessionId" type="string (uuid)" required>
+  ID da sessão.
+</ParamField>
+
+## Resposta
+
+`200 OK`. Com o `clientSecret`, é a [visão do pagador](./retrieve); com a chave secreta, é a [sessão](./reference) do servidor. Trecho da visão do pagador:
+
+```json Response
+{
+  "id": "4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26",
+  "status": "open",
+  "currency": "brl",
+  "subtotal": 19900,
+  "discountAmount": 0,
+  "amount": 19900,
+  "discounts": [],
+  "couponEnabled": true,
+  "couponCode": null
+}
+```
+
+A resposta completa traz também os demais campos da sessão; aqui estão os que mudam.
+
+## Erros
+
+| Status | Código | Quando |
+| ------ | ------ | ------ |
+| `404` | `CHECKOUT_SESSION_NOT_FOUND` | Do servidor: a sessão não existe ou é de outra conta |
+| `409` | `CHECKOUT_SESSION_NOT_OPEN` | A sessão já está `complete` ou `expired` |

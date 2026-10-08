@@ -1,0 +1,91 @@
+---
+title: 'Convenções'
+description: 'Valores em centavos, UUIDs, datas ISO 8601, listas paginadas, includes e idempotência na API Upag.'
+icon: 'book'
+keywords: ['upag', 'convenções', 'centavos', 'paginação', 'idempotência', 'includes']
+---
+
+Regras que valem para todos os endpoints. Ler uma vez evita repetir o mesmo em cada página da Referência.
+
+## Valores em centavos
+
+Todo valor monetário é um **inteiro positivo em centavos**. Não há decimais, strings nem símbolo de moeda.
+
+```json
+{ "amount": 12550 }
+```
+
+Isso é R$ 125,50. Divida por 100 apenas na hora de exibir. Enviar `125.50` falha na validação.
+
+## Identificadores
+
+Identificadores são UUIDs e vão como segmento de caminho:
+
+```
+GET /v1/charges/1f7d3c8a-4b52-4c9e-8a11-6d0e2f5b7c34
+```
+
+Um UUID malformado é erro de validação (`422`), não `404`.
+
+## Referências a outras entidades
+
+Um campo que aponta para outra entidade tem o nome da **entidade**, sem sufixo `Id`: `customer`, `price`, `card`.
+
+- Em requisições, aceita o id da entidade (e, onde indicado, um objeto para criá-la na hora, como `customer` em cobranças).
+- Em respostas, traz o **id** por padrão e o **objeto completo** quando você pede com `?includes=<entidade>` (nos endpoints que suportam).
+- Em payloads de webhook, vem sempre o id.
+
+```json
+{ "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83" }
+```
+
+## Datas
+
+Timestamps são strings ISO 8601 em UTC:
+
+```json
+{ "createdAt": "2026-07-27T18:04:11.482Z" }
+```
+
+Datas em corpos de requisição aceitam string ISO ou epoch em milissegundos.
+
+## Formato
+
+Envie `Content-Type: application/json` em toda requisição com corpo. Respostas são JSON, exceto `204 No Content`, que vem sem corpo.
+
+Corpos de `PATCH` são parciais: campos omitidos não mudam. Para limpar um campo anulável, envie `null`.
+
+## Listas e paginação
+
+Endpoints de listagem devolvem:
+
+```json
+{
+  "data": [],
+  "count": 0
+}
+```
+
+`data` vem do mais recente para o mais antigo (por `createdAt`) e `count` é o total de registros da conta. A maioria das listagens aceita `page` (a partir de 1, padrão `1`) e `limit` (padrão `15`). Subcontas usam `limit` e `offset`, e os logs de entrega de webhook não são paginados. Cada página da Referência indica os parâmetros do endpoint.
+
+## Idempotência
+
+`POST /cards` e `POST /3ds/sessions` aceitam o header `Idempotency-Key` (até 255 caracteres). Por 24 horas, repetir a chave com o mesmo corpo devolve o mesmo recurso. A mesma chave com corpo diferente retorna `409 idempotency_key_reused`. As chaves são isoladas por conta.
+
+```bash
+curl -X POST https://api.upag.dev/v1/3ds/sessions \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Idempotency-Key: order-10482" \
+  -H "Content-Type: application/json" \
+  -d '{ "amount": 10000, "card": "<card id>", "customer": "<customer id>" }'
+```
+
+Nos SDKs, passe `{ idempotencyKey }` como último argumento.
+
+## Escopo da conta
+
+Toda leitura e escrita é restrita à conta da chave. Um recurso de outra conta responde `404`, e não `403`, para que ids alheios sejam indistinguíveis de ids que não existem.
+
+## Ambientes
+
+O ambiente é o host: `https://api.upag.dev/v1` (sandbox, chaves `*_test_`) e `https://api.upag.io/v1` (produção). Veja [Autenticação](./authentication) e o [Simulador](../simulator).

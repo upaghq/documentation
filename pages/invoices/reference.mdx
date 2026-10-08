@@ -1,0 +1,166 @@
+---
+title: 'Referência'
+description: 'Objeto Fatura (invoice): itens, descontos e pagamentos'
+sidebarTitle: 'Visão geral'
+---
+
+Uma fatura é um pedido de pagamento emitido para um cliente, com itens baseados em [preços](../prices/reference). Nasce como rascunho (`draft`), é aberta (`open`) para poder ser paga e fecha como `paid`, `void` ou `uncollectible`. Assinaturas e checkouts geram faturas automaticamente.
+
+Todos os endpoints exigem **chave secreta** (`sk_…`).
+
+| Método | Path | Permissão |
+| ------ | ---- | --------- |
+| `POST` | `/v1/invoices` | `invoice.write` |
+| `GET` | `/v1/invoices` | `invoice.read` |
+| `GET` | `/v1/invoices/upcoming` | `invoice.read` |
+| `GET` | `/v1/invoices/{invoiceId}` | `invoice.read` |
+| `PATCH` | `/v1/invoices/{invoiceId}` | `invoice.write` |
+| `POST` | `/v1/invoices/{invoiceId}/pay` | `invoice.write` |
+| `POST` | `/v1/invoices/{invoiceId}/mark-as-paid` | `invoice.write` |
+| `POST` | `/v1/invoices/{invoiceId}/items` | `invoice.write` |
+| `PATCH` | `/v1/invoices/{invoiceId}/items/{itemId}` | `invoice.write` |
+| `DELETE` | `/v1/invoices/{invoiceId}/items/{itemId}` | `invoice.write` |
+
+<Note>
+  Sandbox: `https://api.upag.dev/v1` com `sk_test_…`. Produção: `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Estrutura
+
+```json
+{
+  "id": "5b0e8d3a-9c71-4e26-a8f4-1d7c3b6e9a02",
+  "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "paymentMethod": null,
+  "subscription": null,
+  "status": "open",
+  "currency": "brl",
+  "description": "Consultoria de setembro",
+  "amountDue": 9900,
+  "amountPaid": 0,
+  "attemptCount": 0,
+  "dueDate": "2026-10-20T00:00:00.000Z",
+  "paidAt": null,
+  "items": [
+    {
+      "id": "e4a1c7f8-2b95-4d03-8e6a-9f1b5d0c3a74",
+      "product": "7d2b5e90-1c34-4a68-b9f7-0e3a6c8d1f25",
+      "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61",
+      "name": "Plano mensal",
+      "amount": 4950,
+      "quantity": 2,
+      "totalAmount": 9900
+    }
+  ],
+  "discounts": [],
+  "payments": [],
+  "createdAt": "2026-10-07T19:00:00.000Z",
+  "updatedAt": "2026-10-07T19:00:00.000Z"
+}
+```
+
+## Atributos
+
+<ParamField body="id" type="string">
+  UUID da fatura.
+</ParamField>
+
+<ParamField body="customer" type="string">
+  UUID do [cliente](../customers/reference).
+</ParamField>
+
+<ParamField body="paymentMethod" type="string | null">
+  Campo reservado; hoje vem sempre `null`. Para saber como uma fatura foi paga, consulte `payments`.
+</ParamField>
+
+<ParamField body="subscription" type="string | null">
+  UUID da [assinatura](../subscriptions/reference) que gerou a fatura. `null` em faturas avulsas.
+</ParamField>
+
+<ParamField body="status" type="string">
+  `draft`, `open`, `paid`, `void` ou `uncollectible`. Veja [Status](#status).
+</ParamField>
+
+<ParamField body="currency" type="string">
+  Moeda dos preços da fatura (`brl` ou `usd`). Só faturas em `brl` podem ser pagas.
+</ParamField>
+
+<ParamField body="description" type="string | null">
+  Descrição informada na criação.
+</ParamField>
+
+<ParamField body="amountDue" type="integer">
+  Valor a pagar em **centavos**: soma dos itens menos os descontos. Recalculado a cada mudança nos itens.
+</ParamField>
+
+<ParamField body="amountPaid" type="integer">
+  Valor pago em **centavos**. `0` até a fatura ser paga; depois, igual a `amountDue`.
+</ParamField>
+
+<ParamField body="attemptCount" type="integer">
+  Tentativas de pagamento que falharam (cartão recusado ou Pix vencido).
+</ParamField>
+
+<ParamField body="dueDate" type="string | null">
+  Vencimento informado na criação (ISO 8601).
+</ParamField>
+
+<ParamField body="paidAt" type="string | null">
+  ISO 8601 do pagamento. `null` até a fatura ser paga.
+</ParamField>
+
+<ParamField body="items" type="array">
+  Linhas da fatura.
+
+  - `id`: UUID do item.
+  - `product`: UUID do produto.
+  - `price`: UUID do preço.
+  - `name`: nome do preço, copiado na hora em que o item entrou.
+  - `amount`: valor unitário em centavos, copiado do preço na hora em que o item entrou.
+  - `quantity`: quantidade.
+  - `totalAmount`: `amount × quantity`, em centavos.
+</ParamField>
+
+<ParamField body="discounts" type="array">
+  Descontos aplicados (hoje só de cupom, vindos de um [checkout](../checkout-sessions/reference)).
+
+  - `id`: UUID do desconto.
+  - `item`: UUID do item descontado.
+  - `coupon`: UUID do [cupom](../coupons/reference).
+  - `type`: `coupon`.
+  - `amount`: desconto em centavos.
+</ParamField>
+
+<ParamField body="payments" type="array">
+  Tentativas de pagamento, uma por [cobrança](../charges/reference) criada para a fatura. Só vem em respostas da API; nos [webhooks de fatura](../webhooks/payload-invoice) não aparece.
+
+  - `charge`: UUID da cobrança.
+  - `type`: `pix` ou `card`.
+  - `status`: status da cobrança (`pending`, `paid`, `expired`, `failed`, `in_review`, `refunded`, `partially_refunded` ou `chargeback`).
+  - `settledAt`: ISO 8601 do momento em que o resultado foi aplicado à fatura. `null` enquanto a cobrança está pendente.
+  - `createdAt`: ISO 8601.
+</ParamField>
+
+<ParamField body="createdAt" type="string">
+  ISO 8601.
+</ParamField>
+
+<ParamField body="updatedAt" type="string">
+  ISO 8601.
+</ParamField>
+
+## Status
+
+| Status | Significado |
+| ------ | ----------- |
+| `draft` | Rascunho. Os itens ainda podem ser alterados. Só sai daqui ao ser aberta. |
+| `open` | Aguardando pagamento. Os itens ficam travados. |
+| `paid` | Paga. Final. |
+| `void` | Anulada antes do pagamento. Final. |
+| `uncollectible` | Cobrança abandonada; ocorre quando o Pix da fatura vence sem pagamento. Final. |
+
+Não há endpoint para anular uma fatura nem para marcá-la como `uncollectible`.
+
+Um cartão recusado **não** muda o status: a fatura continua `open`, `attemptCount` sobe e você pode pagar de novo.
+
+Acompanhe as mudanças por [webhooks de fatura](../webhooks/payload-invoice): `invoice.created`, `invoice.opened`, `invoice.paid`, `invoice.voided`, `invoice.uncollectible` e `invoice.payment_failed`.

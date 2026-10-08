@@ -1,0 +1,116 @@
+---
+title: 'Criar app'
+description: 'Conecta uma integração (Meta, Spedy, Utmify, Trackup ou Shopify) à conta'
+sidebarTitle: 'Criar'
+api: 'POST https://api.upag.io/v1/apps'
+---
+
+Permissão: `app.write` (chave secreta; chave publicável não é aceita).
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/apps \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "integration",
+    "provider": "meta",
+    "name": "Meta Pixel",
+    "config": { "pixelId": "123456789", "accessToken": "EAAB..." }
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const app = await upag.apps.create({
+  type: 'integration',
+  provider: 'meta',
+  name: 'Meta Pixel',
+  config: { pixelId: '123456789', accessToken: 'EAAB...' },
+});
+
+// Shopify: a API valida as credenciais na Shopify ao criar
+await upag.apps.create({
+  type: 'integration',
+  provider: 'shopify',
+  name: 'Loja Shopify',
+  config: {
+    shop: 'minha-loja.myshopify.com',
+    clientId: 'a1b2c3d4e5f6',
+    clientSecret: 'shpss_...',
+  },
+});
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`.
+</Note>
+
+## Parâmetros
+
+<ParamField body="type" type="string" required>
+  Sempre `integration`.
+</ParamField>
+
+<ParamField body="provider" type="string" required>
+  `meta`, `spedy`, `utmify`, `trackup` ou `shopify`. Um app por provedor por conta.
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Nome do app (mínimo 3 caracteres).
+</ParamField>
+
+<ParamField body="config" type="object" default="{}">
+  Configuração do provedor. Chaves usadas pela Upag:
+
+  - `meta`: `pixelId`, `accessToken`.
+  - `spedy`: `apiKey`, `creation` (`afterWarranty` ou `immediate`), `warrantyDays`, `notifyCustomer`, `nfType` (`service` ou `product`).
+  - `utmify`: `apiKey`.
+  - `trackup`: `url` (endpoint que recebe os eventos), `projectId`, `hostname`.
+  - `shopify`: `shop` (domínio `.myshopify.com`), `clientId` e `clientSecret` (obrigatórios); `skipCart` (opcional).
+</ParamField>
+
+<ParamField body="active" type="boolean" default="true">
+  Se o app já nasce ligado.
+</ParamField>
+
+<ParamField body="appliesTo" type="string" default="all">
+  `all` ou `specific`.
+</ParamField>
+
+<ParamField body="appliesToProducts" type="string[] | null" default="null">
+  UUIDs de produtos. Obrigatório (não vazio) quando `appliesTo` é `specific`.
+</ParamField>
+
+## Resposta
+
+`201 Created`
+
+```json Response
+{
+  "id": "b7c8d9e0-f1a2-4b3c-8d4e-5f6a7b8c9d01",
+  "type": "integration",
+  "provider": "meta",
+  "scope": "public",
+  "name": "Meta Pixel",
+  "config": { "pixelId": "123456789", "accessToken": "********oken" },
+  "active": true,
+  "appliesTo": "all",
+  "appliesToProducts": null,
+  "createdAt": "2026-03-18T11:30:00.000Z",
+  "updatedAt": "2026-03-18T11:30:00.000Z"
+}
+```
+
+Para `shopify`, a Upag valida as credenciais, confere os escopos e registra o webhook de desinstalação; `config` volta com `shop`, `clientId`, `clientSecret` (mascarado) e `connectedAt`. Depois, [instale o script](./install) na loja.
+
+- `400` (`APP_ALREADY_EXISTS`) — a conta já tem um app desse provedor.
+- `400` — erros do Shopify, como `SHOPIFY_INVALID_SHOP`, `SHOPIFY_CREDENTIALS_REQUIRED` e `SHOPIFY_MISSING_SCOPES` (precisa de `write_script_tags`, `read_products` e `write_draft_orders`).
+- `401` (`SHOPIFY_INVALID_CLIENT`) / `422` (`SHOPIFY_APP_NOT_INSTALLED` e outros `SHOPIFY_*`) — a Shopify recusou as credenciais.
+- `422` — validação do corpo (por exemplo, `config.shop` ausente em `shopify`).

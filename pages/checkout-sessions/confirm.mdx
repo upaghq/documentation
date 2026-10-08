@@ -1,0 +1,488 @@
+---
+title: 'Confirmar sessão de checkout'
+description: 'Paga a sessão com Pix ou cartão, ou inicia um teste grátis guardando um cartão'
+sidebarTitle: 'Confirmar'
+api: 'POST https://api.upag.io/v1/checkout/sessions/{sessionId}/confirm'
+---
+
+Paga a sessão. Na primeira chamada a Upag resolve o pagador, cria a **fatura** (e a **assinatura**, se houver itens recorrentes) e cobra. As chamadas seguintes pagam a mesma fatura: é assim que se tenta de novo depois de um cartão recusado, ou se troca entre Pix e cartão.
+
+- **Cartão**: a resposta já traz o resultado. Aprovado, a sessão fica `complete`; recusado, continua `open` e dá para tentar de novo.
+- **Pix**: a sessão fica `open` com o QR code na cobrança, e vira `complete` quando o pagamento é confirmado. Acompanhe por [webhook](../webhooks/payload-checkout).
+- **Nada a pagar hoje** (um teste cobre todos os itens): não há cobrança nem fatura. A assinatura nasce `trialing` e a sessão fica `complete` na hora. Envie `paymentMethod` em vez de `charge`. Veja [Teste grátis](../guides/free-trial).
+
+Dois chamadores podem confirmar, com a mesma rota e respostas diferentes:
+
+| Quem | Credencial | Cliente (`customer`) | Resposta |
+| ---- | ---------- | -------------------- | -------- |
+| Seu servidor | Chave secreta `sk_…` | UUID de um cliente, ou os dados dele | Sessão completa, com `customer`, `charge` e `invoice` expandidos |
+| Navegador do pagador | `clientSecret` | Só os dados do pagador | [Visão do pagador](./retrieve) |
+
+Permissão: `checkout_session.write`.
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`; no navegador, o `upag-js` usa só a chave pública.
+</Note>
+
+## Do servidor
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/checkout/sessions/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26/confirm \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer": {
+      "name": "Maria Pagadora",
+      "email": "maria@example.com",
+      "document": { "type": "cpf", "number": "39053344705" }
+    },
+    "charge": { "method": "pix" }
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const result = await upag.checkoutSessions.confirm('4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26', {
+  customer: {
+    name: 'Maria Pagadora',
+    email: 'maria@example.com',
+    document: { type: 'cpf', number: '39053344705' },
+  },
+  charge: { method: 'pix' },
+});
+
+// result.charge.pix.qrCode: copia e cola do Pix
+```
+</CodeGroup>
+
+### Cartão
+
+Tokenize o cartão antes ([Criar cartão](../cards/create)) e envie o `id`. Com 3D Secure, abra antes a [sessão 3DS da sessão de checkout](./three-d-secure) e envie o ID dela em `threeDSecureSession`.
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/checkout/sessions/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26/confirm \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+    "bumps": ["6a2e9d41-8c03-4b57-a1f6-3e0d7c5b9a28"],
+    "charge": {
+      "method": "card",
+      "card": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
+      "installments": 2
+    }
+  }'
+```
+
+```javascript Node.js SDK
+const result = await upag.checkoutSessions.confirm('4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26', {
+  customer: '8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83',
+  bumps: ['6a2e9d41-8c03-4b57-a1f6-3e0d7c5b9a28'],
+  charge: {
+    method: 'card',
+    card: '5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15',
+    installments: 2,
+  },
+});
+```
+</CodeGroup>
+
+### Teste grátis (nada a pagar hoje)
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/checkout/sessions/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26/confirm \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+    "paymentMethod": {
+      "type": "card",
+      "card": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15"
+    }
+  }'
+```
+
+```javascript Node.js SDK
+const result = await upag.checkoutSessions.confirm('4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26', {
+  customer: '8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83',
+  paymentMethod: { type: 'card', card: '5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15' },
+});
+```
+</CodeGroup>
+
+## Do navegador
+
+Com o `clientSecret` de [Iniciar sessão](./start). Os cartões são tokenizados no navegador com `upag.cards.create`, usando a chave pública.
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/checkout/sessions/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26/confirm \
+  -H "Authorization: Bearer Zk3v0pQ8xJ2mR7cYt1LwN5dHs9uAeB4gXo6iFqVjT0E" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer": {
+      "name": "Maria Pagadora",
+      "email": "maria@example.com",
+      "document": { "type": "cpf", "number": "39053344705" }
+    },
+    "charge": { "method": "pix" }
+  }'
+```
+
+```javascript upag-js
+import { UpagJs } from 'upag-js';
+
+const upag = new UpagJs('pk_test_your_public_key');
+
+const paid = await upag.checkout.confirm(id, clientSecret, {
+  customer: {
+    name: 'Maria Pagadora',
+    email: 'maria@example.com',
+    document: { type: 'cpf', number: '39053344705' },
+  },
+  charge: { method: 'pix' },
+});
+
+// paid.charge.pix.copyPaste: copia e cola do Pix
+```
+</CodeGroup>
+
+Cartão, no navegador:
+
+```javascript upag-js
+const card = await upag.cards.create({
+  number: '4242424242424242',
+  expirationMonth: 12,
+  expirationYear: 2030,
+  cvv: '123',
+  holderName: 'Maria Pagadora',
+});
+
+const paid = await upag.checkout.confirm(id, clientSecret, {
+  customer: {
+    name: 'Maria Pagadora',
+    document: { type: 'cpf', number: '39053344705' },
+  },
+  charge: { method: 'card', card: card.id, installments: 1 },
+});
+
+if (paid.status === 'complete') {
+  // aprovado
+} else if (paid.charge?.error) {
+  // recusado: mostre paid.charge.error.message e deixe tentar de novo
+}
+```
+
+Num teste sem nada a pagar hoje (`session.trial` presente e `session.amount === 0`), envie `paymentMethod` em vez de `charge`:
+
+```javascript upag-js
+await upag.checkout.confirm(id, clientSecret, {
+  customer: {
+    name: 'Maria Pagadora',
+    document: { type: 'cpf', number: '39053344705' },
+  },
+  paymentMethod: { type: 'card', card: card.id },
+});
+```
+
+O navegador é limitado a 10 confirmações por minuto por sessão e por IP, e não aceita um UUID em `customer`.
+
+## Parâmetros
+
+<ParamField path="sessionId" type="string (uuid)" required>
+  ID da sessão.
+</ParamField>
+
+<ParamField body="customer" type="string (uuid) | object" required>
+  O pagador. Do servidor: UUID de um [cliente](../customers/reference) da conta, ou os dados do pagador (a Upag acha o cliente pelo documento ou cria um, e atualiza o nome, e-mail, telefone e endereço enviados). Do navegador: **só os dados**.
+
+  - `name` (obrigatório): nome.
+  - `document` (obrigatório): `{ type: "cpf" | "cnpj", number }`.
+  - `email`: opcional.
+  - `phone`: opcional, `{ countryCode, areaCode, number }`.
+  - `address`: opcional, com `street`, `number`, `complement`, `neighborhood`, `city`, `state`, `country` e `zip`.
+
+  Se a sessão já pertence a um cliente (a partir de uma tentativa anterior), outro cliente é recusado.
+</ParamField>
+
+<ParamField body="bumps" type="array" default="[]">
+  UUIDs dos `bumps` da sessão que o pagador aceitou. Só valem na primeira tentativa.
+</ParamField>
+
+<ParamField body="charge" type="object">
+  Como pagar. Obrigatório quando há valor a pagar hoje; proibido quando não há. Não pode vir junto de `paymentMethod`.
+
+  - `method` (obrigatório): `pix` ou `card`. Precisa estar em `paymentMethods` da sessão.
+  - **Pix**: `dueDate` (ISO 8601, opcional): vencimento do QR code.
+  - **Cartão**: `card` (obrigatório, UUID de um [cartão tokenizado](../cards/create)), `installments` (1 a 12, padrão `1`), `threeDSecureSession`, `ipAddress`, `location` e `softDescriptor`, como em [Pagar fatura](../invoices/pay).
+</ParamField>
+
+<ParamField body="paymentMethod" type="object">
+  Cartão a guardar para a cobrança depois do teste, quando nada é cobrado hoje: `{ type: "card", card }`, com `card` o UUID de um cartão tokenizado. Obrigatório com `paymentMethodCollection: "always"`; opcional com `if_required`. Não pode vir junto de `charge`.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+**Do servidor**: a [sessão](./reference) com `customer` expandido e `charge` e `invoice` criados pela chamada. `charge` e `invoice` são `null` quando nada foi cobrado hoje. Exemplo de um Pix aguardando pagamento:
+
+```json Response
+{
+  "id": "4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26",
+  "customer": {
+    "id": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+    "name": "Maria Pagadora",
+    "email": "maria@example.com",
+    "document": { "number": "39053344705", "type": "cpf" },
+    "phone": null,
+    "address": {
+      "street": null,
+      "number": null,
+      "complement": null,
+      "neighborhood": null,
+      "city": null,
+      "state": null,
+      "country": null,
+      "zip": null
+    },
+    "createdAt": "2026-10-07T19:03:00.000Z",
+    "updatedAt": "2026-10-07T19:03:00.000Z"
+  },
+  "checkoutLayout": null,
+  "paymentLink": null,
+  "paymentMethods": ["pix", "card"],
+  "subscriptionData": {
+    "trial": null,
+    "trialEnd": null,
+    "trialSettings": {
+      "endBehavior": { "missingPaymentMethod": "create_invoice" }
+    }
+  },
+  "paymentMethodCollection": "always",
+  "status": "open",
+  "url": "https://checkout.upag.io/cs/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26",
+  "expiresAt": "2026-10-08T19:00:00.000Z",
+  "createdAt": "2026-10-07T19:00:00.000Z",
+  "updatedAt": "2026-10-07T19:03:01.000Z",
+  "billingAddressCollection": "auto",
+  "successUrl": "https://exemplo.com.br/obrigado",
+  "cancelUrl": "https://exemplo.com.br/carrinho",
+  "latitude": null,
+  "longitude": null,
+  "country": null,
+  "region": null,
+  "city": null,
+  "subscription": null,
+  "couponEnabled": true,
+  "couponCode": null,
+  "items": [
+    {
+      "id": "b7e1c4a9-3d52-4f08-86a1-2c9d5e7f0b34",
+      "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61",
+      "quantity": 1
+    }
+  ],
+  "bumps": [],
+  "discounts": [],
+  "charge": {
+    "id": "1f7d3c8a-4b52-4c9e-8a11-6d0e2f5b7c34",
+    "type": "pix",
+    "status": "pending",
+    "amount": 19900,
+    "failureCode": null,
+    "description": null,
+    "meta": null,
+    "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+    "pix": {
+      "reference": "9d4c2b7f6a1e40538c9b2d7f1a6e0c34",
+      "qrCode": "00020101021226930014br.gov.bcb.pix...",
+      "expiresAt": "2026-10-07T19:13:01.000Z"
+    },
+    "splits": [],
+    "ipAddress": null,
+    "paidAt": null,
+    "createdAt": "2026-10-07T19:03:01.000Z",
+    "updatedAt": "2026-10-07T19:03:01.000Z"
+  },
+  "invoice": {
+    "id": "e27a4c90-1b58-4d36-8f0a-6c3d9b5e2a71",
+    "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+    "paymentMethod": null,
+    "subscription": null,
+    "status": "open",
+    "currency": "brl",
+    "description": null,
+    "amountDue": 19900,
+    "amountPaid": 0,
+    "attemptCount": 0,
+    "dueDate": null,
+    "paidAt": null,
+    "items": [
+      {
+        "id": "f08c5d21-7a36-4e94-b2d1-9c4e3a6b8f50",
+        "product": "7d2b5e90-1c34-4a68-b9f7-0e3a6c8d1f25",
+        "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61",
+        "name": "Curso de Culinária",
+        "amount": 19900,
+        "quantity": 1,
+        "totalAmount": 19900
+      }
+    ],
+    "discounts": [],
+    "payments": [
+      {
+        "charge": {
+          "id": "1f7d3c8a-4b52-4c9e-8a11-6d0e2f5b7c34",
+          "type": "pix",
+          "status": "pending",
+          "amount": 19900,
+          "failureCode": null,
+          "description": null,
+          "meta": null,
+          "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+          "pix": {
+            "reference": "9d4c2b7f6a1e40538c9b2d7f1a6e0c34",
+            "qrCode": "00020101021226930014br.gov.bcb.pix...",
+            "expiresAt": "2026-10-07T19:13:01.000Z"
+          },
+          "splits": [],
+          "ipAddress": null,
+          "paidAt": null,
+          "createdAt": "2026-10-07T19:03:01.000Z",
+          "updatedAt": "2026-10-07T19:03:01.000Z"
+        },
+        "type": "pix",
+        "status": "pending",
+        "settledAt": null,
+        "createdAt": "2026-10-07T19:03:01.000Z"
+      }
+    ],
+    "createdAt": "2026-10-07T19:03:00.000Z",
+    "updatedAt": "2026-10-07T19:03:01.000Z"
+  }
+}
+```
+
+**Do navegador**: a [visão do pagador](./retrieve), com `customer` (documento mascarado), `invoice` (`id` e `status`) e `charge` preenchidos. Exemplo do mesmo Pix:
+
+```json Response
+{
+  "id": "4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26",
+  "status": "open",
+  "url": "https://checkout.upag.io/cs/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26",
+  "paymentLink": "c3f81a5e-2b94-4d70-a6e3-9d0b7c1f4a58",
+  "expiresAt": "2026-10-08T19:00:00.000Z",
+  "createdAt": "2026-10-07T19:00:00.000Z",
+  "updatedAt": "2026-10-07T19:03:01.000Z",
+  "currency": "brl",
+  "subtotal": 19900,
+  "discountAmount": 0,
+  "amount": 19900,
+  "items": [
+    {
+      "id": "b7e1c4a9-3d52-4f08-86a1-2c9d5e7f0b34",
+      "quantity": 1,
+      "price": {
+        "id": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61",
+        "name": "Curso de Culinária",
+        "billingType": "one_time",
+        "interval": null,
+        "intervalCount": null,
+        "currency": "brl",
+        "amount": 19900,
+        "product": {
+          "id": "7d2b5e90-1c34-4a68-b9f7-0e3a6c8d1f25",
+          "name": "Curso de Culinária",
+          "description": "12 aulas em vídeo",
+          "image": null
+        }
+      }
+    }
+  ],
+  "bumps": [],
+  "discounts": [],
+  "couponEnabled": true,
+  "couponCode": null,
+  "billingAddressCollection": "auto",
+  "trial": null,
+  "paymentMethodCollection": "always",
+  "successUrl": "https://exemplo.com.br/obrigado",
+  "cancelUrl": "https://exemplo.com.br/carrinho",
+  "layout": null,
+  "paymentMethods": [
+    {
+      "type": "card",
+      "interestRate": 2.99,
+      "installments": [
+        { "count": 1, "amount": 19900, "total": 19900 },
+        { "count": 2, "amount": 10070, "total": 20140 }
+      ]
+    },
+    {
+      "type": "pix",
+      "interestRate": 0,
+      "installments": [{ "count": 1, "amount": 19900, "total": 19900 }]
+    }
+  ],
+  "customer": {
+    "id": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+    "name": "Maria Pagadora",
+    "email": "maria@example.com",
+    "document": { "type": "cpf", "number": "390.***.***-05" }
+  },
+  "charge": {
+    "id": "1f7d3c8a-4b52-4c9e-8a11-6d0e2f5b7c34",
+    "type": "pix",
+    "status": "pending",
+    "amount": 19900,
+    "interestAmount": 0,
+    "installments": 1,
+    "paidAt": null,
+    "card": null,
+    "pix": {
+      "copyPaste": "00020101021226930014br.gov.bcb.pix...",
+      "expiresAt": "2026-10-07T19:13:01.000Z"
+    },
+    "error": null,
+    "nextAction": null
+  },
+  "invoice": { "id": "e27a4c90-1b58-4d36-8f0a-6c3d9b5e2a71", "status": "open" },
+  "clientSecret": null,
+  "account": {
+    "displayName": "Loja Exemplo",
+    "legalName": "Loja Exemplo Ltda",
+    "publishableKey": "pk_test_your_public_key",
+    "threeDSecureEnabled": false
+  }
+}
+```
+
+Para um pagamento já aprovado, `status` da sessão vem `complete` e `charge.status` vem `paid`. Para um cartão recusado, a sessão segue `open`, `charge.status` vem `failed` e `charge.error` traz `code` e `message`.
+
+## Erros
+
+| Status | Código | Quando |
+| ------ | ------ | ------ |
+| `401` | n/a | Do navegador: `clientSecret` ausente, errado ou de outra sessão |
+| `404` | `CHECKOUT_SESSION_NOT_FOUND` | Do servidor: a sessão não existe ou é de outra conta |
+| `404` | `CUSTOMER_NOT_FOUND` | O UUID de `customer` não existe na conta |
+| `409` | `CHECKOUT_SESSION_NOT_OPEN` | A sessão já está `complete` ou `expired` |
+| `410` | `CHECKOUT_SESSION_EXPIRED` | A sessão passou do `expiresAt` |
+| `400` | `CHECKOUT_SESSION_CUSTOMER_DATA_REQUIRED` | Do navegador: `customer` veio como UUID; envie os dados |
+| `409` | `CHECKOUT_SESSION_CUSTOMER_MISMATCH` | A sessão já pertence a outro cliente |
+| `400` | `CHECKOUT_SESSION_CHARGE_REQUIRED` | Há valor a pagar hoje e `charge` não veio |
+| `400` | `CHECKOUT_SESSION_NOTHING_TO_CHARGE` | Nada a pagar hoje (teste) e `charge` veio: envie `paymentMethod` |
+| `400` | `CHECKOUT_SESSION_PAYMENT_METHOD_REQUIRED` | Teste com `paymentMethodCollection: "always"` e sem `paymentMethod` |
+| `400` | `CHECKOUT_SESSION_PAYMENT_METHOD_NOT_ALLOWED` | O método não está em `paymentMethods` da sessão |
+| `400` | `CHECKOUT_SESSION_BUMP_INVALID` | Um `bumps[]` não é da sessão, ou se repete |
+| `422` | `VALIDATION_FAILED` | `charge` e `paymentMethod` juntos, `customer` com documento inválido etc. |
+| `429` | n/a | Do navegador: mais de 10 confirmações por minuto por sessão e IP |
+
+Os erros do pagamento em si (cartão inexistente ou de outro cliente, 3DS inválido, falha de cobrança) seguem [Pagar fatura](../invoices/pay).

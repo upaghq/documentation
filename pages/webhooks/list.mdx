@@ -1,0 +1,66 @@
+---
+title: 'Listar webhooks'
+description: 'Lista os webhooks da conta'
+sidebarTitle: 'Listar'
+api: 'GET https://api.upag.io/v1/webhooks'
+---
+
+Permissão: `webhook.read`
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -G https://api.upag.dev/v1/webhooks \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -d "page=1" \
+  -d "limit=15"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const { data, count } = await upag.webhooks.list({ page: 1, limit: 15 });
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`. O SDK escolhe o host pela chave.
+</Note>
+
+## Parâmetros
+
+<ParamField query="page" type="integer" default="1">
+  Página, a partir de 1.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="15">
+  Itens por página, mínimo 1.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "data": [
+    {
+      "id": "aa0e8400-e29b-41d4-a716-446655440000",
+      "description": "Order events",
+      "active": true,
+      "url": "https://example.com/webhooks",
+      "headers": {},
+      "events": ["charge.paid"],
+      "secret": "whsec_abc123...",
+      "createdAt": "2026-03-18T09:00:00.000Z",
+      "updatedAt": "2026-03-18T09:00:00.000Z"
+    }
+  ],
+  "count": 1
+}
+```
+
+`count` é o total de webhooks da conta, não o tamanho da página.

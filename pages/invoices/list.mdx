@@ -1,0 +1,105 @@
+---
+title: 'Listar faturas'
+description: 'Lista as faturas da conta, da mais nova para a mais antiga'
+sidebarTitle: 'Listar'
+api: 'GET https://api.upag.io/v1/invoices'
+---
+
+Lista as faturas da conta, da mais nova para a mais antiga, com filtros opcionais.
+
+Permissão: `invoice.read`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -G https://api.upag.dev/v1/invoices \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -d "status=open" \
+  -d "customer=8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83" \
+  -d "page=1" \
+  -d "limit=15"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const { data, count } = await upag.invoices.list({
+  status: 'open',
+  customer: '8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83',
+  page: 1,
+  limit: 15,
+});
+```
+</CodeGroup>
+
+## Query
+
+<ParamField query="status" type="string">
+  Filtra por status: `draft`, `open`, `paid`, `void` ou `uncollectible`.
+</ParamField>
+
+<ParamField query="customer" type="string (uuid)">
+  Filtra pelas faturas de um cliente.
+</ParamField>
+
+<ParamField query="id" type="string (uuid)">
+  Filtra por um ID específico.
+</ParamField>
+
+<ParamField query="page" type="integer" default="1">
+  Página, a partir de 1.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="15">
+  Itens por página, mínimo 1.
+</ParamField>
+
+## Resposta
+
+`200 OK`. `count` é o total de faturas que batem com o filtro, não o tamanho da página.
+
+```json Response
+{
+  "data": [
+    {
+      "id": "5b0e8d3a-9c71-4e26-a8f4-1d7c3b6e9a02",
+      "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+      "paymentMethod": null,
+      "subscription": null,
+      "status": "open",
+      "currency": "brl",
+      "description": "Consultoria de setembro",
+      "amountDue": 9900,
+      "amountPaid": 0,
+      "attemptCount": 0,
+      "dueDate": "2026-10-20T00:00:00.000Z",
+      "paidAt": null,
+      "items": [
+        {
+          "id": "e4a1c7f8-2b95-4d03-8e6a-9f1b5d0c3a74",
+          "product": "7d2b5e90-1c34-4a68-b9f7-0e3a6c8d1f25",
+          "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61",
+          "name": "Plano mensal",
+          "amount": 4950,
+          "quantity": 2,
+          "totalAmount": 9900
+        }
+      ],
+      "discounts": [],
+      "payments": [],
+      "createdAt": "2026-10-07T19:00:00.000Z",
+      "updatedAt": "2026-10-07T19:00:00.000Z"
+    }
+  ],
+  "count": 1
+}
+```
+
+Cada item tem o mesmo formato do [objeto fatura](./reference).

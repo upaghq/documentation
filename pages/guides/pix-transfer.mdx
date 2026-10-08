@@ -1,0 +1,163 @@
+---
+title: 'Transferência Pix'
+description: 'Consultar chave, enviar Pix-out e obter comprovante'
+icon: 'arrow-right-arrow-left'
+---
+
+Com chave secreta (`sk_...`), Pix de saída **não exige PIN**. Valores em centavos.
+
+```mermaid
+sequenceDiagram
+  participant App
+  participant API
+  App->>API: POST /v1/transfers/lookup
+  API-->>App: dados do recebedor
+  App->>API: POST /v1/transfers
+  API-->>App: transfer
+  App->>API: GET /v1/transfers/:id/receipt
+  API-->>App: HTML comprovante
+```
+
+<Note>
+  Exemplos no sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## 1. Consultar destino
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/transfers/lookup \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "key",
+    "value": "55ce1aae-0d2b-4d76-bc77-294d6407349e"
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const lookup = await upag.transfers.lookup({
+  type: 'key',
+  value: '55ce1aae-0d2b-4d76-bc77-294d6407349e',
+});
+```
+</CodeGroup>
+
+Confira `name` e `taxNumber` antes de debitar.
+
+## 2. Enviar Pix por chave
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/transfers \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "key",
+    "pixKey": "55ce1aae-0d2b-4d76-bc77-294d6407349e",
+    "pixKeyType": "random",
+    "amount": 100,
+    "description": "Pagamento fornecedor"
+  }'
+```
+
+```javascript Node.js SDK
+const transfer = await upag.transfers.create({
+  type: 'key',
+  pixKey: '55ce1aae-0d2b-4d76-bc77-294d6407349e',
+  pixKeyType: 'random',
+  amount: 100,
+  description: 'Pagamento fornecedor',
+});
+```
+</CodeGroup>
+
+Guarde o `id` da resposta. O status evolui até `completed`.
+
+## 3. Copia-e-cola (hash)
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/transfers/lookup \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "hash",
+    "value": "00020126580014br.gov.bcb.pix..."
+  }'
+```
+
+```javascript Node.js SDK
+await upag.transfers.lookup({ type: 'hash', value: '00020126580014br.gov.bcb.pix...' });
+
+const transfer = await upag.transfers.create({
+  type: 'hash',
+  hash: '00020126580014br.gov.bcb.pix...',
+});
+```
+</CodeGroup>
+
+O valor é lido do QR; não envie `amount`.
+
+## 4. Comprovante
+
+<CodeGroup>
+```bash cURL
+curl "https://api.upag.dev/v1/transfers/770e8400-e29b-41d4-a716-446655440000/receipt?format=image" \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+const html = await upag.transfers.receipt('770e8400-e29b-41d4-a716-446655440000', {
+  format: 'image',
+});
+```
+</CodeGroup>
+
+A resposta é HTML: salve ou abra no navegador.
+
+## 5. Webhook
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/webhooks \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com/webhooks/upag",
+    "events": ["transfer.completed", "transfer.failed"]
+  }'
+```
+
+```javascript Node.js SDK
+await upag.webhooks.create({
+  url: 'https://example.com/webhooks/upag',
+  events: ['transfer.completed', 'transfer.failed'],
+});
+```
+</CodeGroup>
+
+```javascript Node.js SDK
+app.post('/webhooks/upag', express.raw({ type: '*/*' }), (req, res) => {
+  const valid = upag.webhooks.validateSignature(
+    req.body,
+    req.headers['x-webhook-signature'],
+    process.env.UPAG_WEBHOOK_SECRET,
+  );
+  if (!valid) return res.sendStatus(401);
+
+  const { event, data } = JSON.parse(req.body.toString('utf8'));
+
+  if (event === 'transfer.completed') {
+    console.log('Pix enviado:', data.id, data.amount);
+  }
+
+  res.sendStatus(200);
+});
+```
+
+Payload: [transfer.completed](../webhooks/payload-transfer). Referência completa: [Transferências](../transfers/reference).

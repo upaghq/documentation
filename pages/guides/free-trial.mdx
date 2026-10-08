@@ -1,0 +1,171 @@
+---
+title: 'Teste grátis'
+description: 'Ofereça um período de teste numa assinatura, guarde o cartão e acompanhe o fim do teste'
+icon: 'gift'
+---
+
+No teste grátis o pagador entra na assinatura sem pagar nada hoje. O teste pertence ao **link de pagamento** (ou à sessão de checkout): você define a duração e o que acontece se o teste acabar sem método de pagamento, e o checkout cria a assinatura já em `trialing`.
+
+```mermaid
+sequenceDiagram
+  participant Loja
+  participant API as Upag API
+  participant Pagador
+  Loja->>API: POST /payment-links (trial + trialSettings)
+  Pagador->>API: POST /checkout/payment-links/{code}/sessions
+  API-->>Pagador: sessão com amount 0 e trial
+  Pagador->>API: confirm com paymentMethod (cartão)
+  API-->>Loja: subscription.trialing
+  Note over API: 3 dias antes do fim
+  API-->>Loja: subscription.trial_ending
+  Note over API: Fim do teste
+  API-->>Loja: invoice.paid + subscription.active (ou past_due / canceled)
+```
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`) com `sk_test_…` e `pk_test_…`. Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## 1. Criar o link com teste
+
+O item precisa ser de um [preço recorrente](../prices/create); sem item recorrente a sessão é recusada (`CHECKOUT_SESSION_TRIAL_REQUIRES_RECURRING_ITEM`).
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/payment-links \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Plano Pro com 14 dias grátis",
+    "items": [
+      { "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61", "quantity": 1 }
+    ],
+    "paymentMethods": ["pix", "card"],
+    "subscriptionData": {
+      "trial": { "interval": "day", "intervalCount": 14 },
+      "trialSettings": { "endBehavior": { "missingPaymentMethod": "cancel" } }
+    },
+    "paymentMethodCollection": "always"
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const link = await upag.paymentLinks.create({
+  name: 'Plano Pro com 14 dias grátis',
+  items: [{ price: '3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61', quantity: 1 }],
+  paymentMethods: ['pix', 'card'],
+  subscriptionData: {
+    trial: { interval: 'day', intervalCount: 14 },
+    trialSettings: { endBehavior: { missingPaymentMethod: 'cancel' } },
+  },
+  paymentMethodCollection: 'always',
+});
+```
+</CodeGroup>
+
+| Campo | Valores |
+| ----- | ------- |
+| `trial.interval` e `trial.intervalCount` | `day` (até 730), `week` (até 104) ou `month` (até 24). O teste conta a partir do momento em que a assinatura é criada |
+| `trialSettings.endBehavior.missingPaymentMethod` | O que fazer se o teste acabar sem cartão: `create_invoice` (padrão: gera uma fatura paga por Pix, vencendo em 3 dias) ou `cancel` (cancela a assinatura) |
+| `paymentMethodCollection` | `always` (padrão): o pagador precisa deixar um cartão. `if_required`: pode concluir sem método de pagamento |
+
+Com `paymentMethodCollection: "always"`, o `card` precisa estar em `paymentMethods` (senão `CHECKOUT_SESSION_TRIAL_REQUIRES_CARD`). Pix não pode ser guardado para cobrar depois: o único método guardado é o cartão.
+
+Campos completos em [Criar link de pagamento](../payment-links/create).
+
+## 2. Abrir a sessão e confirmar sem cobrar
+
+Abra a sessão como no [checkout hospedado](./checkout-hosted) (`upag.checkout.start(code)`, onde `code` é o último trecho de `link.url`). A sessão já vem com `trial` preenchido e `amount: 0`. Em vez de `charge`, a confirmação leva `paymentMethod` com o cartão tokenizado:
+
+```javascript upag-js
+import { UpagJs } from 'upag-js';
+
+const upag = new UpagJs('pk_test_your_public_key');
+
+const session = await upag.checkout.start(code);
+const { id, clientSecret } = session;
+
+// session.trial: { interval, intervalCount, endsAt }
+// session.amount === 0: nada a pagar hoje
+
+const card = await upag.cards.create({
+  number: '4242424242424242',
+  expirationMonth: 12,
+  expirationYear: 2030,
+  cvv: '123',
+  holderName: 'Maria Pagadora',
+});
+
+const done = await upag.checkout.confirm(id, clientSecret, {
+  customer: {
+    name: 'Maria Pagadora',
+    email: 'maria@example.com',
+    document: { type: 'cpf', number: '39053344705' },
+  },
+  paymentMethod: { type: 'card', card: card.id },
+});
+
+console.log(done.status); // complete
+```
+
+Nenhuma cobrança nem fatura é criada. A assinatura nasce `trialing`, o cartão fica vinculado ao pagador e guardado nela para a cobrança do fim do teste, e a sessão vai para `complete`. Com `paymentMethodCollection: "if_required"`, o `paymentMethod` pode ser omitido; com `always`, omitir devolve erro.
+
+Referência: [Confirmar sessão](../checkout-sessions/confirm).
+
+## Data fixa em vez de duração
+
+Na [sessão criada pelo servidor](../checkout-sessions/create) você pode enviar `subscriptionData.trialEnd`, uma data fixa de fim com pelo menos 48 horas a partir de agora (ISO 8601 ou Unix em segundos). `trial` e `trialEnd` não vão juntos.
+
+Já em [Criar assinatura](../subscriptions/create) (`POST /subscriptions`) só existe `trialEnd`, no futuro, e o `trialEnd` não aceita o objeto `trial`. Lá não há `trialSettings`: se o teste acabar sem método de pagamento, uma fatura aberta é criada e a assinatura vai para `past_due`.
+
+```javascript Node.js SDK
+const subscription = await upag.subscriptions.create({
+  customer: '8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83',
+  paymentMethod: 'card',
+  card: '5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15', // já vinculado ao cliente
+  trialEnd: '2026-10-21T19:00:00.000Z',
+  items: [{ price: '3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61' }],
+});
+```
+
+Durante o teste, `startDate`, `currentPeriodStart` e `currentPeriodEnd` ficam `null`; os períodos começam quando o teste termina.
+
+## 3. Acompanhar por webhook
+
+| Evento | Quando | O que fazer |
+| ------ | ------ | ----------- |
+| `subscription.trialing` | A assinatura entra em teste | Liberar o acesso de teste |
+| `subscription.trial_ending` | Uma vez, 3 dias antes do fim | Avisar o cliente que a cobrança vem aí |
+| `subscription.active` | O teste acabou e o primeiro período foi cobrado | Manter o acesso |
+| `subscription.past_due` | A cobrança do fim do teste falhou (ou ficou uma fatura aberta) | Pedir um novo método de pagamento |
+| `subscription.canceled` | O teste acabou sem método de pagamento com `cancel` (motivo `missing_payment_method`) | Revogar o acesso |
+
+```javascript Node.js SDK
+app.post('/webhooks/upag', express.raw({ type: '*/*' }), async (req, res) => {
+  const valid = upag.webhooks.validateSignature(
+    req.body,
+    req.headers['x-webhook-signature'],
+    process.env.UPAG_WEBHOOK_SECRET,
+  );
+  if (!valid) return res.sendStatus(401);
+
+  const { event, data } = JSON.parse(req.body.toString('utf8'));
+
+  if (event === 'subscription.trial_ending') await sendTrialEndingEmail(data.customer);
+  if (event === 'subscription.canceled') await revokeAccess(data.customer);
+
+  return res.sendStatus(200);
+});
+```
+
+O que acontece no último dia depende do que o cliente deixou:
+
+- **Com cartão**: a Upag cobra o primeiro período no cartão, à vista. Aprovado, a assinatura vira `active`; recusado, `past_due` e novas tentativas.
+- **Sem cartão e `create_invoice`**: gera uma fatura com Pix vencendo em 3 dias.
+- **Sem cartão e `cancel`**: a assinatura é cancelada.
+
+Validação da assinatura do webhook: [Segurança](../webhooks/security). Payloads: [assinatura](../webhooks/payload-subscription) e [checkout](../webhooks/payload-checkout). Quem quiser cancelar antes do fim do teste usa [Cancelar assinatura](../subscriptions/cancel).

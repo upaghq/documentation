@@ -1,0 +1,101 @@
+---
+title: 'Referência'
+description: 'Objeto Cartão (card): cartão tokenizado'
+sidebarTitle: 'Visão geral'
+---
+
+Um cartão é tokenizado uma vez e depois referenciado pelo `id`. A Upag **nunca devolve o número nem o código de segurança** (CVV), e nunca armazena o CVV.
+
+| Método | Path | Chave | Permissão |
+| ------ | ---- | ----- | --------- |
+| `POST` | `/v1/cards` | Secreta **ou** publicável | `card.write` |
+| `GET` | `/v1/cards` | Secreta | `card.read` |
+| `GET` | `/v1/cards/{cardId}` | Secreta | `card.read` |
+| `DELETE` | `/v1/cards/{cardId}` | Secreta | `card.write` |
+
+`POST /v1/cards` é o único endpoint que aceita **chave publicável** (`pk_…`): o checkout tokeniza o cartão direto no browser (com o [`upag-js`](../sdk/frontend)) e envia ao seu servidor só o `id`.
+
+<Note>
+  Sandbox: `https://api.upag.dev/v1` com `sk_test_…` / `pk_test_…`. Produção: `https://api.upag.io/v1` com `sk_live_…` / `pk_live_…`. Cartões de teste em [Simulador](../simulator).
+</Note>
+
+## Estrutura
+
+```json
+{
+  "id": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
+  "customer": null,
+  "brand": "visa",
+  "firstDigits": "424242",
+  "lastDigits": "4242",
+  "holderName": "Luke Skywalker",
+  "expirationMonth": 11,
+  "expirationYear": 2031,
+  "funding": "credit",
+  "wallet": null,
+  "status": "active",
+  "createdAt": "2026-07-27T18:04:11.482Z",
+  "updatedAt": "2026-07-27T18:04:11.482Z"
+}
+```
+
+## Atributos
+
+<ParamField body="id" type="string">
+  UUID do cartão. É o que você passa em `card` ao [criar uma cobrança](../charges/create) ou uma [sessão 3DS](../three-d-secure/create).
+</ParamField>
+
+<ParamField body="customer" type="string | null">
+  UUID do cliente ao qual o cartão está vinculado. O cartão nasce sem cliente; o vínculo é feito quando uma cobrança paga (ou em análise) o identifica. `null` até lá.
+</ParamField>
+
+<ParamField body="brand" type="string">
+  `visa`, `mastercard`, `elo`, `amex`, `hipercard`, `diners`, `discover`, `jcb`, `aura` ou `unknown`.
+</ParamField>
+
+<ParamField body="firstDigits" type="string">
+  Primeiros dígitos do número.
+</ParamField>
+
+<ParamField body="lastDigits" type="string">
+  Últimos 4 dígitos do número.
+</ParamField>
+
+<ParamField body="holderName" type="string">
+  Nome impresso no cartão.
+</ParamField>
+
+<ParamField body="expirationMonth" type="integer">
+  1 a 12.
+</ParamField>
+
+<ParamField body="expirationYear" type="integer">
+  Ano com 4 dígitos.
+</ParamField>
+
+<ParamField body="funding" type="string | null">
+  `credit`, `debit`, `prepaid` ou `unknown`. `null` quando não conhecido.
+</ParamField>
+
+<ParamField body="wallet" type="string | null">
+  `apple_pay` ou `google_pay`, quando o cartão veio de uma carteira digital. `null` caso contrário.
+</ParamField>
+
+<ParamField body="status" type="string">
+  `active`, `invalid` ou `removed`.
+</ParamField>
+
+<ParamField body="createdAt" type="string">
+  ISO 8601.
+</ParamField>
+
+<ParamField body="updatedAt" type="string">
+  ISO 8601.
+</ParamField>
+
+A resposta não traz nada do provedor de pagamento, nem número completo, nem CVV.
+
+## Usando o cartão
+
+- Em uma [cobrança de cartão](../charges/create): passe o `id` em `card`.
+- Em uma [sessão 3D Secure](../three-d-secure/create): passe o `id` em `card`.

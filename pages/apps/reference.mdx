@@ -1,0 +1,77 @@
+---
+title: 'Referência'
+description: 'Objeto Aplicativo (app) — integrações com Meta, Spedy, Utmify, Trackup e Shopify'
+sidebarTitle: 'Visão geral'
+---
+
+Um app conecta a conta a um serviço externo (rastreamento, nota fiscal, loja). Cada conta tem no máximo **um app por provedor**.
+
+## Estrutura
+
+```json
+{
+  "id": "b7c8d9e0-f1a2-4b3c-8d4e-5f6a7b8c9d01",
+  "type": "integration",
+  "provider": "meta",
+  "scope": "public",
+  "name": "Meta Pixel",
+  "config": { "pixelId": "123456789", "accessToken": "********oken" },
+  "active": true,
+  "appliesTo": "all",
+  "appliesToProducts": null,
+  "createdAt": "2026-03-18T11:30:00.000Z",
+  "updatedAt": "2026-03-18T11:30:00.000Z"
+}
+```
+
+## Atributos
+
+<AccordionGroup>
+  <Accordion title="type">
+    `integration` (único tipo criável pela API; `custom` existe como valor mas não pode ser criado).
+  </Accordion>
+  <Accordion title="provider / scope">
+    `provider`: `meta`, `spedy`, `utmify`, `trackup` ou `shopify`. `scope` é definido pelo provedor: `public` (`meta`, `trackup`; parte da config chega ao checkout do comprador) ou `private` (`spedy`, `utmify`, `shopify`).
+  </Accordion>
+  <Accordion title="config">
+    Objeto livre com as credenciais e opções do provedor. Segredos (`accessToken`, `clientSecret`, `apiKey`) voltam **mascarados** (asteriscos + 4 últimos caracteres); ao reenviar o valor mascarado em uma atualização, o segredo guardado é mantido. Veja [Criar app](./create) para as chaves de cada provedor.
+  </Accordion>
+  <Accordion title="active">
+    Se o app está ligado. Padrão `true`.
+  </Accordion>
+  <Accordion title="appliesTo / appliesToProducts">
+    `all` (padrão) ou `specific`. Em `specific`, `appliesToProducts` é a lista de UUIDs de produtos (obrigatória e não vazia). Em `all` vem `null`.
+  </Accordion>
+</AccordionGroup>
+
+## Objeto de log
+
+Cada disparo para um provedor é registrado:
+
+```json
+{
+  "id": "d9e0f1a2-b3c4-4d5e-8f6a-7b8c9d0e1f23",
+  "app": "b7c8d9e0-f1a2-4b3c-8d4e-5f6a7b8c9d01",
+  "event": "invoice.paid",
+  "method": "POST",
+  "url": "https://api.utmify.com.br/api-credentials/orders",
+  "statusCode": 200,
+  "duration": 312,
+  "request": "{\"...\": \"corpo enviado, como string\"}",
+  "response": "{\"...\": \"resposta do provedor, como string\"}",
+  "success": true,
+  "createdAt": "2026-03-18T12:00:00.000Z"
+}
+```
+
+## Endpoints
+
+- [Criar app](./create)
+- [Listar apps](./list)
+- [Obter app](./get)
+- [Atualizar app](./update)
+- [Excluir app](./delete)
+- Shopify: [instalar script](./install), [verificar script](./verify-script), [desinstalar script](./uninstall)
+- Logs: [listar](./list-logs), [obter](./get-log)
+
+Todos exigem chave secreta (`sk_`).

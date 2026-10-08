@@ -1,0 +1,79 @@
+---
+title: 'Remover item'
+description: 'Remove um item da assinatura, agora ou na próxima renovação'
+sidebarTitle: 'Remover item'
+api: 'DELETE https://api.upag.io/v1/subscriptions/{subscriptionId}/items/{itemId}'
+---
+
+Remove um item da assinatura. Com `applyAt=now` (padrão) o item sai na hora e a resposta é `204` sem corpo; com `applyAt=period_end` a remoção vira uma [mudança agendada](./scheduled-changes) e a resposta é `200` com ela.
+
+Uma assinatura precisa ter pelo menos um item. Para encerrá-la, use [Cancelar assinatura](./cancel).
+
+Permissão: `subscription.write`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE "https://api.upag.dev/v1/subscriptions/9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36/items/d4a8c1e6-2f90-4b57-9e13-8a6c0b7d5f24?applyAt=period_end" \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+// Devolve a mudança agendada com period_end, ou undefined com now
+const change = await upag.subscriptions.deleteItem(
+  '9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36',
+  'd4a8c1e6-2f90-4b57-9e13-8a6c0b7d5f24',
+  { applyAt: 'period_end' },
+);
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="subscriptionId" type="string (uuid)" required>
+  ID da assinatura.
+</ParamField>
+
+<ParamField path="itemId" type="string (uuid)" required>
+  ID do item (`items[].id` da assinatura).
+</ParamField>
+
+<ParamField query="applyAt" type="string" default="now">
+  `now` ou `period_end`.
+</ParamField>
+
+## Resposta
+
+Com `applyAt=now`: `204 No Content`, sem corpo.
+
+Com `applyAt=period_end`: `200 OK` com a [mudança agendada](./scheduled-changes).
+
+```json Response (applyAt=period_end)
+{
+  "id": "8f1c5a73-4d02-4e96-b7a9-3c6e0d2b9f15",
+  "subscription": "9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36",
+  "operation": "remove",
+  "item": "d4a8c1e6-2f90-4b57-9e13-8a6c0b7d5f24",
+  "price": null,
+  "quantity": null,
+  "createdAt": "2026-10-12T14:20:00.000Z"
+}
+```
+
+## Erros
+
+| Status | Código | Quando |
+| ------ | ------ | ------ |
+| `404` | `SUBSCRIPTION_NOT_FOUND` | A assinatura não existe ou é de outra conta |
+| `404` | `SUBSCRIPTION_ITEM_NOT_FOUND` | O item não pertence à assinatura |
+| `400` | `SUBSCRIPTION_NOT_EDITABLE` | A assinatura está `canceled` ou `void` |
+| `400` | `SUBSCRIPTION_LAST_ITEM` | É o único item da assinatura |

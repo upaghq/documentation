@@ -1,0 +1,39 @@
+---
+title: 'Excluir webhook'
+description: 'Remove um webhook (soft delete)'
+sidebarTitle: 'Excluir'
+api: 'DELETE https://api.upag.io/v1/webhooks/{webhookId}'
+---
+
+Permissão: `webhook.write`
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE https://api.upag.dev/v1/webhooks/aa0e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+await upag.webhooks.delete('aa0e8400-e29b-41d4-a716-446655440000');
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`. O SDK escolhe o host pela chave.
+</Note>
+
+## Parâmetros
+
+<ParamField path="webhookId" type="string (uuid)" required>
+  ID do webhook.
+</ParamField>
+
+## Resposta
+
+`204 No Content` — sem corpo em sucesso.

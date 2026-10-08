@@ -1,0 +1,161 @@
+---
+title: 'Criar transferência'
+description: 'Envia um Pix pela chave de API (sem PIN)'
+sidebarTitle: 'Criar'
+api: 'POST https://api.upag.io/v1/transfers'
+---
+
+Envia um Pix da conta, para uma chave Pix (`type: "key"`) ou para um copia-e-cola (`type: "hash"`). Com chave secreta o Pix de saída **não exige PIN**. Valores em centavos.
+
+Permissão: `transfer.write`. Apenas chave secreta (`sk_…`). Transferência para beneficiário salvo (`type: "beneficiary"`) não está disponível pela chave de API.
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+### Chave Pix
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/transfers \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "key",
+    "pixKey": "55ce1aae-0d2b-4d76-bc77-294d6407349e",
+    "pixKeyType": "random",
+    "amount": 10000,
+    "description": "Pagamento fornecedor"
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const transfer = await upag.transfers.create({
+  type: 'key',
+  pixKey: '55ce1aae-0d2b-4d76-bc77-294d6407349e',
+  pixKeyType: 'random',
+  amount: 10000,
+  description: 'Pagamento fornecedor',
+});
+```
+</CodeGroup>
+
+### Copia-e-cola
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/transfers \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "hash",
+    "hash": "00020126580014br.gov.bcb.pix..."
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const transfer = await upag.transfers.create({
+  type: 'hash',
+  hash: '00020126580014br.gov.bcb.pix...',
+});
+```
+</CodeGroup>
+
+O valor é lido do QR code (valor final, em centavos na resposta); não envie `amount` com `hash`. Consulte antes com [Consultar destino](./lookup) se quiser conferir titular e valor.
+
+## Parâmetros
+
+<ParamField body="type" type="string" required>
+  `key` ou `hash`.
+</ParamField>
+
+<ParamField body="pixKey" type="string" required>
+  Só em `key`. Chave Pix de destino.
+</ParamField>
+
+<ParamField body="pixKeyType" type="string" required>
+  Só em `key`. `email`, `phone`, `cpf`, `cnpj` ou `random`.
+</ParamField>
+
+<ParamField body="amount" type="integer" required>
+  Só em `key`. Valor em centavos, maior que zero.
+</ParamField>
+
+<ParamField body="hash" type="string" required>
+  Só em `hash`. BR Code (copia-e-cola).
+</ParamField>
+
+<ParamField body="description" type="string">
+  Até 140 caracteres.
+</ParamField>
+
+<ParamField body="paymentDate" type="string">
+  Data do pagamento no formato `YYYY-MM-DD`. Padrão: hoje.
+</ParamField>
+
+## Resposta
+
+`201 Created`. A transferência vem com `transaction`, o débito lançado no extrato da conta.
+
+```json Response
+{
+  "id": "770e8400-e29b-41d4-a716-446655440000",
+  "status": "processing",
+  "direction": "out",
+  "type": "key",
+  "amount": 10000,
+  "pixKey": "55ce1aae-0d2b-4d76-bc77-294d6407349e",
+  "pixKeyType": "random",
+  "from": {
+    "name": "Acme LTDA",
+    "taxNumber": "12345678000199",
+    "bankName": "Upag"
+  },
+  "to": {
+    "name": "Maria Receiver",
+    "taxNumber": "111.444.777-35",
+    "bankName": "FitBank"
+  },
+  "endToEndId": null,
+  "providerTransactionId": "555",
+  "url": null,
+  "createdAt": "2026-03-18T12:00:00.000Z",
+  "updatedAt": "2026-03-18T12:00:00.000Z",
+  "transaction": {
+    "id": "880e8400-e29b-41d4-a716-446655440000",
+    "entryType": "debit",
+    "amount": 10000,
+    "description": "Pagamento fornecedor",
+    "endToEndId": null,
+    "availableAt": "2026-03-18T12:00:00.000Z",
+    "source": {
+      "type": "transfer",
+      "id": "770e8400-e29b-41d4-a716-446655440000"
+    },
+    "createdAt": "2026-03-18T12:00:00.000Z"
+  }
+}
+```
+
+A transferência nasce em `processing`; o status final (`completed` ou `failed`) chega por [webhook](../webhooks/payload-transfer) ou consultando [Obter transferência](./get). Campos em [Referência](./reference).
+
+## Erros
+
+| Status | Mensagem | Causa |
+| ------ | -------- | ----- |
+| `400` | `Account is not active` | Conta inativa ou sem dados bancários para Pix |
+| `400` | `Os dados da conta de origem e destino são iguais` | Copia-e-cola da própria conta |
+| `403` | — | Chave sem `transfer.write`, ou chave publicável |
+| `404` | `Account not found` | Conta não encontrada |
+| `422` | `VALIDATION_FAILED` | Corpo inválido (inclusive `type: "beneficiary"`) |
+| `500` | `Transfer provider acceptance requires reconciliation` | O provedor aceitou o Pix mas o registro local falhou. Confira o status em [Listar transferências](./list) antes de enviar de novo |

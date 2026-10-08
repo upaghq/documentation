@@ -1,0 +1,107 @@
+---
+title: 'Mudanças agendadas'
+description: 'Lista as mudanças de itens que serão aplicadas na próxima renovação'
+sidebarTitle: 'Mudanças agendadas'
+api: 'GET https://api.upag.io/v1/subscriptions/{subscriptionId}/scheduled-changes'
+---
+
+Lista as mudanças de itens pendentes de uma assinatura: as criadas com `applyAt: "period_end"` em [Adicionar item](./create-item), [Atualizar item](./update-item) e [Remover item](./delete-item). Elas são aplicadas na renovação, antes de a nova fatura ser gerada (veja [Próxima fatura](../invoices/upcoming)), e depois removidas da lista. Para descartar uma, use [Cancelar mudança agendada](./delete-scheduled-change).
+
+Permissão: `subscription.read`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.dev/v1/subscriptions/9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36/scheduled-changes \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const { data, count } = await upag.subscriptions.listScheduledChanges(
+  '9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36',
+);
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="subscriptionId" type="string (uuid)" required>
+  ID da assinatura.
+</ParamField>
+
+A lista não é paginada.
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "data": [
+    {
+      "id": "6e3b9d07-1c52-4a84-b0f6-9d2a7c4e1b58",
+      "subscription": "9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36",
+      "operation": "add",
+      "item": null,
+      "price": "b2e7a05c-9d41-4c38-8f6a-1e0d5c3b7a92",
+      "quantity": 2,
+      "createdAt": "2026-10-12T14:20:00.000Z"
+    },
+    {
+      "id": "2b7d4f91-8e06-4c53-a1d8-5f3c9e0a6b72",
+      "subscription": "9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36",
+      "operation": "update",
+      "item": "c6d2f9a4-7e18-4b35-9a60-3f1e8d5b2c07",
+      "price": null,
+      "quantity": 3,
+      "createdAt": "2026-10-12T14:25:00.000Z"
+    }
+  ],
+  "count": 2
+}
+```
+
+## Atributos
+
+<ParamField body="id" type="string">
+  UUID da mudança.
+</ParamField>
+
+<ParamField body="subscription" type="string">
+  UUID da assinatura.
+</ParamField>
+
+<ParamField body="operation" type="string">
+  `add`, `update` ou `remove`.
+</ParamField>
+
+<ParamField body="item" type="string | null">
+  UUID do item afetado. `null` em `add`, pois o item ainda não existe.
+</ParamField>
+
+<ParamField body="price" type="string | null">
+  UUID do preço a adicionar (`add`) ou o novo preço (`update`). `null` em `remove`, ou em `update` que só muda a quantidade.
+</ParamField>
+
+<ParamField body="quantity" type="integer | null">
+  Quantidade a adicionar (`add`) ou a nova quantidade (`update`). `null` em `remove`, ou em `update` que só muda o preço.
+</ParamField>
+
+<ParamField body="createdAt" type="string">
+  ISO 8601 do agendamento.
+</ParamField>
+
+## Erros
+
+| Status | Código | Quando |
+| ------ | ------ | ------ |
+| `404` | `SUBSCRIPTION_NOT_FOUND` | A assinatura não existe ou é de outra conta |

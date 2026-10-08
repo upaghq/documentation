@@ -1,0 +1,184 @@
+---
+title: 'Referência'
+description: 'Objeto Assinatura (subscription): cobrança recorrente de preços'
+sidebarTitle: 'Visão geral'
+---
+
+Uma assinatura cobra um cliente de forma recorrente por um ou mais [preços](../prices/reference) `recurring`. A cada período a Upag gera uma [fatura](../invoices/reference) e a cobra pelo método guardado na assinatura (`pix` ou um cartão tokenizado). Também é possível começar com um período de teste (trial).
+
+Todos os endpoints exigem **chave secreta** (`sk_…`).
+
+| Método | Path | Permissão |
+| ------ | ---- | --------- |
+| `POST` | `/v1/subscriptions` | `subscription.write` |
+| `GET` | `/v1/subscriptions` | `subscription.read` |
+| `GET` | `/v1/subscriptions/{subscriptionId}` | `subscription.read` |
+| `PATCH` | `/v1/subscriptions/{subscriptionId}` | `subscription.write` |
+| `POST` | `/v1/subscriptions/{subscriptionId}/cancel` | `subscription.write` |
+| `POST` | `/v1/subscriptions/{subscriptionId}/items` | `subscription.write` |
+| `PATCH` | `/v1/subscriptions/{subscriptionId}/items/{itemId}` | `subscription.write` |
+| `DELETE` | `/v1/subscriptions/{subscriptionId}/items/{itemId}` | `subscription.write` |
+| `GET` | `/v1/subscriptions/{subscriptionId}/scheduled-changes` | `subscription.read` |
+| `DELETE` | `/v1/subscriptions/{subscriptionId}/scheduled-changes/{changeId}` | `subscription.write` |
+
+A prévia da próxima cobrança fica em [Próxima fatura](../invoices/upcoming).
+
+<Note>
+  Sandbox: `https://api.upag.dev/v1` com `sk_test_…`. Produção: `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Estrutura
+
+```json
+{
+  "id": "9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36",
+  "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "paymentMethod": "card",
+  "card": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
+  "status": "active",
+  "currency": "brl",
+  "interval": "month",
+  "intervalCount": 1,
+  "cancelAtPeriodEnd": false,
+  "startDate": "2026-10-07T19:00:00.000Z",
+  "endDate": null,
+  "trialStartDate": null,
+  "trialEndDate": null,
+  "trialEndBehavior": null,
+  "currentPeriodStart": "2026-10-07T19:00:00.000Z",
+  "currentPeriodEnd": "2026-11-07T19:00:00.000Z",
+  "canceledAt": null,
+  "cancellationReason": null,
+  "items": [
+    {
+      "id": "c6d2f9a4-7e18-4b35-9a60-3f1e8d5b2c07",
+      "product": "7d2b5e90-1c34-4a68-b9f7-0e3a6c8d1f25",
+      "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61",
+      "name": "Plano mensal",
+      "amount": 9900,
+      "quantity": 1,
+      "totalAmount": 9900,
+      "createdAt": "2026-10-07T19:00:00.000Z",
+      "updatedAt": "2026-10-07T19:00:00.000Z"
+    }
+  ],
+  "createdAt": "2026-10-07T19:00:00.000Z",
+  "updatedAt": "2026-10-07T19:00:05.000Z"
+}
+```
+
+## Atributos
+
+<ParamField body="id" type="string">
+  UUID da assinatura.
+</ParamField>
+
+<ParamField body="customer" type="string">
+  UUID do [cliente](../customers/reference).
+</ParamField>
+
+<ParamField body="paymentMethod" type="string | null">
+  `pix` ou `card`: o método usado nas cobranças. `null` num teste sem método de pagamento.
+</ParamField>
+
+<ParamField body="card" type="string | null">
+  UUID do [cartão](../cards/reference) usado nas cobranças. `null` quando `paymentMethod` não é `card`.
+</ParamField>
+
+<ParamField body="status" type="string">
+  `incomplete`, `trialing`, `active`, `past_due`, `paused`, `canceled` ou `void`. Veja [Status](#status).
+</ParamField>
+
+<ParamField body="currency" type="string">
+  Moeda dos preços (`brl` ou `usd`).
+</ParamField>
+
+<ParamField body="interval" type="string">
+  `day`, `week`, `month` ou `year`. Todos os itens compartilham o mesmo intervalo.
+</ParamField>
+
+<ParamField body="intervalCount" type="integer">
+  A cada quantos `interval` a assinatura cobra (por exemplo, `interval: "month"` e `intervalCount: 3` cobram a cada 3 meses).
+</ParamField>
+
+<ParamField body="cancelAtPeriodEnd" type="boolean">
+  Quando `true`, a assinatura é cancelada ao fim do período atual em vez de renovar.
+</ParamField>
+
+<ParamField body="startDate" type="string | null">
+  ISO 8601 do início da assinatura. `null` durante o teste: o primeiro período só começa quando ele acaba.
+</ParamField>
+
+<ParamField body="endDate" type="string | null">
+  ISO 8601 do fim. Preenchido ao cancelar de imediato.
+</ParamField>
+
+<ParamField body="trialStartDate" type="string | null">
+  ISO 8601 do início do teste. `null` sem teste, ou depois que ele acabou.
+</ParamField>
+
+<ParamField body="trialEndDate" type="string | null">
+  ISO 8601 do fim do teste. `null` sem teste, ou depois que ele acabou.
+</ParamField>
+
+<ParamField body="trialEndBehavior" type="string | null">
+  O que acontece quando o teste acaba sem método de pagamento: `create_invoice` ou `cancel`. `null` sem teste ou depois que ele acabou. Veja [Teste grátis](../guides/free-trial).
+</ParamField>
+
+<ParamField body="currentPeriodStart" type="string | null">
+  Início do período atual (ISO 8601). `null` durante o teste.
+</ParamField>
+
+<ParamField body="currentPeriodEnd" type="string | null">
+  Fim do período atual (ISO 8601). É a data da próxima renovação. `null` durante o teste.
+</ParamField>
+
+<ParamField body="canceledAt" type="string | null">
+  ISO 8601 do cancelamento efetivo.
+</ParamField>
+
+<ParamField body="cancellationReason" type="string | null">
+  Motivo informado ao cancelar, ou `missing_payment_method` quando o teste acabou sem método de pagamento e o comportamento era `cancel`.
+</ParamField>
+
+<ParamField body="items" type="array">
+  Itens ativos da assinatura.
+
+  - `id`: UUID do item.
+  - `product`: UUID do produto.
+  - `price`: UUID do preço.
+  - `name`: nome do preço, copiado quando o item entrou.
+  - `amount`: valor unitário em **centavos**, copiado do preço quando o item entrou.
+  - `quantity`: quantidade.
+  - `totalAmount`: `amount × quantity`, em centavos.
+  - `createdAt`, `updatedAt`: ISO 8601.
+</ParamField>
+
+<ParamField body="createdAt" type="string">
+  ISO 8601.
+</ParamField>
+
+<ParamField body="updatedAt" type="string">
+  ISO 8601.
+</ParamField>
+
+## Status
+
+| Status | Significado |
+| ------ | ----------- |
+| `incomplete` | Criada, esperando o primeiro pagamento (um Pix ainda não pago, ou um cartão recusado). Vira `active` quando a fatura do primeiro período é paga. |
+| `trialing` | Em período de teste. Nada é cobrado até `trialEndDate`. |
+| `active` | Em dia. |
+| `past_due` | A renovação falhou ou o teste acabou sem método de pagamento; a Upag tenta cobrar de novo. Volta a `active` quando a fatura é paga. |
+| `paused` | Pausada. |
+| `canceled` | Cancelada. Final. |
+| `void` | Anulada. Final. |
+
+Acompanhe as mudanças por [webhooks de assinatura](../webhooks/payload-subscription): `subscription.created`, `subscription.active`, `subscription.trialing`, `subscription.trial_ending`, `subscription.past_due`, `subscription.incomplete`, `subscription.paused`, `subscription.canceled` e `subscription.void`.
+
+## Renovação
+
+- Cartão: cada período é cobrado em 1 parcela no cartão guardado.
+- Pix: a fatura do período é emitida com um QR code que vence em 3 dias.
+- Recusa ou Pix sem pagamento: a assinatura vai para `past_due` e a cobrança é repetida.
+- Trocas de item agendadas com `applyAt: "period_end"` são aplicadas na renovação. Veja [Mudanças agendadas](./scheduled-changes).

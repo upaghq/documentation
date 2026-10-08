@@ -1,0 +1,119 @@
+---
+title: 'Atualizar sessão de checkout'
+description: 'Altera cliente, métodos de pagamento ou URLs de uma sessão aberta'
+sidebarTitle: 'Atualizar'
+api: 'PATCH https://api.upag.io/v1/checkout/sessions/{sessionId}'
+---
+
+Altera uma sessão `open`. Os campos omitidos mantêm o valor; `null` limpa o cliente ou uma URL. Itens, bumps e teste não mudam: para isso, [crie outra sessão](./create).
+
+Permissão: `checkout_session.write`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X PATCH https://api.upag.dev/v1/checkout/sessions/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26 \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "paymentMethods": ["card"],
+    "successUrl": "https://exemplo.com.br/pedido/concluido"
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const session = await upag.checkoutSessions.update('4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26', {
+  paymentMethods: ['card'],
+  successUrl: 'https://exemplo.com.br/pedido/concluido',
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="sessionId" type="string (uuid)" required>
+  ID da sessão.
+</ParamField>
+
+<ParamField body="customer" type="string (uuid) | null">
+  UUID de um [cliente](../customers/reference) da conta, ou `null` para desassociar.
+</ParamField>
+
+<ParamField body="paymentMethods" type="array">
+  `pix` e/ou `card`, mínimo 1. Numa sessão com teste e `paymentMethodCollection: "always"`, `card` precisa continuar na lista.
+</ParamField>
+
+<ParamField body="successUrl" type="string (url) | null">
+  URL de retorno depois do pagamento. `null` remove.
+</ParamField>
+
+<ParamField body="cancelUrl" type="string (url) | null">
+  URL de retorno se o pagador desistir. `null` remove.
+</ParamField>
+
+## Resposta
+
+`200 OK` com a [sessão](./reference) atualizada.
+
+```json Response
+{
+  "id": "4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26",
+  "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "checkoutLayout": null,
+  "paymentLink": null,
+  "paymentMethods": ["card"],
+  "subscriptionData": {
+    "trial": null,
+    "trialEnd": null,
+    "trialSettings": {
+      "endBehavior": { "missingPaymentMethod": "create_invoice" }
+    }
+  },
+  "paymentMethodCollection": "always",
+  "status": "open",
+  "url": "https://checkout.upag.io/cs/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26",
+  "expiresAt": "2026-10-08T19:00:00.000Z",
+  "createdAt": "2026-10-07T19:00:00.000Z",
+  "updatedAt": "2026-10-07T19:10:00.000Z",
+  "billingAddressCollection": "auto",
+  "successUrl": "https://exemplo.com.br/pedido/concluido",
+  "cancelUrl": "https://exemplo.com.br/carrinho",
+  "latitude": null,
+  "longitude": null,
+  "country": null,
+  "region": null,
+  "city": null,
+  "invoice": null,
+  "subscription": null,
+  "couponEnabled": true,
+  "couponCode": null,
+  "items": [
+    {
+      "id": "b7e1c4a9-3d52-4f08-86a1-2c9d5e7f0b34",
+      "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61",
+      "quantity": 1
+    }
+  ],
+  "bumps": [],
+  "discounts": []
+}
+```
+
+## Erros
+
+| Status | Código | Quando |
+| ------ | ------ | ------ |
+| `404` | `CHECKOUT_SESSION_NOT_FOUND` | A sessão não existe ou é de outra conta |
+| `404` | `CUSTOMER_NOT_FOUND` | O cliente não existe na conta |
+| `409` | `CHECKOUT_SESSION_NOT_OPEN` | A sessão já está `complete` ou `expired` |
+| `400` | `CHECKOUT_SESSION_TRIAL_REQUIRES_CARD` | A sessão tem teste com `paymentMethodCollection: "always"` e `card` ficaria fora de `paymentMethods` |
+| `422` | `VALIDATION_FAILED` | `paymentMethods` vazio ou URL inválida |

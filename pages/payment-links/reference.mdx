@@ -1,0 +1,95 @@
+---
+title: 'Referência'
+description: 'Objeto Link de pagamento (payment link)'
+sidebarTitle: 'Visão geral'
+---
+
+Um link de pagamento é uma página de checkout reutilizável: você define itens (preços), formas de pagamento e opções, e a Upag gera uma `url` para compartilhar. Cada compra inicia uma [sessão de checkout](../checkout-sessions/reference).
+
+## Estrutura
+
+```json
+{
+  "id": "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70",
+  "name": "Plano Pro com trial",
+  "description": null,
+  "checkoutLayout": null,
+  "active": true,
+  "amount": 4990,
+  "url": "https://checkout.upag.io/buy/Xk3mPq9RtVw2Zd7B",
+  "paymentMethods": ["pix", "card"],
+  "couponEnabled": false,
+  "billingAddressCollection": "auto",
+  "successUrl": "https://example.com/obrigado",
+  "cancelUrl": null,
+  "subscriptionData": {
+    "trial": { "interval": "day", "intervalCount": 14 },
+    "trialSettings": { "endBehavior": { "missingPaymentMethod": "cancel" } }
+  },
+  "paymentMethodCollection": "always",
+  "items": [
+    {
+      "id": "e5f6a7b8-c9d0-4e1f-8a2b-3c4d5e6f7a81",
+      "product": "0b9c1f3e-6a4d-4c1e-9d55-3f1f6a7c2e10",
+      "price": "5f2d7a90-3b1c-4e8a-8f6d-1c9e4b7a2d33",
+      "quantity": 1,
+      "amount": 4990
+    }
+  ],
+  "bumps": [],
+  "createdAt": "2026-03-18T11:20:00.000Z",
+  "updatedAt": "2026-03-18T11:20:00.000Z"
+}
+```
+
+As referências a outras entidades usam o nome da entidade (`checkoutLayout`, `product`, `price`) e trazem o UUID.
+
+## Atributos
+
+<AccordionGroup>
+  <Accordion title="amount">
+    Soma dos totais dos itens ativos, em **centavos**. Bumps não entram na soma.
+  </Accordion>
+  <Accordion title="url">
+    URL pública do checkout do link. Pode vir `null` se a URL de checkout não estiver configurada no ambiente.
+  </Accordion>
+  <Accordion title="paymentMethods">
+    Lista com `pix` e/ou `card` (mínimo 1). Padrão: `["pix", "card"]`.
+  </Accordion>
+  <Accordion title="billingAddressCollection">
+    `auto` (padrão), `required` ou `none`.
+  </Accordion>
+  <Accordion title="couponEnabled / active">
+    `couponEnabled` (padrão `false`) permite o comprador aplicar [cupons](../coupons/reference). `active` (padrão `true`): link inativo recusa novas compras (`410`, `PAYMENT_LINK_INACTIVE`).
+  </Accordion>
+  <Accordion title="items">
+    Preços vendidos pelo link: `id`, `product`, `price`, `quantity` e `amount` (preço × quantidade, em centavos). Mínimo 1 item; o mesmo preço não pode repetir.
+  </Accordion>
+  <Accordion title="bumps">
+    Ofertas adicionais (order bump): `id`, `product`, `price`, `quantity`, `amount` (centavos), `title` e `description`.
+  </Accordion>
+  <Accordion title="subscriptionData / paymentMethodCollection">
+    Configuração de período de teste (trial) das assinaturas criadas pelos itens recorrentes. `trial` é `{ interval: "day" | "week" | "month", intervalCount }` (até 730 dias: `day` ≤ 730, `week` ≤ 104, `month` ≤ 24) ou `null`. `trialSettings.endBehavior.missingPaymentMethod`: `create_invoice` (padrão; cobra o primeiro período por Pix) ou `cancel`. `paymentMethodCollection`: `always` (padrão; exige método de pagamento mesmo sem cobrar hoje) ou `if_required`. Veja [Teste grátis](../guides/free-trial).
+  </Accordion>
+</AccordionGroup>
+
+## Regras de consistência
+
+- Todos os preços (itens e bumps) devem ter a mesma moeda — `PAYMENT_LINK_CURRENCY_MISMATCH`.
+- Itens recorrentes devem ter o mesmo `interval` e `intervalCount` — `PAYMENT_LINK_RECURRING_INTERVAL_MISMATCH`.
+- Não repita o mesmo preço em itens — `PAYMENT_LINK_DUPLICATE_PRICE`.
+- Um trial exige pelo menos um item recorrente — `PAYMENT_LINK_TRIAL_REQUIRES_RECURRING_ITEM`.
+- Com trial e `paymentMethodCollection: "always"`, `card` precisa estar em `paymentMethods` — `PAYMENT_LINK_TRIAL_REQUIRES_CARD`.
+
+Todas essas violações retornam `400`.
+
+## Endpoints
+
+- [Criar link](./create)
+- [Listar links](./list)
+- [Obter link](./get)
+- [Atualizar link](./update)
+- Itens: [adicionar](./add-item), [atualizar](./update-item), [remover](./remove-item)
+- Bumps: [adicionar](./add-bump), [atualizar](./update-bump), [remover](./remove-bump)
+
+Todos exigem chave secreta (`sk_`). Não há endpoint para excluir um link; desative-o com `active: false`.

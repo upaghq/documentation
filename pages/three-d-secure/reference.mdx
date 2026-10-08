@@ -1,0 +1,95 @@
+---
+title: 'Referência'
+description: 'Sessões 3D Secure: autenticação do portador antes de cobrar o cartão'
+sidebarTitle: 'Visão geral'
+---
+
+O 3D Secure (3DS) faz o banco emissor autenticar o portador antes de você cobrar o cartão. Seu servidor abre uma **sessão**, o browser do pagador executa a autenticação e a cobrança de cartão referencia a sessão concluída em `threeDSecureSession`.
+
+| Método | Path | Chave | Permissão |
+| ------ | ---- | ----- | --------- |
+| `POST` | `/v1/3ds/sessions` | Secreta | `charge.write` |
+| `GET` | `/v1/3ds/sessions/{sessionId}` | Secreta | `charge.read` |
+| `POST` | `/v1/3ds/sessions/start` | Publicável | — |
+| `POST` | `/v1/3ds/sessions/complete` | Publicável | — |
+
+`start` e `complete` são chamados pelo `upag-js` no browser (`threeDSecure.authenticate`), com chave publicável e o `clientSecret` da sessão. Você só chama `create` e `get` do servidor.
+
+<Note>
+  Sandbox: `https://api.upag.dev/v1`. Produção: `https://api.upag.io/v1`. Cartão de teste que força o desafio 3DS em [Simulador](../simulator).
+</Note>
+
+## Fluxo
+
+1. O servidor cria a sessão ([Criar sessão](./create)) e envia o `clientSecret` à página de checkout.
+2. A página chama `upag.threeDSecure.authenticate({ clientSecret })`. O SDK chama [start](./start), roda a autenticação do banco e chama [complete](./complete). Resolve com `{ sessionId, status: 'completed' }`.
+3. O servidor cria a [cobrança de cartão](../charges/create) com `threeDSecureSession` igual ao `id` da sessão.
+
+Guia completo: [Cartão com 3DS](../guides/card-3ds).
+
+## Estrutura
+
+```json
+{
+  "id": "9b7c1e52-3f0a-4d86-a1c4-6e2d8f35b790",
+  "status": "requires_action",
+  "finalAmount": 11016,
+  "card": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
+  "expiresAt": "2026-09-30T19:06:02.113Z"
+}
+```
+
+Na criação a resposta inclui também `clientSecret` (veja [Criar sessão](./create)).
+
+## Atributos
+
+<ParamField body="id" type="string">
+  UUID da sessão.
+</ParamField>
+
+<ParamField body="status" type="string">
+  `requires_action`, `completed`, `failed`, `canceled` ou `expired`.
+
+  - `requires_action`: aguardando o browser.
+  - `completed`: portador autenticado; a sessão pode ser usada por uma cobrança.
+  - `canceled`: o pagador fechou o desafio, ou o browser estourou o tempo.
+  - `failed`: a autenticação falhou.
+  - `expired`: passou de `expiresAt`.
+
+  `failed`, `canceled` e `expired` são finais: crie uma sessão nova para tentar de novo.
+</ParamField>
+
+<ParamField body="finalAmount" type="integer">
+  Valor que o cartão será cobrado, em centavos: o `amount` enviado mais os juros de parcelamento que o pagador assume. Fixado na criação.
+</ParamField>
+
+<ParamField body="card" type="string">
+  UUID do [cartão](../cards/reference) autenticado.
+</ParamField>
+
+<ParamField body="expiresAt" type="string">
+  ISO 8601. A sessão vale 1 hora.
+</ParamField>
+
+A sessão não repete o que você enviou (`amount`, `installments`, cliente). O `clientSecret` só é devolvido na criação e nunca mais.
+
+## Usando a sessão na cobrança
+
+Passe o `id` em `threeDSecureSession` numa [cobrança de cartão](../charges/create):
+
+- `card` precisa ser o cartão da sessão.
+- O cartão é cobrado pelo `finalAmount` da sessão, sem recalcular: mudar taxas depois não altera o que o pagador autenticou.
+- `amount` e `installments` da cobrança precisam ser iguais aos da sessão.
+
+A cobrança é recusada, sem cobrar o cartão, quando a sessão:
+
+- não existe na conta (`404 session_not_found`);
+- não está `completed` ou já foi usada (`409 invalid_session_state`);
+- expirou (`410 session_expired`);
+- foi autenticada para outro cartão, valor ou parcelas (`409 threeds_session_mismatch`).
+
+A sessão é consumida assim que uma cobrança a usa, mesmo que o banco depois recuse o pagamento. Para tentar de novo, crie outra sessão.
+
+## Disponibilidade
+
+O 3D Secure é habilitado por ambiente. Com ele desligado, todos os endpoints desta seção respondem `404 not_found`.

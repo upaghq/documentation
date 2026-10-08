@@ -1,0 +1,55 @@
+---
+title: 'Payload checkout'
+description: 'Campo data nos eventos checkout-session.*'
+icon: 'cart-shopping'
+sidebarTitle: 'Checkout'
+---
+
+Eventos: `checkout-session.created`, `checkout-session.completed` e `checkout-session.expired`.
+
+`data` é a [sessão de checkout](../checkout-sessions/reference) em formato reduzido. Entidades relacionadas vêm como id:
+
+```json
+{
+  "id": "880e8400-e29b-41d4-a716-446655440000",
+  "event": "checkout-session.completed",
+  "createdAt": "2026-03-18T12:40:00.123Z",
+  "data": {
+    "id": "1a2e8400-e29b-41d4-a716-446655440000",
+    "customer": "660e8400-e29b-41d4-a716-446655440001",
+    "checkoutLayout": null,
+    "paymentLink": "1b2e8400-e29b-41d4-a716-446655440000",
+    "paymentMethods": ["pix", "card"],
+    "subscriptionData": {
+      "trial": null,
+      "trialEnd": null,
+      "trialSettings": { "endBehavior": { "missingPaymentMethod": "create_invoice" } }
+    },
+    "paymentMethodCollection": "always",
+    "status": "complete",
+    "url": "https://checkout.upag.io/cs/1a2e8400-e29b-41d4-a716-446655440000",
+    "expiresAt": "2026-03-19T12:00:00.000Z",
+    "createdAt": "2026-03-18T12:00:00.000Z",
+    "updatedAt": "2026-03-18T12:40:00.000Z"
+  }
+}
+```
+
+## Campos
+
+| Campo | Tipo | Descrição |
+| ----- | ---- | --------- |
+| `id` | `string (uuid)` | Sessão |
+| `customer` | `string \| null` | Id do cliente |
+| `checkoutLayout` | `string \| null` | Id do layout de checkout |
+| `paymentLink` | `string \| null` | Id do link de pagamento de origem |
+| `paymentMethods` | `string[]` | Métodos aceitos: `pix`, `card` |
+| `subscriptionData` | `object` | `trial` (`interval`, `intervalCount`, ou `null`), `trialEnd` e `trialSettings.endBehavior.missingPaymentMethod` (`create_invoice` ou `cancel`) |
+| `paymentMethodCollection` | `string` | `always` ou `if_required` |
+| `status` | `string` | `open`, `complete` ou `expired` |
+| `url` | `string \| null` | URL da página de checkout; `null` se o host de checkout não estiver configurado |
+| `expiresAt` | `string \| null` | ISO 8601 |
+| `createdAt` | `string` | ISO 8601 |
+| `updatedAt` | `string` | ISO 8601 |
+
+O evento não traz itens, descontos nem os ids da fatura e da assinatura geradas. Em `checkout-session.completed`, consulte a [sessão](../checkout-sessions/get) para ler `invoice` e `subscription`.

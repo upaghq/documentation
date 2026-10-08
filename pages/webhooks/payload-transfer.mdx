@@ -1,0 +1,65 @@
+---
+title: 'Payload transferência'
+description: 'Campo data nos eventos transfer.*'
+icon: 'arrow-right-arrow-left'
+sidebarTitle: 'Transferência'
+---
+
+Eventos: `transfer.created`, `transfer.processing`, `transfer.completed`, `transfer.failed` e `transfer.updated`.
+
+`data` é a transferência com o documento (`taxNumber`) bruto, só dígitos, sem formatação de CPF/CNPJ:
+
+```json
+{
+  "id": "880e8400-e29b-41d4-a716-446655440000",
+  "event": "transfer.completed",
+  "createdAt": "2026-03-18T12:01:00.123Z",
+  "data": {
+    "id": "770e8400-e29b-41d4-a716-446655440000",
+    "status": "completed",
+    "direction": "out",
+    "type": "key",
+    "amount": 15000,
+    "pixKey": "55ce1aae-0d2b-4d76-bc77-294d6407349e",
+    "pixKeyType": "random",
+    "from": {
+      "name": "Acme LTDA",
+      "taxNumber": "12345678000199",
+      "bankName": "Upag"
+    },
+    "to": {
+      "name": "Maria Receiver",
+      "taxNumber": "11144477735",
+      "bankName": "FitBank"
+    },
+    "endToEndId": "E12345678202603181200000000000000",
+    "providerTransactionId": "555",
+    "url": null,
+    "createdAt": "2026-03-18T12:00:00.000Z",
+    "updatedAt": "2026-03-18T12:01:00.000Z"
+  }
+}
+```
+
+## Campos
+
+| Campo | Tipo | Descrição |
+| ----- | ---- | --------- |
+| `id` | `string (uuid)` | Transferência |
+| `status` | `string` | `awaiting_approval`, `pending`, `processing`, `completed`, `canceled` ou `failed`. Pix recebido nasce `completed` |
+| `direction` | `string` | `in` (recebido) ou `out` (enviado) |
+| `type` | `string` | Como o destino foi resolvido: `key`, `hash` ou `beneficiary` |
+| `amount` | `integer` | Valor em centavos |
+| `pixKey` | `string` | Chave Pix usada |
+| `pixKeyType` | `string` | `cpf`, `cnpj`, `email`, `phone` ou `random` |
+| `from` | `object` | Pagador: `name`, `taxNumber`, `bankName` |
+| `to` | `object` | Recebedor: `name`, `taxNumber`, `bankName` |
+| `endToEndId` | `string \| null` | Identificador fim a fim do Pix |
+| `providerTransactionId` | `string \| null` | Id da transação no provedor |
+| `url` | `string \| null` | Comprovante do provedor, quando existe |
+| `createdAt` | `string` | ISO 8601 |
+| `updatedAt` | `string` | ISO 8601 |
+
+`from` e `to` sempre nomeiam quem pagou e quem recebeu: em uma transferência recebida, `to` é a sua conta. `bankName` pode ser `null` quando o provedor não informa a instituição.
+
+Um Pix recebido sem cobrança dispara `transfer.created`, `transfer.completed` e `transfer.updated` em sequência. Detalhes: [Referência de transferências](../transfers/reference).

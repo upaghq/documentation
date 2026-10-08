@@ -1,0 +1,121 @@
+---
+title: 'Criar fatura'
+description: 'Cria uma fatura a partir de preços, como rascunho ou já aberta'
+sidebarTitle: 'Criar'
+api: 'POST https://api.upag.io/v1/invoices'
+---
+
+Cria uma fatura para um cliente a partir de [preços](../prices/reference). Sem `open`, ela nasce como `draft` e você ainda pode mexer nos itens; com `open: true`, já nasce `open` e pronta para [pagar](./pay).
+
+Permissão: `invoice.write`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/invoices \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+    "description": "Consultoria de setembro",
+    "dueDate": "2026-10-20T00:00:00.000Z",
+    "items": [
+      { "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61", "quantity": 2 }
+    ],
+    "open": true
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const invoice = await upag.invoices.create({
+  customer: '8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83',
+  description: 'Consultoria de setembro',
+  dueDate: '2026-10-20T00:00:00.000Z',
+  items: [{ price: '3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61', quantity: 2 }],
+  open: true,
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField body="customer" type="string (uuid)" required>
+  UUID de um [cliente](../customers/reference) da conta.
+</ParamField>
+
+<ParamField body="items" type="array" required>
+  Pelo menos um item. Todos os preços precisam estar na mesma moeda, que passa a ser a da fatura.
+
+  - `price` (obrigatório): UUID do [preço](../prices/reference).
+  - `quantity` (obrigatório): inteiro ≥ 1.
+
+  O `amount` e o `name` do item são copiados do preço neste momento; mudar o preço depois não altera a fatura.
+</ParamField>
+
+<ParamField body="description" type="string | null">
+  Até 500 caracteres.
+</ParamField>
+
+<ParamField body="dueDate" type="string | null">
+  Vencimento em ISO 8601.
+</ParamField>
+
+<ParamField body="open" type="boolean">
+  `true` abre a fatura na hora. Sem ele, a fatura fica em `draft` até um [`PATCH`](./update) com `open: true`.
+</ParamField>
+
+## Resposta
+
+`201 Created`
+
+```json Response
+{
+  "id": "5b0e8d3a-9c71-4e26-a8f4-1d7c3b6e9a02",
+  "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "paymentMethod": null,
+  "subscription": null,
+  "status": "open",
+  "currency": "brl",
+  "description": "Consultoria de setembro",
+  "amountDue": 9900,
+  "amountPaid": 0,
+  "attemptCount": 0,
+  "dueDate": "2026-10-20T00:00:00.000Z",
+  "paidAt": null,
+  "items": [
+    {
+      "id": "e4a1c7f8-2b95-4d03-8e6a-9f1b5d0c3a74",
+      "product": "7d2b5e90-1c34-4a68-b9f7-0e3a6c8d1f25",
+      "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61",
+      "name": "Plano mensal",
+      "amount": 4950,
+      "quantity": 2,
+      "totalAmount": 9900
+    }
+  ],
+  "discounts": [],
+  "payments": [],
+  "createdAt": "2026-10-07T19:00:00.000Z",
+  "updatedAt": "2026-10-07T19:00:00.000Z"
+}
+```
+
+## Erros
+
+| Status | Código | Quando |
+| ------ | ------ | ------ |
+| `404` | `CUSTOMER_NOT_FOUND` | O cliente não existe na conta |
+| `404` | `PRICE_NOT_FOUND` / `PRODUCT_NOT_FOUND` | O preço, ou o produto dele, não existe na conta |
+| `400` | `INVOICE_CURRENCY_MISMATCH` | Os preços têm moedas diferentes |
+| `422` | `VALIDATION_FAILED` | `items` vazio, UUID inválido, `quantity` < 1 etc. |
+
+Veja [Erros](../guides/errors) para o formato.

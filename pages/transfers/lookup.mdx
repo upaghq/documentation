@@ -1,0 +1,124 @@
+---
+title: 'Consultar destino Pix'
+description: 'Resolve chave, copia-e-cola ou beneficiário antes de transferir'
+sidebarTitle: 'Consultar'
+api: 'POST https://api.upag.io/v1/transfers/lookup'
+---
+
+Valida e devolve os dados do destino (titular, banco, e, para copia-e-cola, o valor) antes de um Pix de saída.
+
+Permissão: `transfer.read`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/transfers/lookup \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "key",
+    "value": "55ce1aae-0d2b-4d76-bc77-294d6407349e"
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const destination = await upag.transfers.lookup({
+  type: 'key',
+  value: '55ce1aae-0d2b-4d76-bc77-294d6407349e',
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+O corpo depende de `type`.
+
+<ParamField body="type" type="string" required>
+  `key`, `hash` ou `beneficiary`.
+</ParamField>
+
+<ParamField body="value" type="string">
+  Obrigatório em `key` (chave Pix) e `hash` (BR Code copia-e-cola).
+</ParamField>
+
+<ParamField body="beneficiary" type="string (uuid)">
+  Obrigatório em `beneficiary`: UUID do beneficiário salvo na conta.
+</ParamField>
+
+<ParamField body="beneficiaryAccount" type="string (uuid)">
+  Obrigatório em `beneficiary`: UUID da conta do beneficiário.
+</ParamField>
+
+## Resposta
+
+`200 OK`. O formato depende do `type`.
+
+### Chave (`key`) e beneficiário (`beneficiary`)
+
+Ambos devolvem `type: "key"`:
+
+```json Response
+{
+  "type": "key",
+  "isBeneficiary": false,
+  "pixKey": "55ce1aae-0d2b-4d76-bc77-294d6407349e",
+  "pixKeyType": "random",
+  "name": "Maria Receiver",
+  "tradingName": null,
+  "taxNumber": "11144477735",
+  "ispb": "00000000",
+  "bank": "450",
+  "bankName": "FitBank",
+  "branch": null,
+  "account": null,
+  "accountDigit": null,
+  "accountType": null
+}
+```
+
+`isBeneficiary` indica se o titular já é um beneficiário salvo na conta. Em consulta por chave, `branch`, `account`, `accountDigit`, `accountType` e `tradingName` vêm `null`: o diretório de chaves Pix não os informa.
+
+### Copia-e-cola (`hash`)
+
+```json Response
+{
+  "type": "hash",
+  "isBeneficiary": false,
+  "hash": "00020126580014br.gov.bcb.pix...",
+  "pixKey": "55ce1aae-0d2b-4d76-bc77-294d6407349e",
+  "name": "Maria Receiver",
+  "tradingName": null,
+  "taxNumber": "11144477735",
+  "ispb": "00000000",
+  "bank": "450",
+  "bankName": "FitBank",
+  "branch": "0001",
+  "account": "99999",
+  "accountType": "payment",
+  "originalValue": "100.00",
+  "finalValue": "100.00",
+  "dueDate": null,
+  "description": null
+}
+```
+
+<Warning>
+  `originalValue` e `finalValue` são strings decimais **em reais**, direto do QR code, não centavos. É a única exceção à regra de valores em centavos.
+</Warning>
+
+## Erros
+
+| Status | Mensagem | Causa |
+| ------ | -------- | ----- |
+| `400` | `Os dados da conta de origem e destino são iguais` | `hash` aponta para a própria conta |
+| `404` | `Account not found` | A conta da chave não foi encontrada |
+| `422` | `VALIDATION_FAILED` | Corpo inválido (`type` desconhecido, campo ausente) |

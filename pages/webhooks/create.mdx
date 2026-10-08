@@ -1,0 +1,85 @@
+---
+title: 'Criar webhook'
+description: 'Registra URL e eventos; retorna o signing secret'
+sidebarTitle: 'Criar'
+api: 'POST https://api.upag.io/v1/webhooks'
+---
+
+Permissão: `webhook.write`
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/webhooks \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "description": "Order events",
+    "url": "https://example.com/webhooks",
+    "events": ["charge.paid", "transfer.completed"],
+    "active": true,
+    "headers": { "X-Custom": "value" }
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const webhook = await upag.webhooks.create({
+  description: 'Order events',
+  url: 'https://example.com/webhooks',
+  events: ['charge.paid', 'transfer.completed'],
+  active: true,
+  headers: { 'X-Custom': 'value' },
+});
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`. O SDK escolhe o host pela chave.
+</Note>
+
+## Parâmetros
+
+<ParamField body="url" type="string (uri)" required>
+  URL de destino. Use HTTPS.
+</ParamField>
+
+<ParamField body="events" type="array" required>
+  Um ou mais eventos (catálogo em [Webhooks](./overview#eventos)). Mínimo de um.
+</ParamField>
+
+<ParamField body="description" type="string | null">
+  Rótulo interno.
+</ParamField>
+
+<ParamField body="active" type="boolean" default="true">
+  Webhooks inativos não recebem entregas.
+</ParamField>
+
+<ParamField body="headers" type="object" default="{}">
+  Headers extras (`string` → `string`) enviados em cada `POST`. Sobrescrevem headers padrão de mesmo nome ([Segurança](./security#headers-da-entrega)).
+</ParamField>
+
+## Resposta
+
+`201 Created`
+
+```json Response
+{
+  "id": "aa0e8400-e29b-41d4-a716-446655440000",
+  "description": "Order events",
+  "active": true,
+  "url": "https://example.com/webhooks",
+  "headers": { "X-Custom": "value" },
+  "events": ["charge.paid", "transfer.completed"],
+  "secret": "whsec_abc123...",
+  "createdAt": "2026-03-18T09:00:00.000Z",
+  "updatedAt": "2026-03-18T09:00:00.000Z"
+}
+```
+
+Guarde `secret` para [validar assinaturas](./security).

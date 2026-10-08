@@ -1,0 +1,80 @@
+---
+title: 'Payload assinatura'
+description: 'Campo data nos eventos subscription.*'
+icon: 'repeat'
+sidebarTitle: 'Assinatura'
+---
+
+Eventos: `subscription.created`, `subscription.active`, `subscription.trialing`, `subscription.trial_ending`, `subscription.past_due`, `subscription.incomplete`, `subscription.paused`, `subscription.canceled` e `subscription.void`.
+
+`data` é a [assinatura](../subscriptions/reference). Entidades relacionadas vêm como id:
+
+```json
+{
+  "id": "880e8400-e29b-41d4-a716-446655440000",
+  "event": "subscription.active",
+  "createdAt": "2026-03-18T12:30:00.123Z",
+  "data": {
+    "id": "ff1e8400-e29b-41d4-a716-446655440000",
+    "customer": "660e8400-e29b-41d4-a716-446655440001",
+    "paymentMethod": "card",
+    "card": "aa1e8400-e29b-41d4-a716-446655440000",
+    "status": "active",
+    "currency": "brl",
+    "interval": "month",
+    "intervalCount": 1,
+    "cancelAtPeriodEnd": false,
+    "startDate": "2026-03-18T12:30:00.000Z",
+    "endDate": null,
+    "trialStartDate": null,
+    "trialEndDate": null,
+    "trialEndBehavior": null,
+    "currentPeriodStart": "2026-03-18T12:30:00.000Z",
+    "currentPeriodEnd": "2026-04-18T12:30:00.000Z",
+    "canceledAt": null,
+    "cancellationReason": null,
+    "items": [
+      {
+        "id": "0a1e8400-e29b-41d4-a716-446655440000",
+        "product": "0b1e8400-e29b-41d4-a716-446655440000",
+        "price": "0c1e8400-e29b-41d4-a716-446655440000",
+        "name": "Plano Pro",
+        "amount": 9900,
+        "quantity": 1,
+        "totalAmount": 9900,
+        "createdAt": "2026-03-18T12:29:00.000Z",
+        "updatedAt": "2026-03-18T12:29:00.000Z"
+      }
+    ],
+    "createdAt": "2026-03-18T12:29:00.000Z",
+    "updatedAt": "2026-03-18T12:30:00.000Z"
+  }
+}
+```
+
+## Campos
+
+| Campo | Tipo | Descrição |
+| ----- | ---- | --------- |
+| `id` | `string (uuid)` | Assinatura |
+| `customer` | `string` | Id do cliente |
+| `paymentMethod` | `string \| null` | `pix` ou `card` |
+| `card` | `string \| null` | Id do cartão, quando a assinatura cobra no cartão |
+| `status` | `string` | `active`, `canceled`, `past_due`, `trialing`, `incomplete`, `paused` ou `void` |
+| `currency` | `string` | `brl` ou `usd` |
+| `interval` | `string` | `day`, `week`, `month` ou `year` |
+| `intervalCount` | `integer` | Quantos `interval` por ciclo |
+| `cancelAtPeriodEnd` | `boolean` | Cancela ao fim do período atual |
+| `startDate` / `endDate` | `string \| null` | ISO 8601 |
+| `trialStartDate` / `trialEndDate` | `string \| null` | ISO 8601, período de teste |
+| `trialEndBehavior` | `string \| null` | Sem método de pagamento ao fim do teste: `create_invoice` (cobra o primeiro período por fatura Pix) ou `cancel` |
+| `currentPeriodStart` / `currentPeriodEnd` | `string \| null` | ISO 8601, período vigente |
+| `canceledAt` | `string \| null` | ISO 8601 |
+| `cancellationReason` | `string \| null` | `low_quality`, `missing_features`, `other`, `switched_service`, `too_complex`, `too_expensive`, `unused` ou `missing_payment_method` (definido pelo sistema) |
+| `items` | `array` | Itens ativos: `id`, `product`, `price`, `name`, `amount` (unitário), `quantity`, `totalAmount`, `createdAt`, `updatedAt` |
+| `createdAt` | `string` | ISO 8601 |
+| `updatedAt` | `string` | ISO 8601 |
+
+- Uma assinatura nova dispara `subscription.created` e, em seguida, `subscription.incomplete`.
+- Cada mudança de status dispara o evento do novo status.
+- `subscription.trial_ending` dispara uma vez por teste, 3 dias antes de `trialEndDate`.

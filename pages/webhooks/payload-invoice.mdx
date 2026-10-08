@@ -1,0 +1,69 @@
+---
+title: 'Payload fatura'
+description: 'Campo data nos eventos invoice.*'
+icon: 'file-invoice'
+sidebarTitle: 'Fatura'
+---
+
+Eventos: `invoice.created`, `invoice.opened`, `invoice.paid`, `invoice.voided`, `invoice.uncollectible` e `invoice.payment_failed`.
+
+`data` é a [fatura](../invoices/reference) sem o array `payments`. Entidades relacionadas vêm como id:
+
+```json
+{
+  "id": "880e8400-e29b-41d4-a716-446655440000",
+  "event": "invoice.paid",
+  "createdAt": "2026-03-18T12:30:00.123Z",
+  "data": {
+    "id": "ee1e8400-e29b-41d4-a716-446655440000",
+    "customer": "660e8400-e29b-41d4-a716-446655440001",
+    "paymentMethod": null,
+    "subscription": "ff1e8400-e29b-41d4-a716-446655440000",
+    "status": "paid",
+    "currency": "brl",
+    "description": null,
+    "amountDue": 9900,
+    "amountPaid": 9900,
+    "attemptCount": 1,
+    "dueDate": "2026-03-20T00:00:00.000Z",
+    "paidAt": "2026-03-18T12:30:00.000Z",
+    "items": [
+      {
+        "id": "0a1e8400-e29b-41d4-a716-446655440000",
+        "product": "0b1e8400-e29b-41d4-a716-446655440000",
+        "price": "0c1e8400-e29b-41d4-a716-446655440000",
+        "name": "Plano Pro",
+        "amount": 9900,
+        "quantity": 1,
+        "totalAmount": 9900
+      }
+    ],
+    "discounts": [],
+    "createdAt": "2026-03-15T10:00:00.000Z",
+    "updatedAt": "2026-03-18T12:30:00.000Z"
+  }
+}
+```
+
+## Campos
+
+| Campo | Tipo | Descrição |
+| ----- | ---- | --------- |
+| `id` | `string (uuid)` | Fatura |
+| `customer` | `string` | Id do cliente |
+| `paymentMethod` | `string \| null` | Reservado |
+| `subscription` | `string \| null` | Id da assinatura que gerou a fatura |
+| `status` | `string` | `draft`, `open`, `paid`, `void` ou `uncollectible` |
+| `currency` | `string` | `brl` ou `usd` |
+| `description` | `string \| null` | Descrição |
+| `amountDue` | `integer` | Valor devido, em centavos |
+| `amountPaid` | `integer` | Valor pago, em centavos |
+| `attemptCount` | `integer` | Tentativas de pagamento |
+| `dueDate` | `string \| null` | ISO 8601, vencimento |
+| `paidAt` | `string \| null` | ISO 8601, pagamento |
+| `items` | `array` | Itens ativos: `id`, `product`, `price`, `name`, `amount` (unitário), `quantity`, `totalAmount` |
+| `discounts` | `array` | Descontos ativos: `id`, `item`, `coupon`, `type` (`coupon`), `amount` |
+| `createdAt` | `string` | ISO 8601 |
+| `updatedAt` | `string` | ISO 8601 |
+
+`invoice.created` dispara com a fatura e seus itens já completos. `invoice.paid` dispara com `paidAt` e `amountPaid` preenchidos. `invoice.payment_failed` não muda o `status`: indica uma tentativa de pagamento que falhou. Os pagamentos (cobranças) ligados à fatura não vão no evento; consulte a [fatura](../invoices/get).

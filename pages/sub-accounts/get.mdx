@@ -1,0 +1,70 @@
+---
+title: 'Obter subconta'
+description: 'Consulta uma subconta pelo ID'
+sidebarTitle: 'Obter'
+api: 'GET https://api.upag.io/v1/sub-accounts/{subAccountId}'
+---
+
+Permissão: `sub_account.read` (chave secreta).
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.dev/v1/sub-accounts/880e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const subAccount = await upag.subAccounts.retrieve('880e8400-e29b-41d4-a716-446655440000');
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`.
+</Note>
+
+## Parâmetros
+
+<ParamField path="subAccountId" type="string (uuid)" required>
+  ID da subconta.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "id": "880e8400-e29b-41d4-a716-446655440000",
+  "status": "pending",
+  "legalEntity": {
+    "id": "990e8400-e29b-41d4-a716-446655440000",
+    "type": "individual",
+    "status": "under_review",
+    "documentType": "cpf",
+    "documentNumber": "39053344705",
+    "legalName": "João Silva",
+    "tradingName": "João Silva",
+    "email": "joao@example.com",
+    "phone": "5511999998888"
+  },
+  "account": {
+    "id": "880e8400-e29b-41d4-a716-446655440000",
+    "name": "João Silva",
+    "status": "pending",
+    "bankCode": "450",
+    "branch": null,
+    "number": null,
+    "digit": null
+  },
+  "createdAt": "2026-03-18T10:00:00.000Z",
+  "updatedAt": "2026-03-18T10:00:00.000Z"
+}
+```
+
+`404` (`SUB_ACCOUNT_NOT_FOUND`) se a subconta não existir ou não pertencer à conta titular.

@@ -1,0 +1,207 @@
+---
+title: 'Criar sessão de checkout'
+description: 'Abre uma sessão de checkout no servidor para pagar com Pix, cartão ou teste grátis'
+sidebarTitle: 'Criar'
+api: 'POST https://api.upag.io/v1/checkout/sessions'
+---
+
+Abre uma sessão de checkout para um ou mais [preços](../prices/reference). Ela fica `open` por 24 horas, a menos que você envie `expiresAt`.
+
+A sessão criada com a chave secreta **não tem `clientSecret`**: ela é para você pagar do seu servidor com [Confirmar](./confirm). Para uma página de pagamento no navegador do cliente, crie um [link de pagamento](../payment-links/create) e abra a sessão com [Iniciar sessão](./start).
+
+Permissão: `checkout_session.write`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/checkout/sessions \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+    "items": [
+      { "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61", "quantity": 1 }
+    ],
+    "paymentMethods": ["pix", "card"],
+    "successUrl": "https://exemplo.com.br/obrigado",
+    "cancelUrl": "https://exemplo.com.br/carrinho",
+    "couponEnabled": true
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const session = await upag.checkoutSessions.create({
+  customer: '8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83',
+  items: [{ price: '3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61', quantity: 1 }],
+  paymentMethods: ['pix', 'card'],
+  successUrl: 'https://exemplo.com.br/obrigado',
+  cancelUrl: 'https://exemplo.com.br/carrinho',
+  couponEnabled: true,
+});
+```
+</CodeGroup>
+
+### Com teste grátis
+
+Para itens recorrentes, `subscriptionData` define o teste da assinatura que a sessão vai criar. Veja o fluxo completo em [Teste grátis](../guides/free-trial).
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/checkout/sessions \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "items": [
+      { "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61", "quantity": 1 }
+    ],
+    "paymentMethods": ["card"],
+    "paymentMethodCollection": "always",
+    "subscriptionData": {
+      "trial": { "interval": "day", "intervalCount": 14 },
+      "trialSettings": {
+        "endBehavior": { "missingPaymentMethod": "cancel" }
+      }
+    }
+  }'
+```
+
+```javascript Node.js SDK
+const session = await upag.checkoutSessions.create({
+  items: [{ price: '3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61', quantity: 1 }],
+  paymentMethods: ['card'],
+  paymentMethodCollection: 'always',
+  subscriptionData: {
+    trial: { interval: 'day', intervalCount: 14 },
+    trialSettings: { endBehavior: { missingPaymentMethod: 'cancel' } },
+  },
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField body="items" type="array" required>
+  Pelo menos um item. Os preços não podem se repetir (nem entre `items` e `bumps`), precisam estar na mesma moeda e, se recorrentes, ter o mesmo intervalo.
+
+  - `price` (obrigatório): UUID do [preço](../prices/reference).
+  - `quantity` (obrigatório): inteiro ≥ 1.
+</ParamField>
+
+<ParamField body="customer" type="string (uuid)">
+  UUID de um [cliente](../customers/reference) da conta. Se omitido, o cliente é definido na confirmação.
+</ParamField>
+
+<ParamField body="bumps" type="array">
+  Ofertas extras que o pagador pode aceitar na confirmação (`bumps` de [Confirmar](./confirm)).
+
+  - `price` (obrigatório): UUID do preço.
+  - `quantity`: inteiro ≥ 1. Padrão `1`.
+  - `title`: até 255 caracteres.
+  - `description`: texto livre.
+</ParamField>
+
+<ParamField body="paymentMethods" type="array">
+  `pix` e/ou `card`. Padrão `["pix", "card"]`. Mínimo 1.
+</ParamField>
+
+<ParamField body="successUrl" type="string (url)">
+  URL de retorno depois do pagamento.
+</ParamField>
+
+<ParamField body="cancelUrl" type="string (url)">
+  URL de retorno se o pagador desistir.
+</ParamField>
+
+<ParamField body="billingAddressCollection" type="string" default="auto">
+  `auto`, `required` ou `none`.
+</ParamField>
+
+<ParamField body="couponEnabled" type="boolean" default="false">
+  Se permite aplicar um [cupom](../coupons/reference) à sessão.
+</ParamField>
+
+<ParamField body="subscriptionData" type="object">
+  Teste da assinatura criada pelos itens recorrentes. Exige pelo menos um item recorrente.
+
+  - `trial`: `{ interval, intervalCount }` com `interval` `day`, `week` ou `month`. Duração máxima de 730 dias (`day` até 730, `week` até 104, `month` até 24). Contada a partir da criação da assinatura.
+  - `trialEnd`: data fixa de fim, com pelo menos 48 horas a partir de agora. Aceita ISO 8601 ou Unix em segundos. Não pode ser enviada junto com `trial`.
+  - `trialSettings.endBehavior.missingPaymentMethod`: `create_invoice` (padrão: cobra o primeiro período por Pix) ou `cancel`. É o que acontece quando o teste acaba sem método de pagamento.
+</ParamField>
+
+<ParamField body="paymentMethodCollection" type="string" default="always">
+  `always` ou `if_required`. Com `if_required`, uma sessão sem nada a pagar hoje pode ser confirmada sem cartão. Com `always` e um teste, `card` precisa estar em `paymentMethods`.
+</ParamField>
+
+<ParamField body="expiresAt" type="string">
+  ISO 8601, no futuro. Padrão: 24 horas a partir de agora. `null` faz a sessão nunca expirar.
+</ParamField>
+
+## Resposta
+
+`201 Created` com a [sessão](./reference).
+
+```json Response
+{
+  "id": "4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26",
+  "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "checkoutLayout": null,
+  "paymentLink": null,
+  "paymentMethods": ["pix", "card"],
+  "subscriptionData": {
+    "trial": null,
+    "trialEnd": null,
+    "trialSettings": {
+      "endBehavior": { "missingPaymentMethod": "create_invoice" }
+    }
+  },
+  "paymentMethodCollection": "always",
+  "status": "open",
+  "url": "https://checkout.upag.io/cs/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26",
+  "expiresAt": "2026-10-08T19:00:00.000Z",
+  "createdAt": "2026-10-07T19:00:00.000Z",
+  "updatedAt": "2026-10-07T19:00:00.000Z",
+  "billingAddressCollection": "auto",
+  "successUrl": "https://exemplo.com.br/obrigado",
+  "cancelUrl": "https://exemplo.com.br/carrinho",
+  "latitude": null,
+  "longitude": null,
+  "country": null,
+  "region": null,
+  "city": null,
+  "invoice": null,
+  "subscription": null,
+  "couponEnabled": true,
+  "couponCode": null,
+  "items": [
+    {
+      "id": "b7e1c4a9-3d52-4f08-86a1-2c9d5e7f0b34",
+      "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61",
+      "quantity": 1
+    }
+  ],
+  "bumps": [],
+  "discounts": []
+}
+```
+
+## Erros
+
+| Status | Código | Quando |
+| ------ | ------ | ------ |
+| `404` | `CUSTOMER_NOT_FOUND` | O cliente não existe na conta |
+| `404` | `PRICE_NOT_FOUND` / `PRODUCT_NOT_FOUND` | Um preço, ou o produto dele, não existe na conta |
+| `400` | `CHECKOUT_SESSION_DUPLICATE_PRICE` | O mesmo preço aparece duas vezes |
+| `400` | `CHECKOUT_SESSION_CURRENCY_MISMATCH` | Os preços têm moedas diferentes |
+| `400` | `CHECKOUT_SESSION_RECURRING_INTERVAL_MISMATCH` | Os preços recorrentes têm intervalos diferentes |
+| `400` | `CHECKOUT_SESSION_TRIAL_REQUIRES_RECURRING_ITEM` | Há teste, mas nenhum item é recorrente |
+| `400` | `CHECKOUT_SESSION_TRIAL_REQUIRES_CARD` | Há teste com `paymentMethodCollection: "always"` e `card` fora de `paymentMethods` |
+| `422` | `VALIDATION_FAILED` | Corpo inválido: `trial` e `trialEnd` juntos, `trialEnd` com menos de 48 horas, `expiresAt` no passado, `trial` acima do máximo |

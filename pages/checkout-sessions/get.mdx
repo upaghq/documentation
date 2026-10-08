@@ -1,0 +1,101 @@
+---
+title: 'Obter sessão de checkout'
+description: 'Consulta uma sessão de checkout pelo servidor, com a chave secreta'
+sidebarTitle: 'Obter'
+api: 'GET https://api.upag.io/v1/checkout/sessions/{sessionId}'
+---
+
+Retorna uma sessão de checkout com seus itens, bumps e descontos. É a leitura do **seu servidor**, com a chave secreta. Para a leitura que a página de checkout faz com o `clientSecret`, veja [Obter sessão (pagador)](./retrieve).
+
+Depois que a sessão é paga, `invoice` e `subscription` trazem os UUIDs da [fatura](../invoices/reference) e da [assinatura](../subscriptions/reference) criadas.
+
+Permissão: `checkout_session.read`.
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.dev/v1/checkout/sessions/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const session = await upag.checkoutSessions.retrieve('4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26');
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="sessionId" type="string (uuid)" required>
+  ID da sessão.
+</ParamField>
+
+## Resposta
+
+`200 OK` com a [sessão](./reference).
+
+```json Response
+{
+  "id": "4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26",
+  "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "checkoutLayout": null,
+  "paymentLink": null,
+  "paymentMethods": ["pix", "card"],
+  "subscriptionData": {
+    "trial": null,
+    "trialEnd": null,
+    "trialSettings": {
+      "endBehavior": { "missingPaymentMethod": "create_invoice" }
+    }
+  },
+  "paymentMethodCollection": "always",
+  "status": "complete",
+  "url": "https://checkout.upag.io/cs/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26",
+  "expiresAt": "2026-10-08T19:00:00.000Z",
+  "createdAt": "2026-10-07T19:00:00.000Z",
+  "updatedAt": "2026-10-07T19:05:12.000Z",
+  "billingAddressCollection": "auto",
+  "successUrl": "https://exemplo.com.br/obrigado",
+  "cancelUrl": "https://exemplo.com.br/carrinho",
+  "latitude": null,
+  "longitude": null,
+  "country": null,
+  "region": null,
+  "city": null,
+  "invoice": "e27a4c90-1b58-4d36-8f0a-6c3d9b5e2a71",
+  "subscription": "9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36",
+  "couponEnabled": true,
+  "couponCode": "BEMVINDO10",
+  "items": [
+    {
+      "id": "b7e1c4a9-3d52-4f08-86a1-2c9d5e7f0b34",
+      "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61",
+      "quantity": 1
+    }
+  ],
+  "bumps": [],
+  "discounts": [
+    {
+      "id": "0d6f3a82-5e19-4b47-a3c8-7f1b9e2d4c60",
+      "item": "b7e1c4a9-3d52-4f08-86a1-2c9d5e7f0b34",
+      "coupon": "a58c2e14-9d70-4f36-b1e5-3c8a6d0f7b92",
+      "type": "coupon",
+      "amount": 990
+    }
+  ]
+}
+```
+
+## Erros
+
+| Status | Código | Quando |
+| ------ | ------ | ------ |
+| `404` | `CHECKOUT_SESSION_NOT_FOUND` | A sessão não existe ou é de outra conta |

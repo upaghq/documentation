@@ -1,0 +1,140 @@
+---
+title: 'Abrir sessão 3DS do checkout'
+description: 'Abre uma sessão 3D Secure para o valor de uma sessão de checkout, antes de confirmar com cartão'
+sidebarTitle: 'Sessão 3DS'
+api: 'POST https://api.upag.io/v1/checkout/sessions/{sessionId}/3ds/session'
+---
+
+Abre uma [sessão 3D Secure](../three-d-secure/reference) para pagar uma sessão de checkout com cartão. O valor **não é seu para informar**: a Upag usa o que a [confirmação](./confirm) vai cobrar (itens, bumps aceitos e cupom, ou o valor da fatura se a primeira tentativa já aconteceu), para que o que o banco autentica seja o que é cobrado.
+
+Fluxo no navegador, com o `clientSecret` da sessão de checkout:
+
+1. Tokenize o cartão (`upag.cards.create`) e chame este endpoint com o `card.id`.
+2. Autentique com o `clientSecret` **da sessão 3DS** devolvido aqui: `upag.threeDSecure.authenticate({ clientSecret })`.
+3. [Confirme](./confirm) com `charge.threeDSecureSession` igual ao `id` devolvido.
+
+Enquanto o 3D Secure não estiver habilitado para a conta (`account.threeDSecureEnabled` na [visão do pagador](./retrieve)), a rota responde `404`.
+
+Permissão: `checkout_session.write`. Aceita a chave secreta ou o `clientSecret` da sessão de checkout. Limite do navegador: 20 por minuto por IP.
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`; no navegador, o `upag-js` usa só a chave pública.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/checkout/sessions/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26/3ds/session \
+  -H "Authorization: Bearer Zk3v0pQ8xJ2mR7cYt1LwN5dHs9uAeB4gXo6iFqVjT0E" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "card": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
+    "installments": 2,
+    "customer": {
+      "name": "Maria Pagadora",
+      "email": "maria@example.com",
+      "document": { "type": "cpf", "number": "39053344705" }
+    }
+  }'
+```
+
+```javascript upag-js
+import { UpagJs } from 'upag-js';
+
+const upag = new UpagJs('pk_test_your_public_key');
+
+const customer = {
+  name: 'Maria Pagadora',
+  email: 'maria@example.com',
+  document: { type: 'cpf', number: '39053344705' },
+};
+
+const threeDS = await upag.checkout.createThreeDSecureSession(id, clientSecret, {
+  card: card.id,
+  installments: 2,
+  customer,
+});
+
+await upag.threeDSecure.authenticate({ clientSecret: threeDS.clientSecret });
+
+const paid = await upag.checkout.confirm(id, clientSecret, {
+  customer,
+  charge: {
+    method: 'card',
+    card: card.id,
+    installments: 2,
+    threeDSecureSession: threeDS.id,
+  },
+});
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const threeDS = await upag.checkoutSessions.createThreeDSecureSession(
+  '4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26',
+  {
+    card: '5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15',
+    installments: 2,
+    customer: '8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83',
+  },
+);
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="sessionId" type="string (uuid)" required>
+  ID da sessão de checkout. Precisa estar `open`, dentro do prazo, e aceitar `card`.
+</ParamField>
+
+<ParamField body="card" type="string (uuid)" required>
+  UUID de um [cartão tokenizado](../cards/create).
+</ParamField>
+
+<ParamField body="installments" type="integer" default="1">
+  Número de parcelas, de 1 a 12.
+</ParamField>
+
+<ParamField body="customer" type="string (uuid) | object" required>
+  O pagador, no mesmo formato de [Confirmar](./confirm). Do navegador, só os dados (não um UUID).
+</ParamField>
+
+<ParamField body="bumps" type="array" default="[]">
+  UUIDs dos bumps da sessão que o pagador aceitou. Ignorados quando a sessão já tem fatura.
+</ParamField>
+
+O corpo não aceita outros campos.
+
+## Resposta
+
+`201 Created`. O `clientSecret` aparece só aqui. Campos da sessão 3DS em [Sessões 3D Secure](../three-d-secure/reference).
+
+```json Response
+{
+  "id": "9b7c1e52-3f0a-4d86-a1c4-6e2d8f35b790",
+  "status": "requires_action",
+  "finalAmount": 20140,
+  "card": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
+  "expiresAt": "2026-10-07T19:13:00.000Z",
+  "clientSecret": "k2Xv9QmT5aLw1RzJ7dHn0cYeB4uFgS8oPi3VtA6xNqM"
+}
+```
+
+## Erros
+
+| Status | Código | Quando |
+| ------ | ------ | ------ |
+| `404` | `THREEDS_DISABLED` | O 3D Secure não está habilitado |
+| `404` | `CHECKOUT_SESSION_NOT_FOUND` | Do servidor: a sessão não existe ou é de outra conta |
+| `404` | `THREEDS_CARD_NOT_FOUND` | O cartão não existe na conta |
+| `409` | `CHECKOUT_SESSION_NOT_OPEN` | A sessão já está `complete` ou `expired` |
+| `410` | `CHECKOUT_SESSION_EXPIRED` | A sessão passou do `expiresAt` |
+| `400` | `CHECKOUT_SESSION_PAYMENT_METHOD_NOT_ALLOWED` | A sessão não aceita `card` |
+| `400` | `CHECKOUT_SESSION_CUSTOMER_DATA_REQUIRED` | Do navegador: `customer` veio como UUID |
+| `400` | `THREEDS_INVALID_PARAMS` | A sessão não tem valor a autenticar (por exemplo, um teste sem nada a pagar hoje) |
+| `422` | `THREEDS_CUSTOMER_INCOMPLETE` | Faltam dados do pagador exigidos pela autenticação |
+| `422` | `VALIDATION_FAILED` | Campo desconhecido ou inválido no corpo |

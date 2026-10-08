@@ -1,0 +1,232 @@
+---
+title: 'Referência'
+description: 'Objeto Cobrança (charge): Pix e cartão'
+sidebarTitle: 'Visão geral'
+---
+
+Uma cobrança é um pedido de pagamento na conta da chave de API. Pode ser **Pix** (QR code que o pagador escaneia ou copia) ou **cartão** (usando um cartão já tokenizado, ver [Cartões](../cards/reference)).
+
+Todos os endpoints exigem **chave secreta** (`sk_…`).
+
+| Método | Path | Permissão |
+| ------ | ---- | --------- |
+| `POST` | `/v1/charges` | `charge.write` |
+| `GET` | `/v1/charges` | `charge.read` |
+| `GET` | `/v1/charges/{chargeId}` | `charge.read` |
+
+<Note>
+  Sandbox: `https://api.upag.dev/v1` com `sk_test_…`. Produção: `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Estrutura
+
+<CodeGroup>
+```json Pix
+{
+  "id": "1f7d3c8a-4b52-4c9e-8a11-6d0e2f5b7c34",
+  "type": "pix",
+  "status": "pending",
+  "amount": 12550,
+  "failureCode": null,
+  "description": "Pedido #10482",
+  "meta": null,
+  "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "pix": {
+    "reference": "9d4c2b7f6a1e40538c9b2d7f1a6e0c34",
+    "qrCode": "00020101021226930014br.gov.bcb.pix...",
+    "expiresAt": "2026-07-28T12:00:00.000Z"
+  },
+  "splits": [],
+  "items": [],
+  "ipAddress": null,
+  "paidAt": null,
+  "createdAt": "2026-07-27T18:06:02.113Z",
+  "updatedAt": "2026-07-27T18:06:02.113Z"
+}
+```
+
+```json Cartão
+{
+  "id": "c2a5e8d1-3b47-4f90-a6d2-9e1f0b7c4a58",
+  "type": "card",
+  "status": "paid",
+  "amount": 10000,
+  "failureCode": null,
+  "description": "Pedido #10483",
+  "meta": { "session_id": "7f3b2a91-5c4d-4e8f-b0a1-2d6c9e1f4a73" },
+  "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "card": {
+    "id": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
+    "installments": 3,
+    "nsu": "284751",
+    "authorizationCode": "A1B2C3",
+    "acquirerStatusCode": "0000"
+  },
+  "splits": [],
+  "items": [],
+  "ipAddress": "203.0.113.10",
+  "paidAt": "2026-07-27T18:06:04.331Z",
+  "createdAt": "2026-07-27T18:06:02.113Z",
+  "updatedAt": "2026-07-27T18:06:04.331Z"
+}
+```
+</CodeGroup>
+
+Só o bloco do método da cobrança aparece: `pix` em cobranças Pix, `card` em cobranças de cartão.
+
+## Atributos
+
+<ParamField body="id" type="string">
+  UUID da cobrança.
+</ParamField>
+
+<ParamField body="type" type="string">
+  `pix` ou `card`.
+</ParamField>
+
+<ParamField body="status" type="string">
+  `pending`, `paid`, `expired`, `failed`, `in_review`, `refunded`, `partially_refunded` ou `chargeback`. Veja [Status](#status).
+</ParamField>
+
+<ParamField body="amount" type="integer">
+  Valor da cobrança em **centavos**: o preço cheio, sem juros de parcelamento.
+</ParamField>
+
+<ParamField body="failureCode" type="string | null">
+  Motivo da falha. Preenchido só quando `status` é `failed`; `null` nos demais casos. Pix expirado é `status = expired`, não uma falha. Veja [Códigos de falha](#códigos-de-falha).
+</ParamField>
+
+<ParamField body="description" type="string | null">
+  Descrição informada na criação.
+</ParamField>
+
+<ParamField body="meta" type="object | null">
+  Pares chave/valor (strings) enviados na criação, devolvidos como foram enviados.
+</ParamField>
+
+<ParamField body="customer" type="string | object | null">
+  UUID do cliente. Com `?includes=customer`, o objeto completo (ver [Clientes](../customers/reference)). `null` em Pix estático criado sem cliente.
+</ParamField>
+
+<ParamField body="pix" type="object">
+  Só em cobranças Pix.
+
+  - `reference`: TxId do QR code.
+  - `qrCode`: BR Code (copia-e-cola).
+  - `expiresAt`: vencimento (ISO 8601). `null` no Pix estático.
+</ParamField>
+
+<ParamField body="card" type="object">
+  Só em cobranças de cartão.
+
+  - `id`: UUID do [cartão](../cards/reference) cobrado.
+  - `installments`: número de parcelas.
+  - `nsu`: referência da transação na adquirente.
+  - `authorizationCode`: código de autorização do banco emissor.
+  - `acquirerStatusCode`: código de resposta do emissor (`0000` quando aprovado).
+</ParamField>
+
+<ParamField body="splits" type="array">
+  Repasses da cobrança. Veja [Splits](#splits). Vem vazio na listagem; consulte a cobrança para ver os splits.
+</ParamField>
+
+<ParamField body="items" type="array">
+  Itens informativos. Sempre presente ao criar e consultar (`[]` sem itens); na listagem, só com `?includes=items`. Veja [Itens](#itens).
+</ParamField>
+
+<ParamField body="ipAddress" type="string | null">
+  IP público do pagador (IPv4 ou IPv6), quando informado em cobrança de cartão. `null` caso contrário.
+</ParamField>
+
+<ParamField body="paidAt" type="string | null">
+  ISO 8601 do primeiro pagamento. Mantido após reembolso ou chargeback. `null` até a cobrança ser paga.
+</ParamField>
+
+<ParamField body="createdAt" type="string">
+  ISO 8601.
+</ParamField>
+
+<ParamField body="updatedAt" type="string">
+  ISO 8601.
+</ParamField>
+
+## Status
+
+| Status | Significado |
+| ------ | ----------- |
+| `pending` | Aguardando pagamento |
+| `paid` | Paga |
+| `expired` | Pix venceu sem pagamento |
+| `failed` | Cartão: a adquirente recusou ou a captura falhou |
+| `in_review` | Cartão: autorizada e reservada, em análise manual do antifraude |
+| `refunded` | Totalmente reembolsada |
+| `partially_refunded` | Reembolso parcial |
+| `chargeback` | Cartão: o portador contestou e o pagamento foi revertido |
+
+Acompanhe as mudanças por [webhooks de cobrança](../webhooks/payload-charge).
+
+## Códigos de falha
+
+Presentes em `failureCode` quando `status` é `failed`. O código bruto do emissor fica em `card.acquirerStatusCode`.
+
+| Código | Significado |
+| ------ | ----------- |
+| `card_declined` | O emissor recusou |
+| `card_expired` | Cartão vencido |
+| `card_blocked` | Cartão bloqueado |
+| `card_invalid` | Dados do cartão inválidos |
+| `card_invalid_number` | Número do cartão inválido |
+| `card_invalid_cvv` | Código de segurança inválido |
+| `insufficient_funds` | Saldo/limite insuficiente |
+| `installments_exceeded` | O emissor não aceita essa quantidade de parcelas |
+| `fraud_suspected` | O emissor suspeitou de fraude |
+| `antifraud_declined` | O antifraude da Upag recusou |
+| `authentication_failed` | A autenticação 3-D Secure falhou |
+| `issuer_unavailable` | Emissor indisponível |
+| `processing_error` | Falha da adquirente ou da rede |
+| `unknown` | Código da adquirente ainda não mapeado |
+
+<Note>
+  Para o pagador (checkout hospedado), `fraud_suspected` e `antifraud_declined` aparecem como `card_declined`. Na API e nos webhooks você recebe o código real.
+</Note>
+
+## Splits
+
+Fatias da cobrança repassadas a outras contas quando ela é paga.
+
+| Campo | Tipo | Descrição |
+| ----- | ---- | --------- |
+| `id` | `string` | UUID |
+| `type` | `string` | `mdr` (taxa da plataforma) ou `account` (split que você pediu) |
+| `status` | `string` | `pending`, `processing`, `paid` ou `failed` |
+| `amount` | `integer` | Centavos |
+| `account` | `string` | Conta recebedora (UUID). Só em splits `account` |
+| `createdAt` / `updatedAt` | `string` | ISO 8601 |
+
+Em Pix, a taxa da plataforma aparece como um split `mdr` e é debitada além dos seus splits. Em cartão não há split `mdr`: os splits são pagos direto pela adquirente a cada recebedor, e a taxa é o que sobra.
+
+## Itens
+
+Linhas informativas enviadas na criação (até 100). Não alteram valor, taxas, QR code nem splits, e não podem ser editadas depois.
+
+| Campo | Tipo | Descrição |
+| ----- | ---- | --------- |
+| `id` | `string` | UUID gerado pela Upag |
+| `externalId` | `string \| null` | Sua referência (não precisa ser única) |
+| `kind` | `string` | `physical`, `digital`, `shipping` ou `other` (padrão) |
+| `sku` | `string \| null` | Seu SKU |
+| `name` | `string` | Nome |
+| `url` | `string \| null` | URL HTTP/HTTPS |
+| `quantity` | `integer` | Unidades |
+| `unitAmount` | `integer` | Preço unitário em centavos |
+| `amount` | `integer` | `quantity × unitAmount`, em centavos |
+| `createdAt` | `string` | ISO 8601 |
+
+## Expansão com `includes`
+
+`?includes=` aceita `customer` e `items`, separados por vírgula. Valores desconhecidos retornam `422`. Na consulta de uma cobrança, `items` já vem sempre.
+
+## Próximos passos
+
+- [Criar cobrança](./create) (Pix e cartão)
+- [Guia: cobrança Pix](../guides/pix-charge) e [Guia: cartão com 3DS](../guides/card-3ds)

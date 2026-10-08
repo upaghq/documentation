@@ -1,0 +1,129 @@
+---
+title: 'Quickstart'
+description: 'Crie sua primeira cobrança Pix e acompanhe o pagamento com a API Upag ou os SDKs upag e upag-js.'
+icon: 'rocket'
+boost: 4
+keywords: ['upag', 'quickstart', 'pix', 'cobrança', 'sdk', 'api']
+---
+
+Uma única API Upag cobre contas, Pix, cartão, checkout, assinaturas e transferências. Neste guia você cria uma cobrança Pix e consulta o status, usando uma chave de teste (`sk_test_...`).
+
+Valores monetários são **inteiros em centavos**. Identificadores são UUIDs. Veja [Convenções](./conventions).
+
+<Note>
+  Chaves `sk_test_...` usam o sandbox em `https://api.upag.dev/v1`. Qualquer outra chave usa produção em `https://api.upag.io/v1`. Os SDKs escolhem o host sozinhos a partir da chave. Detalhes em [Autenticação](./authentication).
+</Note>
+
+```mermaid
+sequenceDiagram
+  participant App
+  participant API
+  App->>API: POST /v1/charges
+  API-->>App: charge.id, pix.qrCode
+  App->>API: GET /v1/charges/:id
+  API-->>App: status paid
+```
+
+## 1. Instalar o SDK (opcional)
+
+O SDK não é obrigatório: qualquer cliente HTTP com `Authorization: Bearer` funciona. Para Node.js:
+
+<CodeGroup>
+```bash npm
+npm install upag
+```
+```bash yarn
+yarn add upag
+```
+```bash pnpm
+pnpm add upag
+```
+</CodeGroup>
+
+No browser use [`upag-js`](../sdk/frontend) com a chave publicável (`pk_...`).
+
+## 2. Criar a cobrança
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/charges \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "pix",
+    "amount": 9900,
+    "description": "Pedido #10482",
+    "pix": { "method": "dynamic" },
+    "customer": {
+      "name": "Maria Pagadora",
+      "email": "maria@example.com",
+      "document": { "type": "cpf", "number": "39053344705" }
+    }
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const charge = await upag.charges.create({
+  type: 'pix',
+  amount: 9900,
+  description: 'Pedido #10482',
+  pix: { method: 'dynamic' },
+  customer: {
+    name: 'Maria Pagadora',
+    email: 'maria@example.com',
+    document: { type: 'cpf', number: '39053344705' },
+  },
+});
+
+console.log(charge.id, charge.pix.qrCode);
+```
+</CodeGroup>
+
+Mostre `pix.qrCode` (copia-e-cola) ao pagador e guarde o `id`. O status inicial é `pending`.
+
+## 3. Consultar o status
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.dev/v1/charges/1f7d3c8a-4b52-4c9e-8a11-6d0e2f5b7c34 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+const charge = await upag.charges.retrieve('1f7d3c8a-4b52-4c9e-8a11-6d0e2f5b7c34');
+console.log(charge.status);
+```
+</CodeGroup>
+
+Quando `status` for `paid`, o Pix foi recebido. Em produção, prefira [webhooks](../webhooks/overview) a polling.
+
+<Tip>
+  No sandbox você pode simular resultados. Veja o [Simulador](../simulator).
+</Tip>
+
+## Próximos passos
+
+<CardGroup cols={2}>
+  <Card title="Autenticação" icon="key" href="./authentication">
+    Chaves, permissões e hosts.
+  </Card>
+  <Card title="Cobrança Pix" icon="qrcode" href="./pix-charge">
+    QR dinâmico, estático e splits.
+  </Card>
+  <Card title="Cartão com 3DS" icon="credit-card" href="./card-3ds">
+    Tokenização no browser e autenticação.
+  </Card>
+  <Card title="Checkout hospedado" icon="cart-shopping" href="./checkout-hosted">
+    Links de pagamento e sessões de checkout.
+  </Card>
+  <Card title="Assinatura recorrente" icon="repeat" href="./subscription-recurring">
+    Produtos, preços e faturas.
+  </Card>
+  <Card title="SDKs" icon="code" href="../sdk/overview">
+    `upag` (Node.js) e `upag-js` (browser).
+  </Card>
+</CardGroup>

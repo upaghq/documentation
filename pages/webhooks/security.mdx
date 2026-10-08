@@ -1,0 +1,106 @@
+---
+title: 'Verificação e segurança'
+description: 'Assinatura HMAC-SHA256 nas entregas de webhook'
+sidebarTitle: 'Segurança'
+---
+
+Valide `X-Webhook-Signature` antes de aplicar efeitos colaterais no seu sistema.
+
+## Como a assinatura é gerada
+
+- Algoritmo: HMAC-SHA256.
+- Chave: o `secret` do webhook (`whsec_...`), retornado em [Criar webhook](./create) e nas leituras.
+- Mensagem: os **bytes exatos** do corpo do `POST`.
+- Header `X-Webhook-Signature`: `sha256=<hex>`, com o digest em hexadecimal minúsculo.
+
+Não há timestamp nem nonce na assinatura: ela cobre somente o corpo. O `id` da entrega no envelope serve para deduplicar.
+
+<Warning>
+  Parsear e reserializar o JSON altera o corpo e quebra a comparação. Na rota do webhook use o corpo bruto (por exemplo `express.raw({ type: '*/*' })`), nunca `express.json()`.
+</Warning>
+
+## Node.js SDK
+
+O SDK compara em tempo constante e aceita `Buffer` ou `string`:
+
+```javascript Node.js SDK
+import express from 'express';
+import { Upag } from 'upag';
+
+const upag = new Upag(process.env.UPAG_SECRET_KEY);
+const app = express();
+
+app.post('/webhooks/upag', express.raw({ type: '*/*' }), async (req, res) => {
+  const valid = upag.webhooks.validateSignature(
+    req.body, // Buffer bruto
+    req.headers['x-webhook-signature'],
+    process.env.UPAG_WEBHOOK_SECRET,
+  );
+
+  if (!valid) return res.sendStatus(401);
+
+  const event = JSON.parse(req.body.toString('utf8'));
+  await enqueue(event); // persista ou enfileire antes de responder
+  return res.sendStatus(200);
+});
+```
+
+`validateSignature(rawBody, header, secret)` retorna `false` se o header ou o `secret` estiverem ausentes.
+
+## Sem o SDK
+
+```javascript
+import crypto from 'node:crypto';
+
+function isValidSignature(rawBody, signatureHeader, secret) {
+  if (!signatureHeader || !secret) return false;
+
+  const expected =
+    'sha256=' + crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+
+  const received = Buffer.from(signatureHeader);
+  const computed = Buffer.from(expected);
+
+  return received.length === computed.length && crypto.timingSafeEqual(received, computed);
+}
+```
+
+Compare sempre em tempo constante (`timingSafeEqual`) e rejeite a entrega se a assinatura não bater.
+
+## Headers da entrega
+
+| Header | Valor |
+| ------ | ----- |
+| `Content-Type` | `application/json` |
+| `X-Webhook-Id` | Id da entrega (igual a `id` no corpo) |
+| `X-Webhook-Event` | Nome do evento (igual a `event` no corpo) |
+| `X-Webhook-Signature` | `sha256=<hex>` |
+
+Os `headers` customizados do webhook entram por último e sobrescrevem headers de mesmo nome. Se você usa um header próprio para autenticar sua rota, escolha um nome diferente dos acima.
+
+## Evitar processamento duplicado
+
+Use o `id` da entrega antes de qualquer efeito colateral. Um [reprocessamento](../webhook-logs/reprocess) reaproveita o mesmo `id`.
+
+```javascript
+async function handle(event) {
+  if (await db.webhookDedupe.exists(event.id)) return;
+
+  await dispatch(event);
+
+  await db.webhookDedupe.put(event.id);
+}
+```
+
+## Checklist
+
+| Item | Ação |
+| ---- | ---- |
+| URL | TLS em produção |
+| Secret | Só em variável de ambiente, nunca no front |
+| Assinatura | Validar sobre o corpo bruto, antes de processar |
+| Resposta HTTP | 2xx após persistir ou enfileirar |
+| Duplicatas | Deduplicar por `id` |
+| Payload | Ler só os campos que você usa |
+
+[Voltar para Webhooks](./overview)

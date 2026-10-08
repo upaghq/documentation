@@ -1,0 +1,85 @@
+---
+title: 'Atualizar bump do link'
+description: 'Altera preço, quantidade, valor, título ou descrição de um bump'
+sidebarTitle: 'Atualizar bump'
+api: 'PATCH https://api.upag.io/v1/payment-links/{paymentLinkId}/bumps/{bumpId}'
+---
+
+Permissão: `payment_link.write` (chave secreta).
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X PATCH https://api.upag.dev/v1/payment-links/d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70/bumps/f6a7b8c9-d0e1-4f2a-9b3c-4d5e6f7a8b92 \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{ "amount": 1990, "title": "Adicione o guia de boas práticas" }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+// upag.paymentLinks.updateBump(paymentLinkId, bumpId, params)
+const bump = await upag.paymentLinks.updateBump(
+  'd4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70',
+  'f6a7b8c9-d0e1-4f2a-9b3c-4d5e6f7a8b92',
+  { amount: 1990, title: 'Adicione o guia de boas práticas' },
+);
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`.
+</Note>
+
+## Parâmetros
+
+<ParamField path="paymentLinkId" type="string (uuid)" required>
+  ID do link de pagamento.
+</ParamField>
+
+<ParamField path="bumpId" type="string (uuid)" required>
+  ID do bump.
+</ParamField>
+
+<ParamField body="price" type="string (uuid)">
+  Novo preço.
+</ParamField>
+
+<ParamField body="quantity" type="integer">
+  Nova quantidade (≥ 1).
+</ParamField>
+
+<ParamField body="amount" type="integer">
+  Novo valor em centavos (≥ 0).
+</ParamField>
+
+<ParamField body="title" type="string | null">
+  Título (até 255 caracteres) ou `null`.
+</ParamField>
+
+<ParamField body="description" type="string | null">
+  Descrição ou `null`.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "id": "f6a7b8c9-d0e1-4f2a-9b3c-4d5e6f7a8b92",
+  "product": "1c0d2e4f-7b5e-4d2f-8e66-4a2a7b8d3f21",
+  "price": "6a3e8b01-4c2d-4f9b-9a7e-2d0f5c8b3e44",
+  "quantity": 1,
+  "amount": 1990,
+  "title": "Adicione o guia de boas práticas",
+  "description": "Oferta única, só neste checkout"
+}
+```
+
+- `404` — `PAYMENT_LINK_NOT_FOUND`, `PAYMENT_LINK_BUMP_NOT_FOUND`, `PRICE_NOT_FOUND` ou `PRODUCT_NOT_FOUND`.
+- `400` — violação das regras de consistência (veja a [referência](./reference)).

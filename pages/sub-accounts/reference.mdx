@@ -1,0 +1,68 @@
+---
+title: 'Referência'
+description: 'Objeto Subconta (sub-account)'
+sidebarTitle: 'Visão geral'
+---
+
+Subcontas (pessoa física ou jurídica) são criadas sob a conta titular da chave secreta. Cada subconta tem a própria chave secreta, que opera apenas nela. A abertura passa por análise (KYC) antes de a conta ficar ativa.
+
+## Estrutura (consulta)
+
+```json
+{
+  "id": "880e8400-e29b-41d4-a716-446655440000",
+  "status": "pending",
+  "legalEntity": {
+    "id": "990e8400-e29b-41d4-a716-446655440000",
+    "type": "individual",
+    "status": "under_review",
+    "documentType": "cpf",
+    "documentNumber": "39053344705",
+    "legalName": "João Silva",
+    "tradingName": "João Silva",
+    "email": "joao@example.com",
+    "phone": "5511999998888"
+  },
+  "account": {
+    "id": "880e8400-e29b-41d4-a716-446655440000",
+    "name": "João Silva",
+    "status": "pending",
+    "bankCode": "450",
+    "branch": null,
+    "number": null,
+    "digit": null
+  },
+  "createdAt": "2026-03-18T10:00:00.000Z",
+  "updatedAt": "2026-03-18T10:00:00.000Z"
+}
+```
+
+## Atributos
+
+<AccordionGroup>
+  <Accordion title="id / status">
+    `id` é o UUID da subconta (o mesmo de `account.id`). `status` espelha `account.status`: `pending`, `active` ou `closed`.
+  </Accordion>
+  <Accordion title="legalEntity">
+    Dados cadastrais. `type`: `individual` ou `company`. `status`: `active`, `inactive`, `under_review` ou `rejected` (nasce `under_review`). `documentType`: `cpf` ou `cnpj`. `phone` é a string só com dígitos (código do país + DDD + número). Em pessoa física, `legalName` e `tradingName` repetem o nome.
+  </Accordion>
+  <Accordion title="account">
+    Conta bancária: `name`, `status`, `bankCode` e, depois da aprovação, `branch`, `number` e `digit` (`null` enquanto `pending`).
+  </Accordion>
+</AccordionGroup>
+
+## Resposta de criação
+
+Além dos campos acima, a criação retorna:
+
+- `apiKey` — chave secreta da subconta: `id`, `type` (`secret`), `secret` (texto completo, **exibido apenas na criação e na rotação**), `description`, `permissions`, `createdAt`, `updatedAt`. A chave não aparece na listagem de chaves da subconta.
+- `paymentMethodConfigurations` — tarifas informadas na abertura (vazio se nenhuma foi enviada; métodos omitidos usam o padrão da plataforma).
+
+## Endpoints
+
+- [Criar subconta](./create)
+- [Listar subcontas](./list)
+- [Obter subconta](./get)
+- [Rotacionar chave](./roll-api-key)
+
+Todos exigem chave secreta (`sk_`) da conta titular. A listagem desta área usa `limit`/`offset` (e não `page`) e devolve também `limit` e `offset` na resposta.

@@ -1,0 +1,96 @@
+---
+title: 'Referência'
+description: 'Objeto Cliente (customer)'
+sidebarTitle: 'Visão geral'
+---
+
+Um cliente é a pessoa ou empresa que você cobra. Cobranças Pix dinâmicas e de cartão exigem um cliente; Pix estático, não.
+
+Clientes são únicos por conta pelo **número do documento**. Você pode cadastrá-los antes (endpoints abaixo) ou inline ao [criar uma cobrança](../charges/create): nesse caso um documento já existente é reutilizado e atualizado, em vez de duplicado. `POST /v1/customers` rejeita documento repetido com `409`.
+
+Todos os endpoints exigem **chave secreta** (`sk_…`).
+
+| Método | Path | Permissão |
+| ------ | ---- | --------- |
+| `POST` | `/v1/customers` | `customer.write` |
+| `GET` | `/v1/customers` | `customer.read` |
+| `GET` | `/v1/customers/{customerId}` | `customer.read` |
+| `PATCH` | `/v1/customers/{customerId}` | `customer.write` |
+| `DELETE` | `/v1/customers/{customerId}` | `customer.write` |
+
+<Note>
+  Sandbox: `https://api.upag.dev/v1` com `sk_test_…`. Produção: `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Estrutura
+
+```json
+{
+  "id": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "name": "Maria Souza",
+  "email": "maria@example.com",
+  "document": {
+    "number": "12345678909",
+    "type": "cpf"
+  },
+  "phone": {
+    "countryCode": "55",
+    "areaCode": "11",
+    "number": "999998888"
+  },
+  "address": {
+    "street": "Avenida Paulista",
+    "number": "1578",
+    "complement": null,
+    "neighborhood": "Bela Vista",
+    "city": "São Paulo",
+    "state": "SP",
+    "country": "BR",
+    "zip": "01310200"
+  },
+  "createdAt": "2026-07-27T18:04:11.482Z",
+  "updatedAt": "2026-07-27T18:04:11.482Z"
+}
+```
+
+## Atributos
+
+<ParamField body="id" type="string">
+  UUID do cliente.
+</ParamField>
+
+<ParamField body="name" type="string">
+  Nome completo, ou razão social no caso de empresa.
+</ParamField>
+
+<ParamField body="email" type="string | null">
+  E-mail (armazenado em minúsculas).
+</ParamField>
+
+<ParamField body="document" type="object">
+  `number` (somente dígitos; CNPJ pode ter letras) e `type`: `cpf` ou `cnpj`.
+</ParamField>
+
+<ParamField body="phone" type="object | null">
+  `countryCode`, `areaCode` e `number`, todos strings.
+</ParamField>
+
+<ParamField body="address" type="object">
+  Sempre presente; cada campo pode ser `null`: `street`, `number`, `complement`, `neighborhood`, `city`, `state`, `country`, `zip`. Sem endereço conhecido, todos vêm `null`.
+</ParamField>
+
+<ParamField body="createdAt" type="string">
+  ISO 8601.
+</ParamField>
+
+<ParamField body="updatedAt" type="string">
+  ISO 8601.
+</ParamField>
+
+## Referências em outros objetos
+
+[Cobranças](../charges/reference) e [cartões](../cards/reference) guardam o cliente no campo `customer` (UUID). Com `?includes=customer` na cobrança, o campo traz este objeto completo.
+
+## Webhooks
+
+`customer.created` e `customer.updated` (inclusive quando um cliente inline numa cobrança é criado ou atualizado). Veja [payload de cliente](../webhooks/payload-customer).

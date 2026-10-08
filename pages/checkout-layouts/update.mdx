@@ -1,0 +1,84 @@
+---
+title: 'Atualizar layout de checkout'
+description: 'Atualiza nome, tema, favicon ou blocos do layout'
+sidebarTitle: 'Atualizar'
+api: 'PATCH https://api.upag.io/v1/checkout/layouts/{layoutId}'
+---
+
+Atualização parcial. Envie `null` em `favicon`, `desktop` ou `mobile` para limpar. Ao enviar `theme`, ele **substitui** o tema inteiro (todas as chaves obrigatórias são exigidas).
+
+Permissão: `checkout_layout.write` (chave secreta).
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X PATCH https://api.upag.dev/v1/checkout/layouts/c1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Tema escuro v2",
+    "favicon": null
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const layout = await upag.checkoutLayouts.update('c1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f', {
+  name: 'Tema escuro v2',
+  favicon: null,
+});
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`.
+</Note>
+
+## Parâmetros
+
+<ParamField path="layoutId" type="string (uuid)" required>
+  ID do layout.
+</ParamField>
+
+<ParamField body="name" type="string">
+  Novo nome (1 a 255 caracteres).
+</ParamField>
+
+<ParamField body="theme" type="object">
+  Tema completo (veja a [referência](./reference)).
+</ParamField>
+
+<ParamField body="favicon" type="string | null">
+  Até 255 caracteres, ou `null`.
+</ParamField>
+
+<ParamField body="desktop" type="object | null">
+  Configuração de blocos para desktop.
+</ParamField>
+
+<ParamField body="mobile" type="object | null">
+  Configuração de blocos para mobile.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "id": "c1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+  "name": "Tema escuro v2",
+  "theme": { "radius": "0.65rem", "background": "oklch(0.985 0 0)", "...": "demais chaves do tema" },
+  "favicon": null,
+  "desktop": null,
+  "mobile": null,
+  "createdAt": "2026-03-18T11:15:00.000Z",
+  "updatedAt": "2026-03-18T12:30:00.000Z"
+}
+```
+
+`404` (`CHECKOUT_LAYOUT_NOT_FOUND`) se o layout não existir.

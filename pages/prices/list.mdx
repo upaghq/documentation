@@ -1,0 +1,74 @@
+---
+title: 'Listar preços'
+description: 'Lista os preços de um produto, do mais novo para o mais antigo'
+sidebarTitle: 'Listar'
+api: 'GET https://api.upag.io/v1/products/{productId}/prices'
+---
+
+Permissão: `price.read` (chave secreta).
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -G https://api.upag.dev/v1/products/0b9c1f3e-6a4d-4c1e-9d55-3f1f6a7c2e10/prices \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -d "page=1" \
+  -d "limit=15"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const { data, count } = await upag.prices.list('0b9c1f3e-6a4d-4c1e-9d55-3f1f6a7c2e10', {
+  page: 1,
+  limit: 15,
+});
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`.
+</Note>
+
+## Parâmetros
+
+<ParamField path="productId" type="string (uuid)" required>
+  ID do produto.
+</ParamField>
+
+<ParamField query="page" type="integer" default="1">
+  Página (mínimo 1).
+</ParamField>
+
+<ParamField query="limit" type="integer" default="15">
+  Itens por página (mínimo 1).
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "data": [
+    {
+      "id": "5f2d7a90-3b1c-4e8a-8f6d-1c9e4b7a2d33",
+      "name": "Mensal",
+      "billingType": "recurring",
+      "interval": "month",
+      "intervalCount": 1,
+      "currency": "brl",
+      "amount": 4990,
+      "metadata": {},
+      "createdAt": "2026-03-18T11:05:00.000Z",
+      "updatedAt": "2026-03-18T11:05:00.000Z"
+    }
+  ],
+  "count": 1
+}
+```
+
+`404` (`PRODUCT_NOT_FOUND`) se o produto não existir.

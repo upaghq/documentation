@@ -1,0 +1,73 @@
+---
+title: 'Reprocessar log'
+description: 'Reenvia um evento a partir de um log de falha'
+sidebarTitle: 'Reprocessar'
+api: 'POST https://api.upag.io/v1/webhooks/{webhookId}/logs/{logId}/reprocess'
+---
+
+Permissão: `webhook.write`
+
+Reenvia o corpo original do log para a URL **atual** do webhook, assinado de novo com o `secret` atual. O `id` da entrega no corpo e no header `X-Webhook-Id` é o original. A tentativa é gravada como um **novo** log com `retryCount` incrementado; o log original é preservado.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/webhooks/aa0e8400-e29b-41d4-a716-446655440000/logs/bb0e8400-e29b-41d4-a716-446655440000/reprocess \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const log = await upag.webhooks.logs.reprocess(
+  'aa0e8400-e29b-41d4-a716-446655440000',
+  'bb0e8400-e29b-41d4-a716-446655440000',
+);
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`. O SDK escolhe o host pela chave.
+</Note>
+
+## Parâmetros
+
+<ParamField path="webhookId" type="string (uuid)" required>
+  ID do webhook.
+</ParamField>
+
+<ParamField path="logId" type="string (uuid)" required>
+  ID do log a reprocessar. Só logs que não tiveram sucesso.
+</ParamField>
+
+## Resposta
+
+`200 OK` — novo log da tentativa (ID diferente do log original).
+
+```json Response
+{
+  "id": "cc0e8400-e29b-41d4-a716-446655440000",
+  "webhook": "aa0e8400-e29b-41d4-a716-446655440000",
+  "event": "charge.paid",
+  "method": "POST",
+  "url": "https://example.com/webhooks",
+  "statusCode": 200,
+  "duration": 85,
+  "request": "{\"id\":\"880e8400-e29b-41d4-a716-446655440000\",\"event\":\"charge.paid\",\"createdAt\":\"2026-03-18T12:10:00.000Z\",\"data\":{}}",
+  "response": "ok",
+  "retryCount": 1,
+  "success": true,
+  "createdAt": "2026-03-18T12:15:00.000Z"
+}
+```
+
+Erros:
+
+| Status | `errorCode` | Quando |
+| ------ | ----------- | ------ |
+| `400` | `WEBHOOK_LOG_ALREADY_SUCCEEDED` | O log já teve resposta 2xx |
+| `404` | `WEBHOOK_NOT_FOUND` | Webhook inexistente, excluído ou de outra conta |
+| `404` | `WEBHOOK_LOG_NOT_FOUND` | Log inexistente ou de outro webhook |

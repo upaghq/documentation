@@ -1,0 +1,71 @@
+---
+title: 'Adicionar item ao link'
+description: 'Adiciona um preço como item do link de pagamento'
+sidebarTitle: 'Adicionar item'
+api: 'POST https://api.upag.io/v1/payment-links/{paymentLinkId}/items'
+---
+
+Permissão: `payment_link.write` (chave secreta).
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/payment-links/d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70/items \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "price": "5f2d7a90-3b1c-4e8a-8f6d-1c9e4b7a2d33",
+    "quantity": 2
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+// upag.paymentLinks.createItem(paymentLinkId, params)
+const item = await upag.paymentLinks.createItem('d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70', {
+  price: '5f2d7a90-3b1c-4e8a-8f6d-1c9e4b7a2d33',
+  quantity: 2,
+});
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`.
+</Note>
+
+## Parâmetros
+
+<ParamField path="paymentLinkId" type="string (uuid)" required>
+  ID do link de pagamento.
+</ParamField>
+
+<ParamField body="price" type="string (uuid)" required>
+  ID do preço a vender.
+</ParamField>
+
+<ParamField body="quantity" type="integer" required>
+  Quantidade (≥ 1).
+</ParamField>
+
+## Resposta
+
+`201 Created`
+
+`amount` é preço × quantidade, em centavos.
+
+```json Response
+{
+  "id": "e5f6a7b8-c9d0-4e1f-8a2b-3c4d5e6f7a81",
+  "product": "0b9c1f3e-6a4d-4c1e-9d55-3f1f6a7c2e10",
+  "price": "5f2d7a90-3b1c-4e8a-8f6d-1c9e4b7a2d33",
+  "quantity": 2,
+  "amount": 9980
+}
+```
+
+- `404` — `PAYMENT_LINK_NOT_FOUND`, `PRICE_NOT_FOUND` ou `PRODUCT_NOT_FOUND`.
+- `400` — `PAYMENT_LINK_DUPLICATE_PRICE`, `PAYMENT_LINK_CURRENCY_MISMATCH`, `PAYMENT_LINK_RECURRING_INTERVAL_MISMATCH` (veja a [referência](./reference)).

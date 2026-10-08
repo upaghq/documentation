@@ -1,0 +1,64 @@
+---
+title: 'Desinstalar app'
+description: 'Remove o script de checkout da loja Shopify'
+sidebarTitle: 'Desinstalar'
+api: 'DELETE https://api.upag.io/v1/apps/{appId}/uninstall'
+---
+
+Remove os ScriptTags do checkout na loja e limpa o `scriptTagId` da `config`. O app continua cadastrado; para removê-lo use [Excluir app](./delete). Só apps `shopify`.
+
+Permissão: `app.write` (chave secreta).
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE https://api.upag.dev/v1/apps/c8d9e0f1-a2b3-4c4d-9e5f-6a7b8c9d0e12/uninstall \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const app = await upag.apps.uninstall('c8d9e0f1-a2b3-4c4d-9e5f-6a7b8c9d0e12');
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`.
+</Note>
+
+## Parâmetros
+
+<ParamField path="appId" type="string (uuid)" required>
+  ID do app Shopify.
+</ParamField>
+
+## Resposta
+
+`200 OK` — o app, sem `scriptTagId` na `config`.
+
+```json Response
+{
+  "id": "c8d9e0f1-a2b3-4c4d-9e5f-6a7b8c9d0e12",
+  "type": "integration",
+  "provider": "shopify",
+  "scope": "private",
+  "name": "Loja Shopify",
+  "config": {
+    "shop": "minha-loja.myshopify.com",
+    "clientId": "a1b2c3d4e5f6",
+    "clientSecret": "********9f0a",
+    "connectedAt": "2026-03-18T11:35:00.000Z"
+  },
+  "active": true,
+  "appliesTo": "all",
+  "appliesToProducts": null,
+  "createdAt": "2026-03-18T11:35:00.000Z",
+  "updatedAt": "2026-03-18T11:35:00.000Z"
+}
+```
+
+Erros: `404` (`APP_NOT_FOUND`); `400` (`APP_SCRIPT_NOT_SUPPORTED` em apps que não são Shopify).

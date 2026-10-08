@@ -1,0 +1,74 @@
+---
+title: 'Referência'
+description: 'Objeto Layout de checkout (checkout layout)'
+sidebarTitle: 'Visão geral'
+---
+
+Um layout define a aparência do checkout (tema, favicon e blocos). Associe um layout a um [link de pagamento](../payment-links/reference) pelo campo `checkoutLayout`.
+
+## Estrutura
+
+```json
+{
+  "id": "c1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+  "name": "Tema escuro",
+  "theme": {
+    "radius": "0.65rem",
+    "background": "oklch(0.985 0 0)",
+    "foreground": "oklch(0.145 0 0)",
+    "card": "oklch(1 0 0)",
+    "card-foreground": "oklch(0.145 0 0)",
+    "popover": "oklch(1 0 0)",
+    "popover-foreground": "oklch(0.145 0 0)",
+    "primary": "oklch(0.7 0.133 226.05)",
+    "primary-foreground": "oklch(0.985 0.002 247.839)",
+    "secondary": "oklch(0.97 0 0)",
+    "secondary-foreground": "oklch(0.205 0 0)",
+    "muted": "oklch(0.97 0 0)",
+    "muted-foreground": "oklch(0.556 0 0)",
+    "accent": "oklch(0.97 0 0)",
+    "accent-foreground": "oklch(0.205 0 0)",
+    "destructive": "oklch(0.57 0.18 29.23)",
+    "destructive-foreground": "oklch(0.97 0 0)",
+    "success": "oklch(0.64 0.17 171.45)",
+    "success-foreground": "oklch(1 0 0)",
+    "warning": "oklch(0.82 0.20 100.24)",
+    "warning-foreground": "oklch(1 0 0)",
+    "border": "oklch(0.922 0 0)",
+    "input": "oklch(0.922 0 0)",
+    "ring": "oklch(0.8 0.0906 223.63)"
+  },
+  "favicon": "https://example.com/favicon.png",
+  "desktop": null,
+  "mobile": null,
+  "createdAt": "2026-03-18T11:15:00.000Z",
+  "updatedAt": "2026-03-18T11:15:00.000Z"
+}
+```
+
+## Atributos
+
+<AccordionGroup>
+  <Accordion title="name">
+    Nome do layout (1 a 255 caracteres).
+  </Accordion>
+  <Accordion title="theme">
+    Objeto de cores e estilo (valores em string, ex.: `oklch(...)`). Se não for enviado na criação, a API aplica o tema padrão. Chaves obrigatórias quando o tema é enviado: `radius`, `background`, `foreground`, `card`, `card-foreground`, `popover`, `popover-foreground`, `primary`, `primary-foreground`, `secondary`, `secondary-foreground`, `muted`, `muted-foreground`, `accent`, `accent-foreground`, `destructive`, `destructive-foreground`, `success`, `success-foreground`, `warning`, `warning-foreground`, `border`, `input`, `ring`. Opcional: `font`.
+  </Accordion>
+  <Accordion title="favicon">
+    URL ou identificador do favicon (até 255 caracteres), ou `null`.
+  </Accordion>
+  <Accordion title="desktop / mobile">
+    Objetos livres com a configuração de blocos do checkout em cada dispositivo, ou `null`.
+  </Accordion>
+</AccordionGroup>
+
+## Endpoints
+
+- [Criar layout](./create)
+- [Listar layouts](./list)
+- [Obter layout](./get)
+- [Atualizar layout](./update)
+- [Excluir layout](./delete)
+
+Todos exigem chave secreta (`sk_`) e ficam em `/checkout/layouts`.

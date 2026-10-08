@@ -1,0 +1,48 @@
+---
+title: 'Excluir cliente'
+description: 'Remove um cliente da conta'
+sidebarTitle: 'Excluir'
+api: 'DELETE https://api.upag.io/v1/customers/{customerId}'
+---
+
+Exclui o cliente (exclusão lógica). Ele deixa de aparecer em consultas e listagens; cobranças que já o referenciam continuam apontando para ele.
+
+Permissão: `customer.write`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE https://api.upag.dev/v1/customers/8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+await upag.customers.delete('8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83');
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="customerId" type="string (uuid)" required>
+  ID do cliente.
+</ParamField>
+
+## Resposta
+
+`204 No Content`, sem corpo.
+
+## Erros
+
+| Status | Mensagem | Causa |
+| ------ | -------- | ----- |
+| `404` | `Customer not found` | Cliente inexistente, já excluído (a segunda exclusão retorna `404`) ou de outra conta |
+| `422` | `VALIDATION_FAILED` | `customerId` não é UUID |
