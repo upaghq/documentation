@@ -28,8 +28,8 @@ Exemplo de `charge.paid`:
     "meta": { "order": "10482" },
     "customer": "660e8400-e29b-41d4-a716-446655440001",
     "pix": {
-      "reference": "tx-qr-1",
-      "qrCode": "00020126580014br.gov.bcb.pix...",
+      "copyPaste": "00020126580014br.gov.bcb.pix...",
+      "qrCodeUrl": "https://files.upag.io/pix-qr/6f1c2d3e-4a5b-4c6d-8e7f-9a0b1c2d3e4f.png",
       "expiresAt": "2026-03-19T11:50:00.000Z"
     },
     "splits": [],
@@ -87,7 +87,7 @@ Exemplo de `charge.failed`:
 | `description` | `string \| null` | Descrição |
 | `meta` | `object \| null` | Metadados enviados na criação |
 | `customer` | `string \| null` | Id do cliente |
-| `pix` | `object` | Só em `type: "pix"`: `reference`, `qrCode` (copia e cola), `expiresAt` |
+| `pix` | `object` | Só em `type: "pix"`: `qrCodeUrl` (imagem PNG do QR code, ou `null`), `copyPaste` (copia e cola), `expiresAt` |
 | `card` | `object` | Só em `type: "card"`: `id` (cartão), `installments`, `nsu`, `authorizationCode`, `acquirerStatusCode` |
 | `splits` | `array` | Repasses: `id`, `type` (`mdr` ou `account`), `status`, `amount`, `account` (só em `type: "account"`), `createdAt`, `updatedAt` |
 | `items` | `array` | Itens informativos, quando a cobrança os tem: `id`, `externalId`, `kind`, `sku`, `name`, `url`, `quantity`, `unitAmount`, `amount`, `createdAt` |

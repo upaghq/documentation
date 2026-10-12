@@ -97,7 +97,7 @@ const session = await upag.checkoutSessions.create({
 </ParamField>
 
 <ParamField body="customer" type="string (uuid)">
-  UUID de um [cliente](../customers/reference) da conta. Se omitido, o cliente é definido na confirmação.
+  UUID de um [cliente](../customers/reference) da conta. Se omitido, o cliente é definido na confirmação. O pagador do navegador só pode pagar como esse cliente. Pode ser um cliente criado só com o nome; nesse caso o pagador informa o documento na confirmação.
 </ParamField>
 
 <ParamField body="bumps" type="array">

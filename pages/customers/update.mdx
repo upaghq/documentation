@@ -5,7 +5,7 @@ sidebarTitle: 'Atualizar'
 api: 'PATCH https://api.upag.io/v1/customers/{customerId}'
 ---
 
-Atualiza parcialmente o cliente: campos omitidos ficam como estão. O documento não pode ser alterado; crie outro cliente.
+Atualiza parcialmente o cliente: campos omitidos ficam como estão. O documento só pode ser informado **uma vez**, num cliente que ainda não tem um; depois de definido não pode ser alterado (crie outro cliente).
 
 Permissão: `customer.write`. Apenas chave secreta (`sk_…`).
 
@@ -46,6 +46,10 @@ const customer = await upag.customers.update('8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f
 
 <ParamField body="name" type="string">
   Nome (mínimo 1 caractere).
+</ParamField>
+
+<ParamField body="document" type="object">
+  `{ type: "cpf" | "cnpj", number }`. Aceito só enquanto o cliente não tem documento; com um já definido, a requisição inteira é recusada com `409` e nada é alterado.
 </ParamField>
 
 <ParamField body="email" type="string | null">
@@ -91,4 +95,5 @@ const customer = await upag.customers.update('8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f
 | Status | Mensagem | Causa |
 | ------ | -------- | ----- |
 | `404` | `Customer not found` | Cliente inexistente, excluído ou de outra conta |
+| `409` | `CUSTOMER_DOCUMENT_ALREADY_SET` | `document` enviado para um cliente que já tem documento |
 | `422` | `VALIDATION_FAILED` | Corpo inválido |

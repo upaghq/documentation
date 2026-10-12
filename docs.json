@@ -92,6 +92,12 @@
                         ]
                     },
                     {
+                        "group": "Arquivos",
+                        "pages": [
+                            "pages/files/create"
+                        ]
+                    },
+                    {
                         "group": "3D Secure",
                         "pages": [
                             "pages/three-d-secure/reference",

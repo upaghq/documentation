@@ -1,0 +1,111 @@
+---
+title: 'Enviar arquivo'
+description: 'Envia um arquivo (logo, imagem de produto, documento) e devolve o objeto Arquivo'
+sidebarTitle: 'Enviar'
+api: 'POST https://api.upag.io/v1/files'
+---
+
+Envia um arquivo como `multipart/form-data`. Arquivos de finalidade **pública** (logo, ícone, imagem de produto…) ficam num CDN e voltam com uma `url`. Os de finalidade **privada** (documentos, evidências…) ficam guardados sem endereço público e voltam com `url: null`.
+
+Permissão: `file.write`. Aceita chave **secreta ou publicável**, mas a chave publicável (`pk_…`) só envia finalidades públicas, porque vive no browser. Finalidades privadas exigem a chave secreta, no servidor.
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…` / `pk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/files \
+  -H "Authorization: Bearer pk_test_your_public_key" \
+  -F "file=@./logo.png" \
+  -F "purpose=business_logo" \
+  -F "name=Logo da loja"
+```
+
+```javascript upag-js
+import { UpagJs } from 'upag-js';
+
+const upag = new UpagJs('pk_test_your_public_key');
+
+const input = document.querySelector('input[type="file"]');
+
+const file = await upag.files.create({
+  file: input.files[0], // File ou Blob
+  purpose: 'business_logo',
+  name: 'Logo da loja', // opcional
+});
+
+console.log(file.url);
+```
+</CodeGroup>
+
+## Parâmetros
+
+Corpo `multipart/form-data`.
+
+<ParamField body="file" type="file" required>
+  O arquivo: JPEG, PNG, WEBP, PDF ou CSV, até 10 MB. O formato é conferido pelo **conteúdo** do arquivo, não pelo tipo informado. CSV precisa ser enviado com o tipo `text/csv` e ter conteúdo de texto.
+</ParamField>
+
+<ParamField body="purpose" type="string" required>
+  Para que o arquivo serve. Define se ele é público ou privado.
+
+  | Finalidade | Visibilidade | Chave |
+  | ---------- | ------------ | ----- |
+  | `business_icon` | Pública (`url`) | Secreta ou publicável |
+  | `business_logo` | Pública (`url`) | Secreta ou publicável |
+  | `product_image` | Pública (`url`) | Secreta ou publicável |
+  | `user_profile_picture` | Pública (`url`) | Secreta ou publicável |
+  | `checkout_asset` | Pública (`url`) | Secreta ou publicável |
+  | `dispute_evidence` | Privada | Secreta |
+  | `identity_document` | Privada | Secreta |
+  | `content_delivery` | Privada | Secreta |
+  | `social_contract` | Privada | Secreta |
+  | `other` | Privada | Secreta |
+</ParamField>
+
+<ParamField body="name" type="string">
+  Nome do arquivo, até 255 caracteres. Se omitido, usa o nome do arquivo enviado.
+</ParamField>
+
+## Resposta
+
+`201 Created`
+
+```json Response
+{
+  "id": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
+  "name": "Logo da loja",
+  "size": 18234,
+  "contentType": "image/png",
+  "purpose": "business_logo",
+  "url": "https://assets.upag.io/0c8e9d2a-1b3f-4a6c-9e57-2d4f6a8b0c13/5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15.png",
+  "createdAt": "2026-10-08T13:04:11.482Z"
+}
+```
+
+`url` é `null` nas finalidades privadas. Imagens são redimensionadas para caber em 1080x720 e recomprimidas, então `size` pode ser menor que o arquivo original.
+
+## Limites de requisição
+
+Chave publicável vive no browser, então tem um orçamento extra mais apertado. Ao estourar, a resposta é `429 too_many_uploads` com o header `Retry-After`.
+
+| Limite | Valor |
+| ------ | ----- |
+| Chave publicável, por IP do cliente | 10 por minuto |
+| Chave publicável, por conta | 100 por hora |
+| Qualquer chave (por chave de API) | 30 por minuto |
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `403` | `ACCOUNT_FILE_PURPOSE_NOT_ALLOWED` | Chave publicável tentando enviar uma finalidade privada |
+| `403` | `PERMISSION_DENIED` | A chave não tem a permissão `file.write` |
+| `422` | `FILE_REQUIRED` | Nenhum arquivo foi enviado |
+| `422` | `ACCOUNT_FILE_UNSUPPORTED_FILE_TYPE` | O conteúdo não é JPEG, PNG, WEBP, PDF ou CSV |
+| `422` | `MULTIPART_PAYLOAD_TOO_LARGE` | O envio passa de 10 MB |
+| `422` | `VALIDATION_FAILED` | `purpose` ausente ou desconhecido, ou `name` com mais de 255 caracteres |
+| `429` | `too_many_uploads` | Limite de requisição atingido |

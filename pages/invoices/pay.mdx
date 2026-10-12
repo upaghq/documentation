@@ -168,6 +168,7 @@ Num Pix, `status` fica `open` e `payments[0]` vem com `type: "pix"`, `status: "p
 | `404` | `INVOICE_NOT_FOUND` | A fatura não existe ou é de outra conta |
 | `400` | `INVOICE_NOT_PAYABLE` | A fatura não está `open` ou não tem valor a pagar |
 | `400` | `INVOICE_CURRENCY_UNSUPPORTED` | A fatura não está em `brl` |
+| `400` | `CUSTOMER_DOCUMENT_REQUIRED` | O cliente da fatura não tem documento; cobranças exigem um |
 | `409` | `INVOICE_PAYMENT_IN_PROGRESS` | Já existe um pagamento pendente (um Pix ainda aberto, por exemplo) |
 | `422` | `VALIDATION_FAILED` | `method` inválido, `card` ausente num pagamento de cartão etc. |
 

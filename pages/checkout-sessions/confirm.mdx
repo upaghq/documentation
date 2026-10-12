@@ -55,7 +55,8 @@ const result = await upag.checkoutSessions.confirm('4f9d2b71-6c03-4e58-9a1d-8b3e
   charge: { method: 'pix' },
 });
 
-// result.charge.pix.qrCode: copia e cola do Pix
+// result.charge.pix.copyPaste: copia e cola do Pix
+// result.charge.pix.qrCodeUrl: imagem PNG do QR code
 ```
 </CodeGroup>
 
@@ -203,12 +204,14 @@ O navegador é limitado a 10 confirmações por minuto por sessão e por IP, e n
   O pagador. Do servidor: UUID de um [cliente](../customers/reference) da conta, ou os dados do pagador (a Upag acha o cliente pelo documento ou cria um, e atualiza o nome, e-mail, telefone e endereço enviados). Do navegador: **só os dados**.
 
   - `name` (obrigatório): nome.
-  - `document` (obrigatório): `{ type: "cpf" | "cnpj", number }`.
+  - `document` (obrigatório, exceto quando a sessão já tem um cliente com documento): `{ type: "cpf" | "cnpj", number }`.
   - `email`: opcional.
   - `phone`: opcional, `{ countryCode, areaCode, number }`.
   - `address`: opcional, com `street`, `number`, `complement`, `neighborhood`, `city`, `state`, `country` e `zip`.
 
-  Se a sessão já pertence a um cliente (a partir de uma tentativa anterior), outro cliente é recusado.
+  Se a sessão já pertence a um cliente (criada com `customer` ou por uma tentativa anterior), outro cliente é recusado.
+
+  Se esse cliente foi criado **sem documento**, o pagador precisa informar o `document`: ele é gravado no cliente da sessão (uma única vez) e é esse cliente que paga, mesmo que outro cliente da conta já tenha o mesmo documento. Se o cliente já tem documento, o `document` enviado precisa ser o dele.
 </ParamField>
 
 <ParamField body="bumps" type="array" default="[]">
@@ -301,8 +304,8 @@ O navegador é limitado a 10 confirmações por minuto por sessão e por IP, e n
     "meta": null,
     "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
     "pix": {
-      "reference": "9d4c2b7f6a1e40538c9b2d7f1a6e0c34",
-      "qrCode": "00020101021226930014br.gov.bcb.pix...",
+      "copyPaste": "00020101021226930014br.gov.bcb.pix...",
+      "qrCodeUrl": "https://files.upag.io/pix-qr/6f1c2d3e-4a5b-4c6d-8e7f-9a0b1c2d3e4f.png",
       "expiresAt": "2026-10-07T19:13:01.000Z"
     },
     "splits": [],
@@ -348,8 +351,8 @@ O navegador é limitado a 10 confirmações por minuto por sessão e por IP, e n
           "meta": null,
           "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
           "pix": {
-            "reference": "9d4c2b7f6a1e40538c9b2d7f1a6e0c34",
-            "qrCode": "00020101021226930014br.gov.bcb.pix...",
+            "copyPaste": "00020101021226930014br.gov.bcb.pix...",
+            "qrCodeUrl": "https://files.upag.io/pix-qr/6f1c2d3e-4a5b-4c6d-8e7f-9a0b1c2d3e4f.png",
             "expiresAt": "2026-10-07T19:13:01.000Z"
           },
           "splits": [],
@@ -476,7 +479,8 @@ Para um pagamento já aprovado, `status` da sessão vem `complete` e `charge.sta
 | `409` | `CHECKOUT_SESSION_NOT_OPEN` | A sessão já está `complete` ou `expired` |
 | `410` | `CHECKOUT_SESSION_EXPIRED` | A sessão passou do `expiresAt` |
 | `400` | `CHECKOUT_SESSION_CUSTOMER_DATA_REQUIRED` | Do navegador: `customer` veio como UUID; envie os dados |
-| `409` | `CHECKOUT_SESSION_CUSTOMER_MISMATCH` | A sessão já pertence a outro cliente |
+| `409` | `CHECKOUT_SESSION_CUSTOMER_MISMATCH` | A sessão já pertence a outro cliente, ou o `document` enviado não é o do cliente da sessão |
+| `400` | `CHECKOUT_SESSION_PAYER_DOCUMENT_REQUIRED` | A sessão não tem cliente, ou o cliente não tem documento, e o `document` não veio |
 | `400` | `CHECKOUT_SESSION_CHARGE_REQUIRED` | Há valor a pagar hoje e `charge` não veio |
 | `400` | `CHECKOUT_SESSION_NOTHING_TO_CHARGE` | Nada a pagar hoje (teste) e `charge` veio: envie `paymentMethod` |
 | `400` | `CHECKOUT_SESSION_PAYMENT_METHOD_REQUIRED` | Teste com `paymentMethodCollection: "always"` e sem `paymentMethod` |

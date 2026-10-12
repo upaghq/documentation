@@ -235,7 +235,7 @@ const session = await upag.checkout.retrieve(id, clientSecret);
 </ParamField>
 
 <ParamField body="customer" type="object | null">
-  Pagador, depois que a sessão foi confirmada: `id`, `name`, `email`, `document` (`type` e `number` **mascarado**) e, quando existirem, `phone` (mascarado) e `address`.
+  Pagador, depois que a sessão foi confirmada: `id`, `name`, `email`, `document` (`type` e `number` **mascarado**; `null` se o cliente não tem documento) e, quando existirem, `phone` (mascarado) e `address`.
 </ParamField>
 
 <ParamField body="charge" type="object | null">

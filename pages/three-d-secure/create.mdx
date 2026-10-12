@@ -96,6 +96,7 @@ const session = await upag.threeDSecure.createSession(
 | Status | Código | Causa |
 | ------ | ------ | ----- |
 | `400` | `invalid_params` | Corpo malformado (inclusive cartão enviado como objeto), ou cartão inativo, vencido ou indisponível para autenticação |
+| `400` | `Customer has no document, which charges require` | O cliente (UUID) não tem documento (`error.meta.errorCode`: `CUSTOMER_DOCUMENT_REQUIRED`); o objeto inline exige `document` |
 | `404` | `card_not_found` | O cartão não existe na conta |
 | `404` | `not_found` | 3D Secure não está habilitado neste ambiente |
 | `409` | `idempotency_key_reused` | A `Idempotency-Key` já foi usada com outro corpo |

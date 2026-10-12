@@ -5,7 +5,7 @@ sidebarTitle: 'Criar'
 api: 'POST https://api.upag.io/v1/customers'
 ---
 
-Cadastra um cliente. O documento (CPF/CNPJ) é único por conta.
+Cadastra um cliente. O documento (CPF/CNPJ) é opcional, mas **obrigatório para cobrar**; quando enviado, não pode repetir outro cliente da conta.
 
 Permissão: `customer.write`. Apenas chave secreta (`sk_…`).
 
@@ -66,8 +66,8 @@ const customer = await upag.customers.create({
   Nome (mínimo 1 caractere).
 </ParamField>
 
-<ParamField body="document" type="object" required>
-  Documento do cliente.
+<ParamField body="document" type="object | null">
+  Documento do cliente. Opcional: sem ele, o cliente é criado só com o nome e vem com `document: null`; ele não poderá ser cobrado até ter um (veja [Cliente sem documento](./reference#cliente-sem-documento)). Um `number` em branco é tratado como ausente.
 
   - `type`: `cpf` ou `cnpj`.
   - `number`: CPF com 11 dígitos, ou CNPJ válido (inclusive o alfanumérico). Pontos, barra e hífen são removidos.
@@ -117,5 +117,5 @@ Campos em [Referência](./reference).
 
 | Status | Mensagem | Causa |
 | ------ | -------- | ----- |
-| `409` | `Customer with this document number already exists` | Já existe cliente com esse documento na conta |
+| `409` | `Customer with this document number already exists` | Já existe cliente com esse documento na conta (só quando `document` é enviado) |
 | `422` | `VALIDATION_FAILED` | Corpo inválido (documento, e-mail, telefone incompleto…) |

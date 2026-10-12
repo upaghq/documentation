@@ -190,5 +190,5 @@ const result = await upag.checkoutSessions.confirm(session.id, {
   charge: { method: 'pix' },
 });
 
-console.log(result.charge.pix.qrCode);
+console.log(result.charge.pix.copyPaste);
 ```

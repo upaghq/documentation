@@ -128,6 +128,24 @@ await upag.cards.create(params, { idempotencyKey: 'checkout_42' });
 
 `create` é a única operação de cartão que uma chave publicável pode fazer. Listar, obter e remover exigem a chave secreta, no servidor. Referência: [Criar cartão](../cards/create).
 
+## Arquivos
+
+Envia um arquivo, como um logo ou a imagem de um produto, e devolve o arquivo com uma `url` pública.
+
+```javascript
+const input = document.querySelector('input[type="file"]');
+
+const file = await upag.files.create({
+  file: input.files[0], // File ou Blob
+  purpose: 'business_logo',
+  name: 'Logo da loja', // opcional
+});
+
+console.log(file.id, file.url);
+```
+
+Uma chave publicável só envia as finalidades públicas: `business_icon`, `business_logo`, `product_image`, `user_profile_picture` e `checkout_asset`. As demais são privadas, voltam com `url: null` e exigem a chave secreta, no servidor. Formatos aceitos: JPEG, PNG, WEBP, PDF e CSV, até 10 MB. Referência: [Enviar arquivo](../files/create).
+
 ## Antifraude
 
 Instanciar o cliente no browser inicia o coletor de dispositivo. Envie `sessionId()` como `meta.session_id` na cobrança de cartão e chame `rotate()` antes de uma nova tentativa.
@@ -209,6 +227,7 @@ Erros devolvidos pela API trazem o `code` dela (por exemplo `session_expired`, `
 | `checkout` | `startShopify({ items })` | Sessão a partir de um carrinho Shopify |
 | `checkout` | `redirectToCheckout(code, tracking?)` | Abre a sessão e redireciona para a página hospedada |
 | `cards` | `create(params, options?)` | Tokeniza um cartão |
+| `files` | `create({ file, purpose, name? })` | Envia um arquivo |
 | `threeDSecure` | `authenticate({ clientSecret }, options?)` | Autenticação 3D Secure de uma sessão criada pelo servidor |
 | `antifraud` | `sessionId()`, `rotate()` | Sessão de dispositivo para antifraude |
 

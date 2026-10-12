@@ -43,7 +43,7 @@ Eventos: `customer.created` e `customer.updated`.
 | `id` | `string (uuid)` | Cliente |
 | `name` | `string` | Nome |
 | `email` | `string \| null` | E-mail |
-| `document` | `object` | `number` (só dígitos) e `type` (`cpf` ou `cnpj`) |
+| `document` | `object \| null` | `number` (só dígitos) e `type` (`cpf` ou `cnpj`); `null` num cliente sem documento |
 | `phone` | `object \| null` | `countryCode`, `areaCode`, `number` |
 | `address` | `object` | `street`, `number`, `complement`, `neighborhood`, `city`, `state`, `country`, `zip`; cada campo pode ser `null` |
 | `createdAt` | `string` | ISO 8601 |

@@ -19,7 +19,7 @@ sequenceDiagram
   participant App
   participant API
   App->>API: POST /v1/charges
-  API-->>App: charge.id, pix.qrCode
+  API-->>App: charge.id, pix.qrCodeUrl, pix.copyPaste
   App->>API: GET /v1/charges/:id
   API-->>App: status paid
 ```
@@ -79,11 +79,11 @@ const charge = await upag.charges.create({
   },
 });
 
-console.log(charge.id, charge.pix.qrCode);
+console.log(charge.id, charge.pix.copyPaste);
 ```
 </CodeGroup>
 
-Mostre `pix.qrCode` (copia-e-cola) ao pagador e guarde o `id`. O status inicial é `pending`.
+Mostre `pix.qrCodeUrl` (imagem do QR code) e `pix.copyPaste` (copia-e-cola) ao pagador e guarde o `id`. O status inicial é `pending`.
 
 ## 3. Consultar o status
 

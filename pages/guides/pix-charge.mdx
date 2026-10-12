@@ -14,7 +14,7 @@ sequenceDiagram
   participant API
   participant Pagador
   App->>API: POST /v1/charges
-  API-->>App: pix.qrCode
+  API-->>App: pix.qrCodeUrl, pix.copyPaste
   App->>Pagador: exibe QR ou copia-e-cola
   Pagador->>API: paga Pix
   API-->>App: webhook charge.paid
@@ -63,7 +63,7 @@ const charge = await upag.charges.create({
 ```
 </CodeGroup>
 
-Exiba `pix.qrCode` na UI. Guarde `id`: o status inicial é `pending`.
+Exiba a imagem em `pix.qrCodeUrl` e ofereça `pix.copyPaste` (copia-e-cola) na UI. Se `qrCodeUrl` vier `null`, use só o `copyPaste`. Guarde `id`: o status inicial é `pending`.
 
 ## 2. Cobrança estática (opcional)
 

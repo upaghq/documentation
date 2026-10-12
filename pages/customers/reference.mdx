@@ -6,7 +6,9 @@ sidebarTitle: 'Visão geral'
 
 Um cliente é a pessoa ou empresa que você cobra. Cobranças Pix dinâmicas e de cartão exigem um cliente; Pix estático, não.
 
-Clientes são únicos por conta pelo **número do documento**. Você pode cadastrá-los antes (endpoints abaixo) ou inline ao [criar uma cobrança](../charges/create): nesse caso um documento já existente é reutilizado e atualizado, em vez de duplicado. `POST /v1/customers` rejeita documento repetido com `409`.
+O **documento** (CPF/CNPJ) é opcional no cadastro: você pode criar um cliente só com o nome, por exemplo para [reservar o cliente de uma sessão de checkout](../checkout-sessions/create) antes de saber o documento. **Para cobrar, o documento é obrigatório**: veja [Sem documento](#cliente-sem-documento).
+
+Ao [criar uma cobrança](../charges/create) com um cliente inline, o documento identifica o cliente: um documento já existente na conta é reutilizado e atualizado, em vez de duplicado. `POST /v1/customers` rejeita documento repetido com `409`. Se mais de um cliente da conta tiver o mesmo documento, vale o mais antigo.
 
 Todos os endpoints exigem **chave secreta** (`sk_…`).
 
@@ -67,8 +69,8 @@ Todos os endpoints exigem **chave secreta** (`sk_…`).
   E-mail (armazenado em minúsculas).
 </ParamField>
 
-<ParamField body="document" type="object">
-  `number` (somente dígitos; CNPJ pode ter letras) e `type`: `cpf` ou `cnpj`.
+<ParamField body="document" type="object | null">
+  `number` (somente dígitos; CNPJ pode ter letras) e `type`: `cpf` ou `cnpj`. `null` num cliente criado sem documento.
 </ParamField>
 
 <ParamField body="phone" type="object | null">
@@ -86,6 +88,15 @@ Todos os endpoints exigem **chave secreta** (`sk_…`).
 <ParamField body="updatedAt" type="string">
   ISO 8601.
 </ParamField>
+
+## Cliente sem documento
+
+Um cliente criado só com o nome vem com `"document": null`. Ele pode ser usado em sessões de checkout e faturas, mas não pode ser cobrado:
+
+- Pix, cartão, boleto e [3D Secure](../three-d-secure/create) respondem `400` com `CUSTOMER_DOCUMENT_REQUIRED`. Isso vale também para quem paga uma fatura ou assinatura desse cliente.
+- Um cliente **inline** numa cobrança continua exigindo `document` (`422` sem ele).
+- O documento pode ser informado depois, **uma única vez**: em [Atualizar cliente](./update) ou pelo pagador, ao [confirmar a sessão de checkout](../checkout-sessions/confirm) do cliente. Depois de definido, não muda (`409` `CUSTOMER_DOCUMENT_ALREADY_SET`).
+- Mais de um cliente da conta pode acabar com o mesmo documento (por exemplo, um cliente sem documento que recebe um já usado por outro). A busca pelo documento devolve o mais antigo.
 
 ## Referências em outros objetos
 

@@ -137,7 +137,7 @@ A cobrança de cartão é processada na hora: a resposta já traz o resultado (`
 </ParamField>
 
 <ParamField body="customer" type="string | object">
-  Obrigatório no Pix dinâmico; opcional no estático. UUID de um cliente existente ou um objeto cliente inline (mesmos campos de [Criar cliente](../customers/create)). No objeto inline, o `document.number` identifica o cliente: se já existir na conta, é reutilizado e os demais valores enviados o atualizam; campos omitidos ou `null` não apagam nada.
+  Obrigatório no Pix dinâmico; opcional no estático. UUID de um cliente existente ou um objeto cliente inline (mesmos campos de [Criar cliente](../customers/create)). Em qualquer caso o cliente precisa ter documento: um UUID de cliente sem documento é recusado (`CUSTOMER_DOCUMENT_REQUIRED`) e o objeto inline exige `document`. No objeto inline, o `document.number` identifica o cliente: se já existir na conta, é reutilizado e os demais valores enviados o atualizam; campos omitidos ou `null` não apagam nada.
 </ParamField>
 
 ### Cartão (`type: "card"`)
@@ -204,8 +204,8 @@ Gere um `session_id` novo a cada tentativa de pagamento: reutilizar reduz a apro
   "meta": null,
   "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
   "pix": {
-    "reference": "9d4c2b7f6a1e40538c9b2d7f1a6e0c34",
-    "qrCode": "00020101021226930014br.gov.bcb.pix...",
+    "copyPaste": "00020101021226930014br.gov.bcb.pix...",
+    "qrCodeUrl": "https://files.upag.io/pix-qr/6f1c2d3e-4a5b-4c6d-8e7f-9a0b1c2d3e4f.png",
     "expiresAt": "2026-07-28T12:00:00.000Z"
   },
   "splits": [
@@ -267,6 +267,7 @@ Se a adquirente recusar, a resposta continua `201`, com `status: "failed"` e `fa
 | `400` | `Installments exceed the maximum of N for this account` | Parcelas acima do máximo da conta |
 | `400` | `Card is not active` / `Card is expired` | Cartão inutilizável |
 | `400` | `Customer is missing fields required for card payments: …` | Cliente sem `email` e/ou `phone` |
+| `400` | `CUSTOMER_DOCUMENT_REQUIRED` | O cliente (UUID) não tem documento; cobranças exigem um |
 | `404` | `Customer not found` | UUID de cliente inexistente na conta |
 | `404` | `Card not found` | Cartão inexistente, removido ou de outra conta |
 | `404` | `Pix key not found` | A conta não tem chave Pix para receber |
