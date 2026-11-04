@@ -113,10 +113,10 @@ Todos os endpoints exigem **chave secreta** (`sk_…`).
   Linhas da fatura.
 
   - `id`: UUID do item.
-  - `product`: UUID do produto.
-  - `price`: UUID do preço.
-  - `name`: nome do preço, copiado na hora em que o item entrou.
-  - `amount`: valor unitário em centavos, copiado do preço na hora em que o item entrou.
+  - `product`: UUID do produto, ou `null` na linha de um [link de valor fixo](../payment-links/reference#link-de-valor-fixo).
+  - `price`: UUID do preço, ou `null` na mesma situação.
+  - `name`: nome do preço, copiado na hora em que o item entrou (no link de valor fixo, o nome do link).
+  - `amount`: valor unitário em centavos, copiado do preço na hora em que o item entrou (no link de valor fixo, o valor do link).
   - `quantity`: quantidade.
   - `totalAmount`: `amount × quantity`, em centavos.
 </ParamField>

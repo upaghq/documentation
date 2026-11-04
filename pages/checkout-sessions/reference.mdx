@@ -84,6 +84,8 @@ Públicos, sem autenticação:
     {
       "id": "b7e1c4a9-3d52-4f08-86a1-2c9d5e7f0b34",
       "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61",
+      "name": null,
+      "amount": null,
       "quantity": 1
     }
   ],
@@ -182,8 +184,11 @@ Públicos, sem autenticação:
   Itens da sessão.
 
   - `id`: UUID do item.
-  - `price`: UUID do [preço](../prices/reference).
+  - `price`: UUID do [preço](../prices/reference), ou `null` no item de um [link de valor fixo](../payment-links/reference#link-de-valor-fixo).
+  - `name` / `amount`: nome e valor unitário (centavos) do item sem preço; `null` quando há `price`.
   - `quantity`: quantidade.
+
+  Na visão do pagador ([Iniciar](./start), [Obter](./retrieve)), o item sem preço aparece como um preço avulso (`one_time`) cujo `price.id` e `price.product.id` são o `id` do item, com `name` e `amount` do link.
 </ParamField>
 
 <ParamField body="bumps" type="array">
