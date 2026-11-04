@@ -18,7 +18,7 @@
 ## Abas
 
 - **Guias** (`pages/guides/`): quickstart, authentication, conventions, errors; fluxos pix-charge, pix-transfer, card-3ds, checkout-hosted, subscription-recurring, free-trial
-- **Referência** (`pages/<recurso>/`): charges, cards, three-d-secure, customers, products, prices, coupons, invoices, subscriptions, payment-links, checkout-sessions, checkout-layouts, transfers, sub-accounts, apps, me
+- **Referência** (`pages/<recurso>/`): charges, cards, three-d-secure, customers, products, prices, coupons, invoices, subscriptions, payment-links, checkout-sessions, checkout-layouts, transfers, sub-accounts, apps, me. Links de pagamento têm `type`: `product` (itens do catálogo, padrão) ou `fixed_amount` (valor fixo avulso em `amount`, sem produto/preço)
 - **Webhooks** (`pages/webhooks/`, `pages/webhook-logs/`): visão geral, referência, segurança, endpoints, payloads, logs de entrega
 - **SDK**: `pages/sdk/`
 - **Simulador**: `pages/simulator.mdx` (cartões de teste no sandbox)

@@ -1,11 +1,13 @@
 ---
 title: 'Criar link de pagamento'
-description: 'Cria um link de pagamento com itens e bumps opcionais'
+description: 'Cria um link de pagamento com itens do catálogo ou com valor fixo'
 sidebarTitle: 'Criar'
 api: 'POST https://api.upag.io/v1/payment-links'
 ---
 
 Permissão: `payment_link.write` (chave secreta; chave publicável não é aceita).
+
+O `type` do link define o corpo: `product` (padrão) vende itens do catálogo; `fixed_amount` cobra um valor fixo, sem produto nem preço. Veja os [tipos de link](./reference).
 
 ## Endpoint
 
@@ -46,18 +48,55 @@ const link = await upag.paymentLinks.create({
 ```
 </CodeGroup>
 
+### Link de valor fixo
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/payment-links \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "fixed_amount",
+    "name": "Consultoria de outubro",
+    "amount": 25000,
+    "paymentMethods": ["pix", "card"]
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const link = await upag.paymentLinks.create({
+  type: 'fixed_amount',
+  name: 'Consultoria de outubro', // nome que o pagador vê na linha
+  amount: 25000, // centavos, mínimo 500 (R$ 5,00)
+  paymentMethods: ['pix', 'card'],
+});
+```
+</CodeGroup>
+
 <Note>
   Em produção use `https://api.upag.io/v1` com `sk_live_...`.
 </Note>
 
 ## Parâmetros
 
-<ParamField body="name" type="string" required>
-  Nome do link (1 a 255 caracteres).
+<ParamField body="type" type="string" default="product">
+  `product` ou `fixed_amount`. Não pode ser alterado depois.
 </ParamField>
 
-<ParamField body="items" type="array" required>
-  Mínimo 1 item: `{ "price": "uuid", "quantity": inteiro ≥ 1 }`. O mesmo `price` não pode repetir.
+<ParamField body="name" type="string" required>
+  Nome do link (1 a 255 caracteres). Em `fixed_amount`, é também o nome da linha que o pagador vê.
+</ParamField>
+
+<ParamField body="items" type="array">
+  Obrigatório em `product`. Mínimo 1 item: `{ "price": "uuid", "quantity": inteiro ≥ 1 }`. O mesmo `price` não pode repetir.
+</ParamField>
+
+<ParamField body="amount" type="integer">
+  Obrigatório em `fixed_amount` (e só aceito nele). Valor em centavos (BRL), de `500` (R$ 5,00) a `2147483647`, dentro dos limites de cobrança de cada método em `paymentMethods`.
 </ParamField>
 
 <ParamField body="description" type="string | null">
@@ -99,6 +138,8 @@ const link = await upag.paymentLinks.create({
   Ofertas adicionais: `{ "price": "uuid", "quantity": inteiro ≥ 1 (padrão 1), "amount": centavos ≥ 0 (padrão preço × quantidade), "title": string até 255, "description": string }`.
 </ParamField>
 
+Em `fixed_amount`, só `name`, `amount`, `description`, `checkoutLayout`, `paymentMethods`, `billingAddressCollection`, `successUrl` e `cancelUrl` são aceitos; `items`, `bumps`, `subscriptionData` e `paymentMethodCollection` retornam `422`.
+
 O link nasce `active: true` e `couponEnabled: false`; ajuste em [Atualizar link](./update).
 
 ## Resposta
@@ -108,6 +149,7 @@ O link nasce `active: true` e `couponEnabled: false`; ajuste em [Atualizar link]
 ```json Response
 {
   "id": "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70",
+  "type": "product",
   "name": "Plano Pro com trial",
   "description": null,
   "checkoutLayout": null,
@@ -139,6 +181,8 @@ O link nasce `active: true` e `couponEnabled: false`; ajuste em [Atualizar link]
 }
 ```
 
+Um link `fixed_amount` responde no mesmo formato, com `type: "fixed_amount"`, o `amount` enviado e `items`/`bumps` vazios ([exemplo](./reference#link-de-valor-fixo)).
+
 - `404` — `PRICE_NOT_FOUND`, `PRODUCT_NOT_FOUND` ou `CHECKOUT_LAYOUT_NOT_FOUND`.
-- `400` — violações das [regras de consistência](./reference).
-- `422` — validação do corpo.
+- `400` — violações das [regras de consistência](./reference); em `fixed_amount`, `ACCOUNT_PAYMENT_METHOD_DISABLED` se um método de `paymentMethods` estiver desativado na conta.
+- `422` — validação do corpo; em `fixed_amount`, `PAYMENT_METHOD_AMOUNT_TOO_LOW` / `PAYMENT_METHOD_AMOUNT_TOO_HIGH` se o valor estiver fora dos limites de cobrança de um método.
