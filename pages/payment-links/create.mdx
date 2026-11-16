@@ -52,8 +52,8 @@ const link = await upag.paymentLinks.create({
 
 <CodeGroup>
 ```bash cURL
-curl -X POST https://api.upag.dev/v1/payment-links \
-  -H "Authorization: Bearer sk_test_your_api_key" \
+curl -X POST https://api.upag.io/v1/payment-links \
+  -H "Authorization: Bearer sk_live_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
     "type": "fixed_amount",
@@ -66,7 +66,7 @@ curl -X POST https://api.upag.dev/v1/payment-links \
 ```javascript Node.js SDK
 import { Upag } from 'upag';
 
-const upag = new Upag('sk_test_your_api_key');
+const upag = new Upag('sk_live_your_api_key');
 
 const link = await upag.paymentLinks.create({
   type: 'fixed_amount',
