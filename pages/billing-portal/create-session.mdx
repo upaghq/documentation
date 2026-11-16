@@ -1,0 +1,105 @@
+---
+title: 'Criar sessão'
+description: 'Cria uma sessão do portal de cobrança para um cliente'
+sidebarTitle: 'Criar sessão'
+api: 'POST https://api.upag.io/v1/billing-portal/sessions'
+---
+
+Cria uma sessão e devolve a `url` do portal. Redirecione o cliente para ela. Sem `configuration`, a sessão usa a configuração default da conta e, se a conta ainda não tem uma, cria a default com os valores padrão.
+
+Permissão: `billing_portal.write`. Apenas chave secreta (`sk_…`).
+
+<Warning>
+  O portal de cobrança precisa estar habilitado para a conta. Até lá, a rota responde `403 feature_flag_disabled`. Veja [Erros](../guides/errors#recurso-não-habilitado).
+</Warning>
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/billing-portal/sessions \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer": "660e8400-e29b-41d4-a716-446655440001",
+    "returnUrl": "https://sualoja.com/conta",
+    "expiresIn": 1800
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const session = await upag.billingPortal.sessions.create({
+  customer: '660e8400-e29b-41d4-a716-446655440001',
+  returnUrl: 'https://sualoja.com/conta',
+  expiresIn: 1800,
+});
+
+// Redirecione o cliente para session.url
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField body="customer" type="string" required>
+  UUID do cliente.
+</ParamField>
+
+<ParamField body="configuration" type="string">
+  UUID da configuração. Omitido: a default da conta. A configuração precisa estar ativa.
+</ParamField>
+
+<ParamField body="returnUrl" type="string">
+  URL de até 2048 caracteres. Omitido: o `defaultReturnUrl` da configuração.
+</ParamField>
+
+<ParamField body="flow" type="object">
+  Leva o cliente direto a uma tarefa: `{ "type": "payment_method_update" | "subscription_update", "subscription": "<uuid>" }`. A assinatura precisa ser do cliente e editável, e a configuração precisa permitir a tarefa (`paymentMethodUpdate` ou `subscriptionUpdate`).
+</ParamField>
+
+<ParamField body="expiresIn" type="integer" default="3600">
+  Segundos até o link expirar, de 60 a 86400.
+</ParamField>
+
+## Resposta
+
+`201 Created` com a [sessão](./sessions-reference), incluindo a `url`. Essa é a única vez que a `url` aparece.
+
+```json Response
+{
+  "id": "7c2e9a41-3b5d-4f60-8e17-9d0a2c4b6e83",
+  "customer": "660e8400-e29b-41d4-a716-446655440001",
+  "configuration": "5b1f0c2e-8d4a-4e6b-9f31-7a2c0e9d4b18",
+  "flow": null,
+  "returnUrl": "https://sualoja.com/conta",
+  "paymentMethodUpdate": true,
+  "subscriptionUpdate": false,
+  "prorationBehavior": "create_prorations",
+  "downgradeTiming": "period_end",
+  "expiresAt": "2026-11-16T12:30:00.000Z",
+  "createdAt": "2026-11-16T12:00:00.000Z",
+  "url": "https://portal.upag.io/kV3n9xQ2mT8pZr4LwB6yHc1sDf7GjA0eNu5oXiRbYtE"
+}
+```
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `400` | `SUBSCRIPTION_NOT_EDITABLE` | A assinatura do `flow` está cancelada, void ou encerrada |
+| `403` | `feature_flag_disabled` | Portal de cobrança não habilitado para a conta |
+| `404` | `CUSTOMER_NOT_FOUND` | Cliente inexistente ou de outra conta |
+| `404` | `BILLING_PORTAL_CONFIGURATION_NOT_FOUND` | Configuração inexistente ou de outra conta |
+| `404` | `SUBSCRIPTION_NOT_FOUND` | A assinatura do `flow` não é desse cliente |
+| `422` | `BILLING_PORTAL_CONFIGURATION_INACTIVE` | A configuração informada está inativa |
+| `422` | `BILLING_PORTAL_FLOW_DISABLED` | A configuração não permite a tarefa do `flow` |
+| `422` | `VALIDATION_FAILED` | Campo inválido ou `expiresIn` fora de 60–86400 |
+
+Formato dos erros em [Erros](../guides/errors).

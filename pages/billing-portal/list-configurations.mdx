@@ -1,0 +1,74 @@
+---
+title: 'Listar configurações'
+description: 'Lista as configurações do portal de cobrança da conta'
+sidebarTitle: 'Listar configurações'
+api: 'GET https://api.upag.io/v1/billing-portal/configurations'
+---
+
+Lista as configurações da conta, da mais nova para a mais antiga.
+
+Permissão: `billing_portal.read`. Apenas chave secreta (`sk_…`).
+
+<Warning>
+  O portal de cobrança precisa estar habilitado para a conta. Até lá, a rota responde `403 feature_flag_disabled`. Veja [Erros](../guides/errors#recurso-não-habilitado).
+</Warning>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -G https://api.upag.dev/v1/billing-portal/configurations \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -d "page=1" \
+  -d "limit=15"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const { data, count } = await upag.billingPortal.configurations.list({ page: 1, limit: 15 });
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField query="page" type="integer" default="1">
+  Página, a partir de 1.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="15">
+  Itens por página, mínimo 1.
+</ParamField>
+
+## Resposta
+
+`200 OK`. `data` traz [configurações](./configurations-reference); `count` é o total da conta.
+
+```json Response
+{
+  "data": [
+    {
+      "id": "5b1f0c2e-8d4a-4e6b-9f31-7a2c0e9d4b18",
+      "name": "Planos Cloakup",
+      "isDefault": true,
+      "active": true,
+      "paymentMethodUpdate": true,
+      "subscriptionUpdate": true,
+      "prorationBehavior": "create_prorations",
+      "downgradeTiming": "period_end",
+      "defaultReturnUrl": "https://sualoja.com/conta",
+      "products": [
+        {
+          "product": "0b1e8400-e29b-41d4-a716-446655440000",
+          "prices": ["0c1e8400-e29b-41d4-a716-446655440000", "0d1e8400-e29b-41d4-a716-446655440000"]
+        }
+      ],
+      "createdAt": "2026-11-16T12:00:00.000Z",
+      "updatedAt": "2026-11-16T12:00:00.000Z"
+    }
+  ],
+  "count": 1
+}
+```

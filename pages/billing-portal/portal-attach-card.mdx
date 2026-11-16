@@ -1,0 +1,67 @@
+---
+title: 'Vincular cartão'
+description: 'Vincula ao cliente da sessão um cartão tokenizado pelo portal'
+sidebarTitle: 'Vincular cartão'
+api: 'POST https://api.upag.io/v1/portal/payment-methods'
+---
+
+Vincula ao cliente da sessão um cartão que a página tokenizou com a `publishableKey` de [Dados do portal](./portal-me) em [Criar cartão](../cards/create). Não há cobrança nem 3D Secure. Se o cliente ainda não tem cartão padrão, este vira o padrão.
+
+Exige `paymentMethodUpdate` na sessão. Autenticação pelo token da sessão.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/portal/payment-methods \
+  -H "Authorization: Bearer kV3n9xQ2mT8pZr4LwB6yHc1sDf7GjA0eNu5oXiRbYtE" \
+  -H "Content-Type: application/json" \
+  -d '{ "card": "bb1e8400-e29b-41d4-a716-446655440000" }'
+```
+
+```javascript fetch
+await fetch('https://api.upag.dev/v1/portal/payment-methods', {
+  method: 'POST',
+  headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+  body: JSON.stringify({ card: cardId }),
+});
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const { portal } = new Upag({ apiKey: token, baseURL: 'https://api.upag.dev/v1' });
+
+const card = await portal.attachCard({ card: cardId });
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField body="card" type="string" required>
+  UUID do cartão devolvido por [Criar cartão](../cards/create).
+</ParamField>
+
+## Resposta
+
+`201 Created`
+
+```json Response
+{
+  "id": "bb1e8400-e29b-41d4-a716-446655440000",
+  "brand": "mastercard",
+  "lastDigits": "5454",
+  "expirationMonth": 8,
+  "expirationYear": 2031
+}
+```
+
+Vincular o mesmo cartão de novo devolve o cartão, sem erro.
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `403` | `BILLING_PORTAL_FEATURE_DISABLED` | A sessão não permite trocar o método de pagamento |
+| `404` | `CARD_NOT_FOUND` | Cartão inexistente ou de outra conta |
+| `409` | `CARD_ALREADY_ATTACHED` | O cartão já é de outro cliente |

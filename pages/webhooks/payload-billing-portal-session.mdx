@@ -1,0 +1,48 @@
+---
+title: 'Payload sessão do portal'
+description: 'Campo data no evento billing_portal.session.created'
+icon: 'id-card'
+sidebarTitle: 'Sessão do portal'
+---
+
+Evento: `billing_portal.session.created`, quando você cria uma [sessão do portal](../billing-portal/sessions-reference).
+
+`data` é a sessão **sem** `url` e sem o token: o link do portal só aparece na resposta de [Criar sessão](../billing-portal/create-session).
+
+```json
+{
+  "id": "880e8400-e29b-41d4-a716-446655440000",
+  "event": "billing_portal.session.created",
+  "createdAt": "2026-11-16T12:00:00.312Z",
+  "data": {
+    "id": "7c2e9a41-3b5d-4f60-8e17-9d0a2c4b6e83",
+    "customer": "660e8400-e29b-41d4-a716-446655440001",
+    "configuration": "5b1f0c2e-8d4a-4e6b-9f31-7a2c0e9d4b18",
+    "flow": null,
+    "returnUrl": "https://sualoja.com/conta",
+    "paymentMethodUpdate": true,
+    "subscriptionUpdate": false,
+    "prorationBehavior": "create_prorations",
+    "downgradeTiming": "period_end",
+    "expiresAt": "2026-11-16T13:00:00.000Z",
+    "createdAt": "2026-11-16T12:00:00.000Z"
+  }
+}
+```
+
+## Campos
+
+| Campo | Tipo | Descrição |
+| ----- | ---- | --------- |
+| `id` | `string (uuid)` | Sessão |
+| `customer` | `string (uuid)` | Cliente |
+| `configuration` | `string (uuid)` | [Configuração](../billing-portal/configurations-reference) copiada |
+| `flow` | `object \| null` | `{ type, subscription }`, com `type` `payment_method_update` ou `subscription_update` |
+| `returnUrl` | `string \| null` | Para onde o portal leva o cliente ao sair |
+| `paymentMethodUpdate` / `subscriptionUpdate` | `boolean` | O que a sessão permite |
+| `prorationBehavior` | `string` | `create_prorations` ou `none` |
+| `downgradeTiming` | `string` | `period_end` ou `immediately` |
+| `expiresAt` | `string` | ISO 8601 |
+| `createdAt` | `string` | ISO 8601 |
+
+As mudanças que o cliente faz no portal chegam como `subscription.updated` com o campo [`source`](./payload-subscription#mudanças-feitas-pelo-cliente).

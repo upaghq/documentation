@@ -1,0 +1,120 @@
+---
+title: 'Configurações do portal'
+description: 'Objeto Configuração do portal de cobrança: o que o cliente pode fazer e para quais preços pode trocar'
+sidebarTitle: 'Configurações'
+---
+
+O portal de cobrança é a página em que o seu cliente gerencia a própria assinatura: troca o método de pagamento e, quando você permite, troca de plano dentro do mesmo produto. Uma **configuração** define o que o portal oferece. Cada [sessão](./sessions-reference) copia a configuração no momento em que é criada, então editar a configuração depois não muda sessões já abertas.
+
+<Warning>
+  O portal de cobrança precisa estar habilitado para a conta. Até lá, todas as rotas de `/billing-portal` e `/portal` respondem `403` com o código `feature_flag_disabled`. Peça a habilitação ao suporte. Veja [Erros](../guides/errors#recurso-não-habilitado).
+</Warning>
+
+Os endpoints exigem **chave secreta** (`sk_…`).
+
+| Método | Path | Permissão |
+| ------ | ---- | --------- |
+| `POST` | `/v1/billing-portal/configurations` | `billing_portal.write` |
+| `GET` | `/v1/billing-portal/configurations` | `billing_portal.read` |
+| `GET` | `/v1/billing-portal/configurations/{configurationId}` | `billing_portal.read` |
+| `PATCH` | `/v1/billing-portal/configurations/{configurationId}` | `billing_portal.write` |
+
+<Note>
+  Chaves criadas antes do portal não têm as permissões `billing_portal.*`: edite a chave para incluí-las.
+</Note>
+
+## Estrutura
+
+```json
+{
+  "id": "5b1f0c2e-8d4a-4e6b-9f31-7a2c0e9d4b18",
+  "name": "Planos Cloakup",
+  "isDefault": true,
+  "active": true,
+  "paymentMethodUpdate": true,
+  "subscriptionUpdate": true,
+  "prorationBehavior": "create_prorations",
+  "downgradeTiming": "period_end",
+  "defaultReturnUrl": "https://sualoja.com/conta",
+  "products": [
+    {
+      "product": "0b1e8400-e29b-41d4-a716-446655440000",
+      "prices": [
+        "0c1e8400-e29b-41d4-a716-446655440000",
+        "0d1e8400-e29b-41d4-a716-446655440000"
+      ]
+    }
+  ],
+  "createdAt": "2026-11-16T12:00:00.000Z",
+  "updatedAt": "2026-11-16T12:00:00.000Z"
+}
+```
+
+## Atributos
+
+<ParamField body="id" type="string">
+  UUID da configuração.
+</ParamField>
+
+<ParamField body="name" type="string | null">
+  Nome para você identificar a configuração. `null` na default criada automaticamente.
+</ParamField>
+
+<ParamField body="isDefault" type="boolean">
+  A configuração usada quando a [sessão](./create-session) não informa uma. Cada conta tem no máximo uma default. Marcar outra como default desmarca a anterior.
+</ParamField>
+
+<ParamField body="active" type="boolean">
+  Configuração inativa não abre sessões novas. A default não pode ser desativada.
+</ParamField>
+
+<ParamField body="paymentMethodUpdate" type="boolean">
+  O cliente pode cadastrar cartão e trocar o método de pagamento das assinaturas. Padrão `true`.
+</ParamField>
+
+<ParamField body="subscriptionUpdate" type="boolean">
+  O cliente pode trocar o preço de um item por outro preço do mesmo produto. Exige ao menos um preço em `products`. Padrão `false`.
+</ParamField>
+
+<ParamField body="prorationBehavior" type="string">
+  Como uma troca de plano acerta o período atual. Padrão `create_prorations`.
+  - `create_prorations`: no upgrade, o cliente paga a diferença proporcional num checkout antes da troca valer; no downgrade imediato, a parte não usada vira crédito no [saldo do cliente](../customers/balance).
+  - `none`: a troca não cobra nem credita nada; o novo valor vale a partir da próxima renovação.
+</ParamField>
+
+<ParamField body="downgradeTiming" type="string">
+  Quando um downgrade vale. Padrão `period_end`.
+  - `period_end`: a troca fica agendada para a renovação.
+  - `immediately`: a troca vale na hora.
+</ParamField>
+
+<ParamField body="defaultReturnUrl" type="string | null">
+  Para onde o portal leva o cliente ao sair, quando a sessão não informa `returnUrl`. URL de até 2048 caracteres.
+</ParamField>
+
+<ParamField body="products" type="array">
+  Os preços para os quais o cliente pode trocar, agrupados por produto: `[{ product, prices }]`, ordenados por produto e por preço. O cliente só vê preços do mesmo produto que já assina.
+</ParamField>
+
+<ParamField body="createdAt" type="string">
+  ISO 8601.
+</ParamField>
+
+<ParamField body="updatedAt" type="string">
+  ISO 8601.
+</ParamField>
+
+## Preços permitidos
+
+Cada preço em `products` precisa:
+
+- ser da sua conta (senão `404 PRODUCT_NOT_FOUND`);
+- estar ativo (senão `400 PRICE_ARCHIVED`);
+- ser recorrente (senão `422 BILLING_PORTAL_PRICE_NOT_RECURRING`);
+- pertencer ao `product` em que foi listado (senão `422 BILLING_PORTAL_PRICE_PRODUCT_MISMATCH`).
+
+Um preço [arquivado](../prices/update) depois de entrar na configuração continua nela: reenviar a mesma lista não falha, mas o portal só oferece preços ativos.
+
+## Configuração default
+
+Quando você cria uma [sessão](./create-session) sem `configuration` e a conta ainda não tem default, a API cria uma com os valores padrão (`paymentMethodUpdate: true`, `subscriptionUpdate: false`, `create_prorations`, `period_end`) e a usa. Para mudar a default, marque outra configuração com `isDefault: true`. Desmarcar a default atual responde `422 BILLING_PORTAL_DEFAULT_CONFIGURATION_UNSET`.

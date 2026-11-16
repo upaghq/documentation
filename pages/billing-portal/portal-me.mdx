@@ -1,0 +1,140 @@
+---
+title: 'Dados do portal'
+description: 'Cliente, cartões, assinaturas e opções da sessão do portal'
+sidebarTitle: 'Dados do portal'
+api: 'GET https://api.upag.io/v1/portal/me'
+---
+
+A página inicial do portal: quem é o cliente e o que a sessão deixa ele gerenciar. Autenticação pelo token da sessão (veja [Portal do cliente](./portal-overview)).
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.dev/v1/portal/me \
+  -H "Authorization: Bearer kV3n9xQ2mT8pZr4LwB6yHc1sDf7GjA0eNu5oXiRbYtE"
+```
+
+```javascript fetch
+const response = await fetch('https://api.upag.dev/v1/portal/me', {
+  headers: { Authorization: `Bearer ${token}` },
+});
+const me = await response.json();
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const { portal } = new Upag({ apiKey: token, baseURL: 'https://api.upag.dev/v1' });
+
+const me = await portal.me();
+```
+</CodeGroup>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "session": {
+    "id": "7c2e9a41-3b5d-4f60-8e17-9d0a2c4b6e83",
+    "flow": null,
+    "returnUrl": "https://sualoja.com/conta",
+    "paymentMethodUpdate": true,
+    "subscriptionUpdate": true,
+    "expiresAt": "2026-11-16T13:00:00.000Z"
+  },
+  "customer": {
+    "id": "660e8400-e29b-41d4-a716-446655440001",
+    "name": "Ana Souza",
+    "email": "ana@exemplo.com",
+    "document": { "type": "cpf", "number": "123.***.***-09" },
+    "cards": [
+      {
+        "id": "aa1e8400-e29b-41d4-a716-446655440000",
+        "brand": "visa",
+        "lastDigits": "4242",
+        "expirationMonth": 12,
+        "expirationYear": 2030
+      }
+    ]
+  },
+  "publishableKey": "pk_test_9a8b7c6d5e4f",
+  "subscriptions": [
+    {
+      "id": "ff1e8400-e29b-41d4-a716-446655440000",
+      "customer": "660e8400-e29b-41d4-a716-446655440001",
+      "paymentMethod": "card",
+      "card": "aa1e8400-e29b-41d4-a716-446655440000",
+      "status": "active",
+      "currency": "brl",
+      "interval": "month",
+      "intervalCount": 1,
+      "currentPeriodStart": "2026-11-01T00:00:00.000Z",
+      "currentPeriodEnd": "2026-12-01T00:00:00.000Z",
+      "items": [
+        {
+          "id": "0a1e8400-e29b-41d4-a716-446655440000",
+          "product": "0b1e8400-e29b-41d4-a716-446655440000",
+          "price": "0c1e8400-e29b-41d4-a716-446655440000",
+          "name": "Plano Pro",
+          "amount": 9900,
+          "quantity": 1,
+          "totalAmount": 9900,
+          "eligiblePrices": [
+            {
+              "id": "0d1e8400-e29b-41d4-a716-446655440000",
+              "name": "Plano Business",
+              "billingType": "recurring",
+              "interval": "month",
+              "intervalCount": 1,
+              "currency": "brl",
+              "amount": 19900,
+              "metadata": {},
+              "active": true,
+              "createdAt": "2026-10-01T00:00:00.000Z",
+              "updatedAt": "2026-10-01T00:00:00.000Z"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "paymentMethods": ["pix", "card"]
+}
+```
+
+A assinatura vem no mesmo formato do [payload de assinatura](../webhooks/payload-subscription) (trecho omitido acima), com `eligiblePrices` em cada item.
+
+<ParamField body="session" type="object">
+  `id`, `flow`, `returnUrl`, `expiresAt` e as permissões da sessão (`paymentMethodUpdate`, `subscriptionUpdate`).
+</ParamField>
+
+<ParamField body="customer" type="object">
+  O cliente com dados mascarados: documento e telefone parcialmente ocultos. `cards` traz os cartões utilizáveis (ativos e não vencidos), o padrão primeiro.
+</ParamField>
+
+<ParamField body="publishableKey" type="string">
+  Chave publicável da conta para tokenizar um cartão novo em [Criar cartão](../cards/create). Se a conta não tem uma que possa ser exibida, a API cria.
+</ParamField>
+
+<ParamField body="subscriptions" type="array">
+  As assinaturas do cliente que ainda podem mudar (todas exceto canceladas, void e encerradas). Com `flow`, só a assinatura do flow.
+</ParamField>
+
+<ParamField body="subscriptions[].items[].eligiblePrices" type="array">
+  [Preços](../prices/reference) para os quais o item pode trocar: outros preços do **mesmo produto** permitidos na sessão, ativos, recorrentes, na moeda e no intervalo da assinatura. Vazio quando a sessão não permite troca de plano.
+</ParamField>
+
+<ParamField body="paymentMethods" type="array">
+  Métodos ativos na conta: `pix`, `card` e/ou `boleto`.
+</ParamField>
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `401` | `AUTHENTICATION_REQUIRED` | Token ausente, desconhecido ou expirado |
+| `403` | `feature_flag_disabled` | Portal de cobrança não habilitado para a conta |
+| `404` | `CUSTOMER_NOT_FOUND` | O cliente da sessão foi excluído |

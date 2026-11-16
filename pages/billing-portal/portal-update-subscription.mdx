@@ -1,0 +1,133 @@
+---
+title: 'Trocar plano'
+description: 'Troca um item da assinatura para outro preço do mesmo produto'
+sidebarTitle: 'Trocar plano'
+api: 'POST https://api.upag.io/v1/portal/subscriptions/{subscription}/update'
+---
+
+Troca o preço de um item por outro preço do **mesmo produto**, entre os permitidos na sessão. O que acontece depende da [configuração](./configurations-reference) copiada pela sessão.
+
+Exige `subscriptionUpdate` na sessão. Autenticação pelo token da sessão.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/portal/subscriptions/ff1e8400-e29b-41d4-a716-446655440000/update \
+  -H "Authorization: Bearer kV3n9xQ2mT8pZr4LwB6yHc1sDf7GjA0eNu5oXiRbYtE" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 6f2b1c84-upgrade-business" \
+  -d '{ "item": "0a1e8400-e29b-41d4-a716-446655440000", "price": "0d1e8400-e29b-41d4-a716-446655440000" }'
+```
+
+```javascript fetch
+const response = await fetch(`https://api.upag.dev/v1/portal/subscriptions/${subscriptionId}/update`, {
+  method: 'POST',
+  headers: {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+    'Idempotency-Key': crypto.randomUUID(),
+  },
+  body: JSON.stringify({ item: itemId, price: priceId }),
+});
+const { outcome, checkoutUrl } = await response.json();
+if (outcome === 'requires_payment') location.href = checkoutUrl;
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const { portal } = new Upag({ apiKey: token, baseURL: 'https://api.upag.dev/v1' });
+
+const { outcome, checkoutUrl } = await portal.updateSubscription(
+  subscriptionId,
+  { item: itemId, price: priceId },
+  { idempotencyKey: '6f2b1c84-upgrade-business' },
+);
+// em 'requires_payment', leve o cliente para checkoutUrl
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField header="Idempotency-Key" type="string">
+  Opcional, até 255 caracteres. Repetir a chave com o mesmo `item` e `price` devolve o resultado da primeira chamada sem trocar de novo; com outro corpo responde `422 BILLING_PORTAL_IDEMPOTENCY_KEY_REUSED`.
+</ParamField>
+
+<ParamField path="subscription" type="string" required>
+  UUID da assinatura.
+</ParamField>
+
+<ParamField body="item" type="string" required>
+  UUID do item da assinatura.
+</ParamField>
+
+<ParamField body="price" type="string" required>
+  UUID do novo preço, entre os `eligiblePrices` do item em [Dados do portal](./portal-me).
+</ParamField>
+
+## O que acontece
+
+O novo total do item (`price.amount × quantity`) é comparado com o atual:
+
+| Troca | Configuração | `outcome` | Efeito |
+| ----- | ------------ | --------- | ------ |
+| Mesmo valor | qualquer | `applied` | Troca na hora, sem cobrança nem crédito |
+| Upgrade | `create_prorations` | `requires_payment` | Cria um checkout com a diferença proporcional, nos métodos ativos da conta; a troca vale quando o cliente pagar |
+| Upgrade | `none` | `applied` | Troca na hora; o novo valor vale na próxima renovação |
+| Downgrade | `period_end` | `scheduled` | Agenda a troca para a renovação |
+| Downgrade | `immediately` + `none` | `applied` | Troca na hora, sem crédito |
+| Downgrade | `immediately` + `create_prorations` | `applied` | Troca na hora e credita a parte não usada no [saldo do cliente](../customers/balance), tipo `proration` |
+
+- A proration só vale para assinatura `active`. Em teste (`trialing`) ou com pagamento pendente (`past_due`) não há período pago para acertar: a troca vale na hora, sem cobrança nem crédito.
+- Um upgrade prorateado sem nada a cobrar (por exemplo, com cupom de 100% ou no fim do período) também vale na hora, sem checkout.
+- Uma troca nova substitui a troca agendada antes no mesmo item: um downgrade agendado não desfaz, na renovação, um upgrade feito depois.
+- As trocas aplicadas na hora disparam `subscription.updated` com [`source`](../webhooks/payload-subscription#mudanças-feitas-pelo-cliente). A troca feita depois do pagamento do checkout dispara sem `source`.
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "outcome": "requires_payment",
+  "subscription": { "id": "ff1e8400-e29b-41d4-a716-446655440000", "status": "active", "items": [] },
+  "checkoutSession": "9e4d2b17-6a3c-4f58-b0e1-2c7a9d5f3b64",
+  "checkoutUrl": "https://checkout.upag.io/cs/Kp3mX9qT",
+  "customerBalanceTransaction": null
+}
+```
+
+<ParamField body="outcome" type="string">
+  `applied`, `scheduled` ou `requires_payment`.
+</ParamField>
+
+<ParamField body="subscription" type="object">
+  A assinatura depois da chamada, no formato do [payload de assinatura](../webhooks/payload-subscription). Em `requires_payment` e `scheduled` o item ainda tem o preço antigo.
+</ParamField>
+
+<ParamField body="checkoutSession" type="string | null">
+  UUID da sessão de checkout em `requires_payment`.
+</ParamField>
+
+<ParamField body="checkoutUrl" type="string | null">
+  Para onde levar o cliente para pagar a diferença, em `requires_payment`.
+</ParamField>
+
+<ParamField body="customerBalanceTransaction" type="string | null">
+  UUID da [transação de saldo](../customers/balance-transactions/reference) com o crédito do downgrade imediato prorateado.
+</ParamField>
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `400` | `SUBSCRIPTION_NOT_EDITABLE` | A assinatura está cancelada, void ou encerrada |
+| `403` | `BILLING_PORTAL_FEATURE_DISABLED` | A sessão não permite trocar de plano |
+| `404` | `SUBSCRIPTION_NOT_FOUND` | A assinatura não é do cliente da sessão, ou está fora do `flow` |
+| `404` | `SUBSCRIPTION_ITEM_NOT_FOUND` | O item não é da assinatura |
+| `409` | `SUBSCRIPTION_CHANGED` | A assinatura mudou durante a chamada (outra alteração, ou a mesma troca enviada duas vezes ao mesmo tempo). Nada foi alterado nem creditado; recarregue e tente de novo |
+| `422` | `BILLING_PORTAL_PRICE_NOT_ELIGIBLE` | O preço não está em `eligiblePrices` do item |
+| `422` | `BILLING_PORTAL_IDEMPOTENCY_KEY_REUSED` | `Idempotency-Key` já usada para outra troca |
+| `422` | `PAYMENT_METHOD_AMOUNT_TOO_LOW` | A diferença do upgrade fica abaixo do valor mínimo dos métodos de pagamento da conta |
+| `422` | `PAYMENT_METHOD_AMOUNT_TOO_HIGH` | A diferença do upgrade passa do valor máximo de um método de pagamento da conta |

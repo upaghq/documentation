@@ -44,6 +44,7 @@ Todos os endpoints exigem **chave secreta** (`sk_…`). Valores sempre em **cent
   - `adjustment`: ajuste criado por você ([Criar transação](./create)) ou pelo dashboard.
   - `applied_to_invoice`: saldo aplicado a uma fatura quando ela foi emitida.
   - `unapplied_from_invoice`: saldo devolvido porque a fatura em que tinha sido aplicado não foi paga (anulada ou abandonada).
+  - `proration`: crédito da parte não usada de um plano, quando o cliente faz um downgrade imediato no [portal de cobrança](../../billing-portal/portal-update-subscription) com proration.
 </ParamField>
 
 <ParamField body="amount" type="integer">

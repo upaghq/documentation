@@ -110,6 +110,8 @@ Fluxo completo em [Cartão com 3DS](../guides/card-3ds).
 | `paymentLinks` | `create`, `retrieve`, `update`, `list`, `createItem`, `updateItem`, `deleteItem`, `createBump`, `updateBump`, `deleteBump` |
 | `checkoutSessions` | `create`, `retrieve`, `update`, `delete`, `list`, `confirm`, `createThreeDSecureSession`, `applyCoupon`, `removeCoupon`, `listApps(id)` |
 | `checkoutLayouts` | `create`, `retrieve`, `update`, `delete`, `list` |
+| `billingPortal` | `billingPortal.configurations.create`, `retrieve`, `update`, `list`; `billingPortal.sessions.create` |
+| `portal` | `me`, `attachCard`, `updatePaymentMethod`, `previewSubscriptionUpdate`, `updateSubscription(subscriptionId, params, { idempotencyKey })`. Cliente criado com o token da sessão: veja [Portal do cliente](../billing-portal/portal-overview) |
 | `transfers` | `lookup`, `create(params, { idempotencyKey })`, `retrieve`, `list`, `receipt` |
 | `bills` | `lookup`, `create`, `list`, `retrieve`, `cancel`, `pay(id, params, { idempotencyKey })` |
 | `billPayments` | `list`, `retrieve`, `receipt(id, { format })`, `cancel` |
@@ -121,14 +123,14 @@ Fluxo completo em [Cartão com 3DS](../guides/card-3ds).
 | `me` | `retrieve` |
 
 <Note>
-  `subAccounts`, `apps`, `bills`, `billPayments`, `customers.cards`, `customers.balance`, `customers.balanceTransactions`, `simulate`, `receivables`, `subscriptions.proration`, os filtros de `webhooks.logs.list`, o `idempotencyKey` de `transfers.create` e os parâmetros `includes` estão no `Unreleased` do changelog do `upag-node`. Confira a versão instalada.
+  `subAccounts`, `apps`, `bills`, `billPayments`, `billingPortal`, `portal`, `customers.cards`, `customers.balance`, `customers.balanceTransactions`, `simulate`, `receivables`, `subscriptions.proration`, os filtros de `webhooks.logs.list`, o `idempotencyKey` de `transfers.create` e os parâmetros `includes` estão no `Unreleased` do changelog do `upag-node`. Confira a versão instalada.
 </Note>
 
 Cada página da Referência traz o exemplo do método correspondente.
 
 ## Idempotência
 
-`cards.create`, `threeDSecure.createSession` e `transfers.create` aceitam `{ idempotencyKey }` como último argumento (header `Idempotency-Key`). Em `bills.pay` ele é obrigatório:
+`cards.create`, `threeDSecure.createSession`, `transfers.create` e `portal.updateSubscription` aceitam `{ idempotencyKey }` como último argumento (header `Idempotency-Key`). Em `bills.pay` ele é obrigatório:
 
 ```javascript
 await upag.cards.create(card, { idempotencyKey: 'card-order-123' });
