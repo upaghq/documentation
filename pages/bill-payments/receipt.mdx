@@ -1,0 +1,67 @@
+---
+title: 'Comprovante'
+description: 'HTML do comprovante de um pagamento de conta'
+sidebarTitle: 'Comprovante'
+api: 'GET https://api.upag.io/v1/bill-payments/{paymentId}/receipt'
+---
+
+Retorna a página HTML do comprovante de um pagamento `paid`, em imagem (padrão) ou em PDF (a página já abre o diálogo de impressão do browser).
+
+Permissão: `bill.read`. Apenas chave secreta (`sk_…`).
+
+<Warning>
+  O pagamento de contas precisa estar habilitado para a conta. Até lá, a rota responde `403 feature_flag_disabled`. Veja [Erros](../guides/errors#recurso-não-habilitado).
+</Warning>
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl "https://api.upag.dev/v1/bill-payments/b7d2f4e8-1a3c-4e59-8f60-2c9d1e7a4b36/receipt?format=pdf" \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const html = await upag.billPayments.receipt('b7d2f4e8-1a3c-4e59-8f60-2c9d1e7a4b36', {
+  format: 'pdf',
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="paymentId" type="string (uuid)" required>
+  ID do pagamento.
+</ParamField>
+
+<ParamField query="format" type="string" default="image">
+  `image` ou `pdf`. Os dois devolvem HTML; `pdf` inclui o gatilho de impressão automática.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+| Header | Valor |
+| ------ | ----- |
+| `Content-Type` | `text/html; charset=utf-8` |
+
+O corpo é a página HTML do comprovante, com tipo de conta, valor, data do pagamento, vencimento, código de barras, beneficiário, pagador e o número de controle do banco.
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `403` | `feature_flag_disabled` | Pagamento de contas não habilitado para a conta |
+| `404` | `BILL_PAYMENT_NOT_FOUND` | Pagamento inexistente ou de outra conta |
+| `404` | `ACCOUNT_NOT_FOUND` | A conta da chave não foi encontrada |
+| `409` | `BILL_PAYMENT_NOT_PAID` | O pagamento ainda não está `paid` |
+| `422` | `VALIDATION_FAILED` | `paymentId` não é UUID, ou `format` inválido |

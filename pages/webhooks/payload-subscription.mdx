@@ -5,9 +5,9 @@ icon: 'repeat'
 sidebarTitle: 'Assinatura'
 ---
 
-Eventos: `subscription.created`, `subscription.active`, `subscription.trialing`, `subscription.trial_ending`, `subscription.past_due`, `subscription.incomplete`, `subscription.paused`, `subscription.canceled` e `subscription.void`.
+Eventos: `subscription.created`, `subscription.active`, `subscription.trialing`, `subscription.trial_ending`, `subscription.past_due`, `subscription.incomplete`, `subscription.paused`, `subscription.canceled`, `subscription.void`, `subscription.ended` e `subscription.updated`.
 
-`data` é a [assinatura](../subscriptions/reference). Entidades relacionadas vêm como id:
+`data` é a [assinatura](../subscriptions/reference). Entidades relacionadas vêm sempre como id (o `includes` da API não vale para webhooks):
 
 ```json
 {
@@ -24,6 +24,8 @@ Eventos: `subscription.created`, `subscription.active`, `subscription.trialing`,
     "interval": "month",
     "intervalCount": 1,
     "cancelAtPeriodEnd": false,
+    "maxCycles": null,
+    "currentCycle": 1,
     "startDate": "2026-03-18T12:30:00.000Z",
     "endDate": null,
     "trialStartDate": null,
@@ -58,23 +60,26 @@ Eventos: `subscription.created`, `subscription.active`, `subscription.trialing`,
 | ----- | ---- | --------- |
 | `id` | `string (uuid)` | Assinatura |
 | `customer` | `string` | Id do cliente |
-| `paymentMethod` | `string \| null` | `pix` ou `card` |
+| `paymentMethod` | `string \| null` | `pix`, `card` ou `boleto` |
 | `card` | `string \| null` | Id do cartão, quando a assinatura cobra no cartão |
-| `status` | `string` | `active`, `canceled`, `past_due`, `trialing`, `incomplete`, `paused` ou `void` |
+| `status` | `string` | `active`, `canceled`, `past_due`, `trialing`, `incomplete`, `paused`, `void` ou `ended` |
 | `currency` | `string` | `brl` ou `usd` |
 | `interval` | `string` | `day`, `week`, `month` ou `year` |
 | `intervalCount` | `integer` | Quantos `interval` por ciclo |
 | `cancelAtPeriodEnd` | `boolean` | Cancela ao fim do período atual |
-| `startDate` / `endDate` | `string \| null` | ISO 8601 |
+| `maxCycles` | `integer \| null` | Quantos períodos a assinatura dura; `null` renova até ser cancelada |
+| `currentCycle` | `integer` | Períodos iniciados até agora, contando o atual; `0` antes do primeiro |
+| `startDate` / `endDate` | `string \| null` | ISO 8601. Com `maxCycles`, `endDate` é preenchido quando o último período começa |
 | `trialStartDate` / `trialEndDate` | `string \| null` | ISO 8601, período de teste |
 | `trialEndBehavior` | `string \| null` | Sem método de pagamento ao fim do teste: `create_invoice` (cobra o primeiro período por fatura Pix) ou `cancel` |
 | `currentPeriodStart` / `currentPeriodEnd` | `string \| null` | ISO 8601, período vigente |
 | `canceledAt` | `string \| null` | ISO 8601 |
-| `cancellationReason` | `string \| null` | `low_quality`, `missing_features`, `other`, `switched_service`, `too_complex`, `too_expensive`, `unused` ou `missing_payment_method` (definido pelo sistema) |
+| `cancellationReason` | `string \| null` | `low_quality`, `missing_features`, `other`, `switched_service`, `too_complex`, `too_expensive`, `unused`, ou, definidos pelo sistema, `missing_payment_method` e `payment_failed` |
 | `items` | `array` | Itens ativos: `id`, `product`, `price`, `name`, `amount` (unitário), `quantity`, `totalAmount`, `createdAt`, `updatedAt` |
 | `createdAt` | `string` | ISO 8601 |
 | `updatedAt` | `string` | ISO 8601 |
 
 - Uma assinatura nova dispara `subscription.created` e, em seguida, `subscription.incomplete`.
-- Cada mudança de status dispara o evento do novo status.
+- Cada mudança de status dispara o evento do novo status. `subscription.ended` dispara quando o último período de `maxCycles` acaba; `subscription.canceled` com `cancellationReason: "payment_failed"`, quando todas as tentativas de cobrar a renovação falham.
+- `subscription.updated` dispara quando você altera a assinatura ([atualizar](../subscriptions/update), [cancelar no fim do período](../subscriptions/cancel)) ou troca itens na hora. Mudanças agendadas para o fim do período não disparam o evento ao serem criadas.
 - `subscription.trial_ending` dispara uma vez por teste, 3 dias antes de `trialEndDate`.

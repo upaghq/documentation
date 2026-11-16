@@ -1,6 +1,6 @@
 ---
 title: 'Confirmar sessão de checkout'
-description: 'Paga a sessão com Pix ou cartão, ou inicia um teste grátis guardando um cartão'
+description: 'Paga a sessão com Pix, cartão ou boleto, ou inicia um teste grátis guardando um cartão'
 sidebarTitle: 'Confirmar'
 api: 'POST https://api.upag.io/v1/checkout/sessions/{sessionId}/confirm'
 ---
@@ -9,6 +9,7 @@ Paga a sessão. Na primeira chamada a Upag resolve o pagador, cria a **fatura** 
 
 - **Cartão**: a resposta já traz o resultado. Aprovado, a sessão fica `complete`; recusado, continua `open` e dá para tentar de novo.
 - **Pix**: a sessão fica `open` com o QR code na cobrança, e vira `complete` quando o pagamento é confirmado. Acompanhe por [webhook](../webhooks/payload-checkout).
+- **Boleto**: a sessão fica `open` com o boleto (`barcode`, `digitableLine`, `pdfUrl`) na cobrança, e vira `complete` quando ele é pago. O cliente precisa ter endereço e telefone, como em [Pagar fatura](../invoices/pay).
 - **Nada a pagar hoje** (um teste cobre todos os itens): não há cobrança nem fatura. A assinatura nasce `trialing` e a sessão fica `complete` na hora. Envie `paymentMethod` em vez de `charge`. Veja [Teste grátis](../guides/free-trial).
 
 Dois chamadores podem confirmar, com a mesma rota e respostas diferentes:
@@ -62,7 +63,7 @@ const result = await upag.checkoutSessions.confirm('4f9d2b71-6c03-4e58-9a1d-8b3e
 
 ### Cartão
 
-Tokenize o cartão antes ([Criar cartão](../cards/create)) e envie o `id`. Com 3D Secure, abra antes a [sessão 3DS da sessão de checkout](./three-d-secure) e envie o ID dela em `threeDSecureSession`.
+Tokenize o cartão antes ([Criar cartão](../cards/create)) e envie o `id`. Com 3D Secure, abra antes a [sessão 3DS da sessão de checkout](./three-d-secure) e envie o ID dela em `threeDSecureSession`. Se você usa o perfilador antifraude no navegador, envie a sessão de dispositivo dele em `deviceSession`.
 
 <CodeGroup>
 ```bash cURL
@@ -75,7 +76,8 @@ curl -X POST https://api.upag.dev/v1/checkout/sessions/4f9d2b71-6c03-4e58-9a1d-8
     "charge": {
       "method": "card",
       "card": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
-      "installments": 2
+      "installments": 2,
+      "deviceSession": "b3f1c2d4-5e6a-4b7c-8d9e-0f1a2b3c4d5e"
     }
   }'
 ```
@@ -88,6 +90,7 @@ const result = await upag.checkoutSessions.confirm('4f9d2b71-6c03-4e58-9a1d-8b3e
     method: 'card',
     card: '5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15',
     installments: 2,
+    deviceSession: 'b3f1c2d4-5e6a-4b7c-8d9e-0f1a2b3c4d5e',
   },
 });
 ```
@@ -119,7 +122,7 @@ const result = await upag.checkoutSessions.confirm('4f9d2b71-6c03-4e58-9a1d-8b3e
 
 ## Do navegador
 
-Com o `clientSecret` de [Iniciar sessão](./start). Os cartões são tokenizados no navegador com `upag.cards.create`, usando a chave pública.
+Com o `clientSecret` de [Iniciar sessão](./start) ou de [Obter sessão por código](./retrieve-by-code). Os cartões são tokenizados no navegador com `upag.cards.create`, usando a chave pública.
 
 <CodeGroup>
 ```bash cURL
@@ -180,6 +183,25 @@ if (paid.status === 'complete') {
 }
 ```
 
+#### Cartão salvo
+
+Numa sessão de [mudança de assinatura](./create) (`proration`) com valor a pagar e `card` entre os métodos, quando a conta tem cartões salvos habilitados, a [visão do pagador](./retrieve) lista os cartões do cliente em `customer.cards`. Um cartão que já é do cliente só pode ser cobrado do navegador com 3D Secure: abra a [sessão 3DS](./three-d-secure) com o `id` dele e confirme com `threeDSecureSession`. Sem isso a resposta é `422 CHECKOUT_SESSION_SAVED_CARD_REQUIRES_AUTHENTICATION`.
+
+```javascript upag-js
+const saved = session.customer.cards[0];
+
+const threeDS = await upag.checkout.createThreeDSecureSession(id, clientSecret, {
+  card: saved.id,
+  customer,
+});
+await upag.threeDSecure.authenticate({ clientSecret: threeDS.clientSecret });
+
+const paid = await upag.checkout.confirm(id, clientSecret, {
+  customer,
+  charge: { method: 'card', card: saved.id, threeDSecureSession: threeDS.id },
+});
+```
+
 Num teste sem nada a pagar hoje (`session.trial` presente e `session.amount === 0`), envie `paymentMethod` em vez de `charge`:
 
 ```javascript upag-js
@@ -221,9 +243,10 @@ O navegador é limitado a 10 confirmações por minuto por sessão e por IP, e n
 <ParamField body="charge" type="object">
   Como pagar. Obrigatório quando há valor a pagar hoje; proibido quando não há. Não pode vir junto de `paymentMethod`.
 
-  - `method` (obrigatório): `pix` ou `card`. Precisa estar em `paymentMethods` da sessão.
+  - `method` (obrigatório): `pix`, `card` ou `boleto`. Precisa estar em `paymentMethods` da sessão.
   - **Pix**: `dueDate` (ISO 8601, opcional): vencimento do QR code.
-  - **Cartão**: `card` (obrigatório, UUID de um [cartão tokenizado](../cards/create)), `installments` (1 a 12, padrão `1`), `threeDSecureSession`, `ipAddress`, `location` e `softDescriptor`, como em [Pagar fatura](../invoices/pay).
+  - **Cartão**: `card` (obrigatório, UUID de um [cartão tokenizado](../cards/create)), `installments` (1 a 12, padrão `1`), `threeDSecureSession`, `deviceSession`, `ipAddress`, `location` e `softDescriptor`, como em [Pagar fatura](../invoices/pay). `deviceSession` (até 500 caracteres) é a sessão de dispositivo do perfilador antifraude, única por tentativa; ela chega à cobrança como `meta.session_id`.
+  - **Boleto**: só `method`. O vencimento é definido pela Upag, e o endereço e o telefone vêm do cliente.
 </ParamField>
 
 <ParamField body="paymentMethod" type="object">
@@ -255,6 +278,7 @@ O navegador é limitado a 10 confirmações por minuto por sessão e por IP, e n
       "country": null,
       "zip": null
     },
+    "defaultCard": null,
     "createdAt": "2026-10-07T19:03:00.000Z",
     "updatedAt": "2026-10-07T19:03:00.000Z"
   },
@@ -266,11 +290,14 @@ O navegador é limitado a 10 confirmações por minuto por sessão e por IP, e n
     "trialEnd": null,
     "trialSettings": {
       "endBehavior": { "missingPaymentMethod": "create_invoice" }
-    }
+    },
+    "maxCycles": null
   },
   "paymentMethodCollection": "always",
+  "meta": {},
+  "proration": null,
   "status": "open",
-  "url": "https://checkout.upag.io/cs/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26",
+  "url": "https://checkout.upag.io/cs/Hq7Kd2xPzR4tWm9b",
   "expiresAt": "2026-10-08T19:00:00.000Z",
   "createdAt": "2026-10-07T19:00:00.000Z",
   "updatedAt": "2026-10-07T19:03:01.000Z",
@@ -289,6 +316,9 @@ O navegador é limitado a 10 confirmações por minuto por sessão e por IP, e n
     {
       "id": "b7e1c4a9-3d52-4f08-86a1-2c9d5e7f0b34",
       "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61",
+      "name": null,
+      "description": null,
+      "amount": null,
       "quantity": 1
     }
   ],
@@ -339,6 +369,7 @@ O navegador é limitado a 10 confirmações por minuto por sessão e por IP, e n
       }
     ],
     "discounts": [],
+    "adjustments": [],
     "payments": [
       {
         "charge": {
@@ -379,7 +410,7 @@ O navegador é limitado a 10 confirmações por minuto por sessão e por IP, e n
 {
   "id": "4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26",
   "status": "open",
-  "url": "https://checkout.upag.io/cs/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26",
+  "url": "https://checkout.upag.io/cs/Hq7Kd2xPzR4tWm9b",
   "paymentLink": "c3f81a5e-2b94-4d70-a6e3-9d0b7c1f4a58",
   "expiresAt": "2026-10-08T19:00:00.000Z",
   "createdAt": "2026-10-07T19:00:00.000Z",
@@ -438,7 +469,8 @@ O navegador é limitado a 10 confirmações por minuto por sessão e por IP, e n
     "id": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
     "name": "Maria Pagadora",
     "email": "maria@example.com",
-    "document": { "type": "cpf", "number": "390.***.***-05" }
+    "document": { "type": "cpf", "number": "390.***.***-05" },
+    "cards": []
   },
   "charge": {
     "id": "1f7d3c8a-4b52-4c9e-8a11-6d0e2f5b7c34",
@@ -450,9 +482,11 @@ O navegador é limitado a 10 confirmações por minuto por sessão e por IP, e n
     "paidAt": null,
     "card": null,
     "pix": {
+      "qrCodeUrl": "https://files.upag.io/pix-qr/6f1c2d3e-4a5b-4c6d-8e7f-9a0b1c2d3e4f.png",
       "copyPaste": "00020101021226930014br.gov.bcb.pix...",
       "expiresAt": "2026-10-07T19:13:01.000Z"
     },
+    "boleto": null,
     "error": null,
     "nextAction": null
   },
@@ -462,7 +496,7 @@ O navegador é limitado a 10 confirmações por minuto por sessão e por IP, e n
     "displayName": "Loja Exemplo",
     "legalName": "Loja Exemplo Ltda",
     "publishableKey": "pk_test_your_public_key",
-    "threeDSecureEnabled": false
+    "threeDSecureEnabled": true
   }
 }
 ```
@@ -486,6 +520,7 @@ Para um pagamento já aprovado, `status` da sessão vem `complete` e `charge.sta
 | `400` | `CHECKOUT_SESSION_PAYMENT_METHOD_REQUIRED` | Teste com `paymentMethodCollection: "always"` e sem `paymentMethod` |
 | `400` | `CHECKOUT_SESSION_PAYMENT_METHOD_NOT_ALLOWED` | O método não está em `paymentMethods` da sessão |
 | `400` | `CHECKOUT_SESSION_BUMP_INVALID` | Um `bumps[]` não é da sessão, ou se repete |
+| `422` | `CHECKOUT_SESSION_SAVED_CARD_REQUIRES_AUTHENTICATION` | Do navegador: o cartão já é do cliente (um cartão salvo) e não veio `threeDSecureSession`. Num teste sem nada a pagar hoje, um cartão salvo não pode ser usado em `paymentMethod` do navegador |
 | `422` | `VALIDATION_FAILED` | `charge` e `paymentMethod` juntos, `customer` com documento inválido etc. |
 | `429` | n/a | Do navegador: mais de 10 confirmações por minuto por sessão e IP |
 

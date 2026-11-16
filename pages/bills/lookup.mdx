@@ -1,0 +1,76 @@
+---
+title: 'Consultar conta'
+description: 'Consulta valor, vencimento e beneficiário de um código de barras sem registrar a conta'
+sidebarTitle: 'Consultar'
+api: 'POST https://api.upag.io/v1/bills/lookup'
+---
+
+Consulta no banco quanto um boleto ou conta de consumo custa hoje, para mostrar ao usuário antes de registrar e pagar. Nada é gravado.
+
+Permissão: `bill.read`. Apenas chave secreta (`sk_…`).
+
+<Warning>
+  O pagamento de contas precisa estar habilitado para a conta. Até lá, a rota responde `403 feature_flag_disabled`. Veja [Erros](../guides/errors#recurso-não-habilitado).
+</Warning>
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/bills/lookup \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{ "barcode": "34191.09008 00122.130370 50059.980008 1 00000000025000" }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const preview = await upag.bills.lookup({
+  barcode: '34191.09008 00122.130370 50059.980008 1 00000000025000',
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField body="barcode" type="string" required>
+  Código de barras lido ou linha digitável, com ou sem pontos e espaços. 1 a 60 caracteres.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "type": "boleto",
+  "barcode": "34191090080012213037050059980008100000025000",
+  "amount": 25000,
+  "dueDate": "2026-11-30",
+  "beneficiaryName": "Imobiliária Exemplo LTDA",
+  "beneficiaryTaxNumber": "12345678000199"
+}
+```
+
+`barcode` volta normalizado (44 dígitos). `amount` é o valor de hoje, em centavos, já com juros, multa ou desconto. Campos em [Referência](./reference).
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `400` | `ACCOUNT_NOT_ACTIVE` | A conta não está ativa |
+| `403` | `feature_flag_disabled` | Pagamento de contas não habilitado para a conta |
+| `409` | `BILL_ALREADY_PAID` | O banco informa que a conta já foi paga |
+| `422` | `BILL_BARCODE_INVALID` | Código de barras ou linha digitável inválido |
+| `422` | `BILL_BARCODE_NOT_SUPPORTED` | Tipo de conta ainda não aceito (tributos) |
+| `422` | `BILL_BARCODE_REJECTED` | O banco recusou o código. `message` traz o motivo |
+| `422` | `VALIDATION_FAILED` | `barcode` ausente ou com mais de 60 caracteres |
+
+Formato dos erros em [Erros](../guides/errors).

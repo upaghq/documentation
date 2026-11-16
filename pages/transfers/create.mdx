@@ -22,12 +22,14 @@ Permissão: `transfer.write`. Apenas chave secreta (`sk_…`). Transferência pa
 curl -X POST https://api.upag.dev/v1/transfers \
   -H "Authorization: Bearer sk_test_your_api_key" \
   -H "Content-Type: application/json" \
+  -H "Idempotency-Key: payout-10482" \
   -d '{
     "type": "key",
     "pixKey": "55ce1aae-0d2b-4d76-bc77-294d6407349e",
     "pixKeyType": "random",
     "amount": 10000,
-    "description": "Pagamento fornecedor"
+    "description": "Pagamento fornecedor",
+    "saveBeneficiary": true
   }'
 ```
 
@@ -36,13 +38,17 @@ import { Upag } from 'upag';
 
 const upag = new Upag('sk_test_your_api_key');
 
-const transfer = await upag.transfers.create({
-  type: 'key',
-  pixKey: '55ce1aae-0d2b-4d76-bc77-294d6407349e',
-  pixKeyType: 'random',
-  amount: 10000,
-  description: 'Pagamento fornecedor',
-});
+const transfer = await upag.transfers.create(
+  {
+    type: 'key',
+    pixKey: '55ce1aae-0d2b-4d76-bc77-294d6407349e',
+    pixKeyType: 'random',
+    amount: 10000,
+    description: 'Pagamento fornecedor',
+    saveBeneficiary: true,
+  },
+  { idempotencyKey: 'payout-10482' },
+);
 ```
 </CodeGroup>
 
@@ -75,6 +81,10 @@ O valor é lido do QR code (valor final, em centavos na resposta); não envie `a
 
 ## Parâmetros
 
+<ParamField header="Idempotency-Key" type="string">
+  Recomendado. Até 255 caracteres. Repetir a requisição com a mesma chave e o mesmo corpo devolve a transferência original com `200 OK`, sem enviar outro Pix. A mesma chave com outro corpo retorna `422 TRANSFER_IDEMPOTENCY_KEY_REUSED`. Use-a para repetir com segurança depois de um timeout.
+</ParamField>
+
 <ParamField body="type" type="string" required>
   `key` ou `hash`.
 </ParamField>
@@ -103,15 +113,20 @@ O valor é lido do QR code (valor final, em centavos na resposta); não envie `a
   Data do pagamento no formato `YYYY-MM-DD`. Padrão: hoje.
 </ParamField>
 
+<ParamField body="saveBeneficiary" type="boolean" default="false">
+  Só em `key`. Com `true`, salva o titular da chave como beneficiário da conta depois que o provedor aceita o Pix. Se não for possível salvar, a transferência segue normalmente.
+</ParamField>
+
 ## Resposta
 
-`201 Created`. A transferência vem com `transaction`, o débito lançado no extrato da conta.
+`201 Created` (ou `200 OK` ao repetir uma `Idempotency-Key`). A transferência vem com `transaction`, o débito lançado no extrato da conta.
 
 ```json Response
 {
   "id": "770e8400-e29b-41d4-a716-446655440000",
   "status": "processing",
   "direction": "out",
+  "method": "pix",
   "type": "key",
   "amount": 10000,
   "pixKey": "55ce1aae-0d2b-4d76-bc77-294d6407349e",
@@ -155,7 +170,10 @@ A transferência nasce em `processing`; o status final (`completed` ou `failed`)
 | ------ | -------- | ----- |
 | `400` | `Account is not active` | Conta inativa ou sem dados bancários para Pix |
 | `400` | `Os dados da conta de origem e destino são iguais` | Copia-e-cola da própria conta |
+| `400` | `BENEFICIARY_PIX_KEY_RESOLVED_TYPE_MISMATCH` | `key`: a chave existe, mas é de outro tipo que o `pixKeyType` enviado |
 | `403` | — | Chave sem `transfer.write`, ou chave publicável |
 | `404` | `Account not found` | Conta não encontrada |
-| `422` | `VALIDATION_FAILED` | Corpo inválido (inclusive `type: "beneficiary"`) |
-| `500` | `Transfer provider acceptance requires reconciliation` | O provedor aceitou o Pix mas o registro local falhou. Confira o status em [Listar transferências](./list) antes de enviar de novo |
+| `422` | `INVALID_BENEFICIARY_PIX_KEY` | `key`: `pixKey` não é válida para o `pixKeyType` informado |
+| `422` | `TRANSFER_IDEMPOTENCY_KEY_REUSED` | A `Idempotency-Key` já foi usada com outro corpo |
+| `422` | `VALIDATION_FAILED` | Corpo inválido (inclusive `type: "beneficiary"`), ou `Idempotency-Key` com mais de 255 caracteres |
+| `500` | `Transfer provider acceptance requires reconciliation` | O provedor aceitou o Pix mas o registro local falhou. Confira o status em [Listar transferências](./list) antes de enviar de novo, ou repita com a mesma `Idempotency-Key` |

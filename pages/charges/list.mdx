@@ -5,7 +5,7 @@ sidebarTitle: 'Listar'
 api: 'GET https://api.upag.io/v1/charges'
 ---
 
-Lista as cobranças (Pix e cartão) da conta, da mais recente para a mais antiga.
+Lista as cobranças (Pix, cartão e boleto) da conta, da mais recente para a mais antiga. Filtre por cliente ou status.
 
 Permissão: `charge.read`. Apenas chave secreta (`sk_…`).
 
@@ -21,6 +21,8 @@ curl -G https://api.upag.dev/v1/charges \
   -H "Authorization: Bearer sk_test_your_api_key" \
   -d "page=1" \
   -d "limit=15" \
+  -d "status=paid" \
+  -d "customer=8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83" \
   -d "includes=customer,items"
 ```
 
@@ -32,6 +34,8 @@ const upag = new Upag('sk_test_your_api_key');
 const { data, count } = await upag.charges.list({
   page: 1,
   limit: 15,
+  status: 'paid',
+  customer: '8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83',
   includes: 'customer,items',
 });
 ```
@@ -47,13 +51,21 @@ const { data, count } = await upag.charges.list({
   Itens por página, mínimo 1.
 </ParamField>
 
+<ParamField query="customer" type="string (uuid)">
+  Só as cobranças deste cliente.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Só as cobranças neste status: `pending`, `paid`, `expired`, `failed`, `in_review`, `refunded`, `partially_refunded` ou `chargeback`. Valor desconhecido retorna `422`.
+</ParamField>
+
 <ParamField query="includes" type="string">
-  Relações a embutir, separadas por vírgula: `customer` (objeto cliente no lugar do UUID) e `items` (lista de itens em cada cobrança). Valor desconhecido retorna `422`.
+  Relações a embutir, separadas por vírgula: `customer` (objeto cliente no lugar do UUID) e `items` (lista de itens em cada cobrança). `card` é aceito, mas não altera a resposta. Valor desconhecido retorna `422`.
 </ParamField>
 
 ## Resposta
 
-`200 OK`. `count` é o total de cobranças da conta (não só da página).
+`200 OK`. `count` é o total de cobranças que atendem aos filtros (não só da página).
 
 ```json Response
 {
@@ -68,6 +80,8 @@ const { data, count } = await upag.charges.list({
       "meta": null,
       "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
       "pix": {
+        "reference": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",
+        "qrCode": "00020101021226930014br.gov.bcb.pix...",
         "copyPaste": "00020101021226930014br.gov.bcb.pix...",
         "qrCodeUrl": "https://files.upag.io/pix-qr/6f1c2d3e-4a5b-4c6d-8e7f-9a0b1c2d3e4f.png",
         "expiresAt": "2026-07-28T12:00:00.000Z"

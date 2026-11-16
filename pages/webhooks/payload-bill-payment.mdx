@@ -1,0 +1,49 @@
+---
+title: 'Payload pagamento de conta'
+description: 'Campo data nos eventos bill_payment.*'
+icon: 'file-invoice-dollar'
+sidebarTitle: 'Pagamento de conta'
+---
+
+Eventos: `bill_payment.created`, `bill_payment.paid`, `bill_payment.failed`, `bill_payment.canceled`, `bill_payment.reversed` e `bill_payment.updated`.
+
+`bill_payment.created` sai quando o pagamento é criado, já com o débito reservado. Toda mudança de status emite `bill_payment.updated`; as mudanças para `paid`, `failed`, `canceled` e `reversed` emitem também o evento específico, antes do `updated`. `scheduled` e `awaiting_funds` só aparecem em `bill_payment.updated`.
+
+`data` é o pagamento de conta, no mesmo formato retornado pela API:
+
+```json
+{
+  "id": "880e8400-e29b-41d4-a716-446655440000",
+  "event": "bill_payment.paid",
+  "createdAt": "2026-11-13T15:20:04.612Z",
+  "data": {
+    "id": "b7d2f4e8-1a3c-4e59-8f60-2c9d1e7a4b36",
+    "bill": "3c9e7a10-52d4-4b8f-9e61-0a2f7d4c8b15",
+    "status": "paid",
+    "amount": 25000,
+    "scheduledFor": "2026-11-13",
+    "paidAt": "2026-11-13T15:20:03.000Z",
+    "receiptUrl": "https://api.upag.io/v1/accounts/0c8e9d2a-1b3f-4a6c-9e57-2d4f6a8b0c13/bill-payments/b7d2f4e8-1a3c-4e59-8f60-2c9d1e7a4b36/receipt",
+    "failureCode": null,
+    "createdAt": "2026-11-13T14:05:40.118Z",
+    "updatedAt": "2026-11-13T15:20:04.551Z"
+  }
+}
+```
+
+## Campos
+
+| Campo | Tipo | Descrição |
+| ----- | ---- | --------- |
+| `id` | `string (uuid)` | Pagamento de conta |
+| `bill` | `string (uuid)` | [Conta](../bills/reference) paga |
+| `status` | `string` | `pending`, `scheduled`, `awaiting_funds`, `paid`, `failed`, `canceled` ou `reversed` |
+| `amount` | `integer` | Valor em centavos |
+| `scheduledFor` | `string` | Dia do pagamento, `YYYY-MM-DD` |
+| `paidAt` | `string \| null` | ISO 8601 da liquidação |
+| `receiptUrl` | `string \| null` | Comprovante para o dashboard (exige sessão de usuário). Com chave de API, use [Comprovante](../bill-payments/receipt) |
+| `failureCode` | `string \| null` | Código de retorno do banco em `failed`, quando informado |
+| `createdAt` | `string` | ISO 8601 |
+| `updatedAt` | `string` | ISO 8601 |
+
+Em `failed`, `canceled` e `reversed` o valor volta para o saldo da conta. Detalhes: [Referência de pagamentos de conta](../bill-payments/reference).

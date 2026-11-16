@@ -141,7 +141,7 @@ Durante o teste, `startDate`, `currentPeriodStart` e `currentPeriodEnd` ficam `n
 | `subscription.trialing` | A assinatura entra em teste | Liberar o acesso de teste |
 | `subscription.trial_ending` | Uma vez, 3 dias antes do fim | Avisar o cliente que a cobrança vem aí |
 | `subscription.active` | O teste acabou e o primeiro período foi cobrado | Manter o acesso |
-| `subscription.past_due` | A cobrança do fim do teste falhou (ou ficou uma fatura aberta) | Pedir um novo método de pagamento |
+| `subscription.past_due` | A cobrança do fim do teste falhou (ou ficou uma fatura aberta) | Levar o cliente a pagar a fatura aberta: trocar o método da assinatura não dispara uma nova cobrança |
 | `subscription.canceled` | O teste acabou sem método de pagamento com `cancel` (motivo `missing_payment_method`) | Revogar o acesso |
 
 ```javascript Node.js SDK
@@ -164,7 +164,7 @@ app.post('/webhooks/upag', express.raw({ type: '*/*' }), async (req, res) => {
 
 O que acontece no último dia depende do que o cliente deixou:
 
-- **Com cartão**: a Upag cobra o primeiro período no cartão, à vista. Aprovado, a assinatura vira `active`; recusado, `past_due` e novas tentativas.
+- **Com cartão**: a Upag cobra o primeiro período no cartão, à vista. Aprovado, a assinatura vira `active`. Recusado, ela vai para `past_due` e a fatura do primeiro período fica aberta até ser [paga](../invoices/pay). As [novas tentativas automáticas](../subscriptions/reference#novas-tentativas) valem só para renovações.
 - **Sem cartão e `create_invoice`**: gera uma fatura com Pix vencendo em 3 dias.
 - **Sem cartão e `cancel`**: a assinatura é cancelada.
 

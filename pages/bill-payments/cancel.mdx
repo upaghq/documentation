@@ -1,0 +1,70 @@
+---
+title: 'Cancelar pagamento de conta'
+description: 'Cancela um pagamento agendado e devolve o débito'
+sidebarTitle: 'Cancelar'
+api: 'POST https://api.upag.io/v1/bill-payments/{paymentId}/cancel'
+---
+
+Cancela no banco um pagamento ainda não pago e devolve o valor ao saldo. Vale para pagamentos `scheduled` ou `awaiting_funds`, e para `pending` já aceito pelo banco. O cancelamento só é gravado depois que o banco confirma. A conta continua `open` e pode ser paga de novo.
+
+Permissão: `bill.write`. Apenas chave secreta (`sk_…`).
+
+<Warning>
+  O pagamento de contas precisa estar habilitado para a conta. Até lá, a rota responde `403 feature_flag_disabled`. Veja [Erros](../guides/errors#recurso-não-habilitado).
+</Warning>
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/bill-payments/b7d2f4e8-1a3c-4e59-8f60-2c9d1e7a4b36/cancel \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const payment = await upag.billPayments.cancel('b7d2f4e8-1a3c-4e59-8f60-2c9d1e7a4b36');
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="paymentId" type="string (uuid)" required>
+  ID do pagamento.
+</ParamField>
+
+## Resposta
+
+`200 OK`. O pagamento com `status: "canceled"`.
+
+```json Response
+{
+  "id": "b7d2f4e8-1a3c-4e59-8f60-2c9d1e7a4b36",
+  "bill": "3c9e7a10-52d4-4b8f-9e61-0a2f7d4c8b15",
+  "status": "canceled",
+  "amount": 25000,
+  "scheduledFor": "2026-11-28",
+  "paidAt": null,
+  "receiptUrl": null,
+  "failureCode": null,
+  "createdAt": "2026-11-13T14:05:40.118Z",
+  "updatedAt": "2026-11-20T10:12:31.440Z"
+}
+```
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `403` | `feature_flag_disabled` | Pagamento de contas não habilitado para a conta |
+| `404` | `BILL_PAYMENT_NOT_FOUND` | Pagamento inexistente ou de outra conta |
+| `409` | `BILL_PAYMENT_INVALID_TRANSITION` | O pagamento não pode ser cancelado no status atual (já pago, final, ou `pending` ainda sem resposta do banco) |
+| `409` | `BILL_PAYMENT_NOT_CANCELABLE` | O banco recusou o cancelamento. `message` traz o motivo |
+| `422` | `VALIDATION_FAILED` | `paymentId` não é UUID |

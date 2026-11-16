@@ -68,6 +68,17 @@ O `url` do link tem a forma `…/buy/{code}`. O `code` (o último trecho) é o q
 const code = new URL(link.url).pathname.split('/').pop();
 ```
 
+Para cobrar um valor livre, sem produto nem preço, crie um link `type: "fixed_amount"` com `amount` em centavos (mínimo 500):
+
+```javascript Node.js SDK
+const donation = await upag.paymentLinks.create({
+  type: 'fixed_amount',
+  name: 'Doação',
+  amount: 5000,
+  paymentMethods: ['pix', 'card'],
+});
+```
+
 Referência: [Criar link de pagamento](../payment-links/create). Para vender com teste grátis, veja [Teste grátis](./free-trial).
 
 ## 2. Abrir a sessão no navegador
@@ -83,7 +94,7 @@ const session = await upag.checkout.start(code, { utmSource: 'instagram' });
 const { id, clientSecret } = session;
 ```
 
-Guarde `id` e `clientSecret` (só vem nesta resposta). Se você só quer levar o pagador à página hospedada, `await upag.checkout.redirectToCheckout(code)` abre a sessão e redireciona para `url`.
+Guarde `id` e `clientSecret`. Se perder o `clientSecret`, recupere a sessão pelo código da `url` da sessão (`/cs/<code>`) com `upag.checkout.retrieveByCode(code)`, que emite um novo e invalida o anterior. Se você só quer levar o pagador à página hospedada, `await upag.checkout.redirectToCheckout(code)` abre a sessão e redireciona para `url`.
 
 A resposta já traz o que a página precisa: itens, `amount` em centavos, e as opções de parcelamento por método em `paymentMethods`. Para recarregar depois: `upag.checkout.retrieve(id, clientSecret)`. Referência: [Iniciar sessão](../checkout-sessions/start) e [Obter sessão (pagador)](../checkout-sessions/retrieve).
 
@@ -136,7 +147,9 @@ if (paid.status === 'complete') {
 }
 ```
 
-O cartão responde na hora: aprovado, a sessão fica `complete`; recusado, continua `open` e dá para tentar de novo (a mesma fatura é paga outra vez, e o pagador pode trocar para Pix). Com 3D Secure habilitado (`session.account.threeDSecureEnabled`), abra antes a [sessão 3DS do checkout](../checkout-sessions/three-d-secure) e envie `threeDSecureSession` no `charge`. Veja [Cartão com 3DS](./card-3ds).
+O cartão responde na hora: aprovado, a sessão fica `complete`; recusado, continua `open` e dá para tentar de novo (a mesma fatura é paga outra vez, e o pagador pode trocar para Pix). O 3D Secure do checkout está sempre disponível: para autenticar o cartão, abra antes a [sessão 3DS do checkout](../checkout-sessions/three-d-secure) e envie `threeDSecureSession` no `charge`, junto com `deviceSession` (`upag.antifraud.sessionId()`). Pagar com um cartão já salvo do cliente exige essa autenticação (`422 CHECKOUT_SESSION_SAVED_CARD_REQUIRES_AUTHENTICATION`). Veja [Cartão com 3DS](./card-3ds).
+
+Boleto: confirme com `charge: { method: 'boleto' }`, sem outros campos. O cliente precisa ter endereço e telefone.
 
 Cupom: se o link tem `couponEnabled`, use `upag.checkout.applyCoupon(id, clientSecret, { code })` antes de confirmar ([Aplicar cupom](../checkout-sessions/apply-coupon)).
 
@@ -177,7 +190,7 @@ Valide a assinatura e deduplique pelo `id` da entrega: [Segurança](../webhooks/
 
 ## Pagar do seu servidor (sem página)
 
-Se você mesmo coleta os dados do pagador, pule o link: crie a sessão com a chave secreta ([Criar sessão](../checkout-sessions/create)) e pague com [Confirmar](../checkout-sessions/confirm), passando o UUID de um cliente ou os dados dele. A sessão criada assim não tem `clientSecret`.
+Se você mesmo coleta os dados do pagador, pule o link: crie a sessão com a chave secreta ([Criar sessão](../checkout-sessions/create)) e pague com [Confirmar](../checkout-sessions/confirm), passando o UUID de um cliente ou os dados dele. A resposta da criação não traz `clientSecret`; se você levar o pagador à página hospedada (`url`, no formato `/cs/<code>`), a página obtém um pelo código com [Obter sessão por código](../checkout-sessions/retrieve-by-code) (`upag.checkout.retrieveByCode(code)`).
 
 ```javascript Node.js SDK
 const session = await upag.checkoutSessions.create({

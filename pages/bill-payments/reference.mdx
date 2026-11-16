@@ -1,0 +1,99 @@
+---
+title: 'Referência'
+description: 'Objeto Pagamento de conta (bill payment)'
+sidebarTitle: 'Visão geral'
+---
+
+Um pagamento de conta é uma tentativa de pagar uma [conta](../bills/reference). Ele nasce em [Pagar conta](../bills/pay), com o valor já debitado do saldo. Uma conta tem no máximo um pagamento vigente (`pending`, `scheduled`, `awaiting_funds` ou `paid`); depois de um `failed` ou `canceled`, a conta pode ser paga de novo.
+
+<Warning>
+  O pagamento de contas precisa estar habilitado para a conta. Até lá, todas as rotas de `/bills` e `/bill-payments` respondem `403` com o código `feature_flag_disabled`. Peça a habilitação ao suporte. Veja [Erros](../guides/errors#recurso-não-habilitado).
+</Warning>
+
+Todos os endpoints exigem **chave secreta** (`sk_…`). Valores sempre em **centavos**.
+
+| Método | Path | Permissão |
+| ------ | ---- | --------- |
+| `GET` | `/v1/bill-payments` | `bill.read` |
+| `GET` | `/v1/bill-payments/{paymentId}` | `bill.read` |
+| `GET` | `/v1/bill-payments/{paymentId}/receipt` | `bill.read` |
+| `POST` | `/v1/bill-payments/{paymentId}/cancel` | `bill.write` |
+
+<Note>
+  Sandbox: `https://api.upag.dev/v1` com `sk_test_…`. Produção: `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Estrutura
+
+```json
+{
+  "id": "b7d2f4e8-1a3c-4e59-8f60-2c9d1e7a4b36",
+  "bill": "3c9e7a10-52d4-4b8f-9e61-0a2f7d4c8b15",
+  "status": "scheduled",
+  "amount": 25000,
+  "scheduledFor": "2026-11-28",
+  "paidAt": null,
+  "receiptUrl": null,
+  "failureCode": null,
+  "createdAt": "2026-11-13T14:05:40.118Z",
+  "updatedAt": "2026-11-13T14:05:41.902Z"
+}
+```
+
+## Atributos
+
+<ParamField body="id" type="string">
+  UUID do pagamento.
+</ParamField>
+
+<ParamField body="bill" type="string">
+  UUID da [conta](../bills/reference) paga.
+</ParamField>
+
+<ParamField body="status" type="string">
+  Veja [Status](#status).
+</ParamField>
+
+<ParamField body="amount" type="integer">
+  Valor pago, em centavos, fixado na consulta feita ao pagar.
+</ParamField>
+
+<ParamField body="scheduledFor" type="string">
+  Dia do pagamento, `YYYY-MM-DD`.
+</ParamField>
+
+<ParamField body="paidAt" type="string | null">
+  ISO 8601 da liquidação. `null` até `paid`.
+</ParamField>
+
+<ParamField body="receiptUrl" type="string | null">
+  Endereço do comprovante usado pelo dashboard (exige sessão de usuário). `null` até `paid`. Com chave de API, use [Comprovante](./receipt).
+</ParamField>
+
+<ParamField body="failureCode" type="string | null">
+  Código de retorno do banco quando ele recusou ou devolveu o pagamento antes de pagar. É o código bruto do provedor, não uma lista fechada, e pode ser `null` mesmo em `failed`.
+</ParamField>
+
+<ParamField body="createdAt" type="string">
+  ISO 8601.
+</ParamField>
+
+<ParamField body="updatedAt" type="string">
+  ISO 8601.
+</ParamField>
+
+## Status
+
+| Status | Significado | Débito |
+| ------ | ----------- | ------ |
+| `pending` | Débito reservado; o banco ainda não confirmou o pagamento | Reservado |
+| `scheduled` | O banco registrou o pagamento para `scheduledFor` | Reservado |
+| `awaiting_funds` | No dia do pagamento o banco não encontrou saldo e aguarda | Reservado |
+| `paid` | Pago | Mantido |
+| `failed` | O banco recusou ou desistiu antes de pagar | Devolvido |
+| `canceled` | Cancelado por você antes do dia do pagamento | Devolvido |
+| `reversed` | Devolvido pelo banco depois de pago | Devolvido |
+
+`failed`, `canceled` e `reversed` são finais. `paid` só muda se o banco devolver o pagamento (`reversed`).
+
+Acompanhe por [webhooks de pagamento de conta](../webhooks/payload-bill-payment).

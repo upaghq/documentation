@@ -1,0 +1,77 @@
+---
+title: 'Obter cartão do cliente'
+description: 'Consulta um cartão de um cliente pelo ID'
+sidebarTitle: 'Obter'
+api: 'GET https://api.upag.io/v1/customers/{customerId}/cards/{cardId}'
+---
+
+Retorna um cartão do cliente. Cartões removidos, de outro cliente ou de outra conta respondem `404`.
+
+Permissão: `card.read`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.dev/v1/customers/8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83/cards/5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const card = await upag.customers.cards.retrieve(
+  '8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83',
+  '5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15',
+);
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="customerId" type="string (uuid)" required>
+  ID do cliente.
+</ParamField>
+
+<ParamField path="cardId" type="string (uuid)" required>
+  ID do cartão.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "id": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
+  "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "brand": "visa",
+  "firstDigits": "424242",
+  "lastDigits": "4242",
+  "fingerprint": "9f2c4b7e1a8d3f6c0b5e2a9d4c7f1e3b8a6d0c2f5e9b1a4d7c3f6e0b2a5d8c1f",
+  "holderName": "Luke Skywalker",
+  "expirationMonth": 11,
+  "expirationYear": 2031,
+  "funding": "credit",
+  "wallet": null,
+  "status": "active",
+  "createdAt": "2026-07-27T18:04:11.482Z",
+  "updatedAt": "2026-07-27T18:10:02.913Z"
+}
+```
+
+Campos em [Referência de cartões](../../cards/reference).
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `404` | `CUSTOMER_NOT_FOUND` | Cliente inexistente, excluído ou de outra conta |
+| `404` | `CARD_NOT_FOUND` | Cartão inexistente, removido ou de outro cliente |
+| `422` | `VALIDATION_FAILED` | `customerId` ou `cardId` não é UUID |

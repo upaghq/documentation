@@ -1,0 +1,167 @@
+---
+title: 'Prévia de proration'
+description: 'Calcula quanto custa mudar os itens de uma assinatura hoje, sem alterar nada'
+sidebarTitle: 'Prévia de proration'
+api: 'POST https://api.upag.io/v1/subscriptions/{subscriptionId}/proration'
+---
+
+Calcula a cobrança proporcional (proration) de mudar os itens de uma assinatura agora: o tempo não usado do que deixa de ser cobrado vira crédito, o tempo restante do que passa a ser cobrado vira débito, e o período atual não muda. **Nada é alterado nem cobrado**: é só uma prévia.
+
+Para cobrar a diferença e aplicar a mudança depois do pagamento, crie uma [sessão de checkout](../checkout-sessions/create) com `proration`. Para mudar os itens sem cobrança proporcional, use [Adicionar item](./create-item), [Atualizar item](./update-item) ou [Remover item](./delete-item).
+
+Só assinaturas `active`, com o período atual pago, têm tempo a creditar. Em teste, `past_due`, `incomplete` ou `paused` a resposta é `SUBSCRIPTION_PRORATION_UNAVAILABLE`.
+
+Permissão: `subscription.read`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/subscriptions/9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36/proration \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "items": [
+      { "item": "c6d2f9a4-7e18-4b35-9a60-3f1e8d5b2c07", "price": "e4c1a7b9-2d60-4f38-9b15-7a0e3c6d8f42" }
+    ]
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const proration = await upag.subscriptions.proration('9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36', {
+  items: [
+    { item: 'c6d2f9a4-7e18-4b35-9a60-3f1e8d5b2c07', price: 'e4c1a7b9-2d60-4f38-9b15-7a0e3c6d8f42' },
+  ],
+});
+
+console.log(proration.amountDue); // 5161
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="subscriptionId" type="string (uuid)" required>
+  ID da assinatura.
+</ParamField>
+
+<ParamField body="items" type="array" required>
+  Pelo menos uma mudança. Cada entrada tem um dos três formatos abaixo, sem misturar campos de formatos diferentes. Cada item da assinatura pode aparecer uma vez só.
+
+  | Formato | Efeito |
+  | ------- | ------ |
+  | `{ "item": "<uuid>", "price": "<uuid>", "quantity": 2 }` | Troca o preço e/ou a quantidade de um item da assinatura. Envie pelo menos `price` ou `quantity`. |
+  | `{ "item": "<uuid>", "deleted": true }` | Remove um item da assinatura. |
+  | `{ "price": "<uuid>", "quantity": 1 }` | Adiciona um preço que a assinatura ainda não tem. `quantity` é opcional, padrão `1`. |
+
+  Os preços precisam ser `recurring`, ativos (não arquivados) e ter o mesmo `interval`, `intervalCount` e moeda da assinatura. Reenviar o preço que o item já tem é aceito mesmo que ele esteja arquivado. `quantity` é inteiro ≥ 1.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "subscription": "9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36",
+  "currency": "brl",
+  "calculatedAt": "2026-10-22T19:00:00.000Z",
+  "period": {
+    "startDate": "2026-10-07T19:00:00.000Z",
+    "endDate": "2026-11-07T19:00:00.000Z"
+  },
+  "lines": [
+    {
+      "type": "credit",
+      "item": "c6d2f9a4-7e18-4b35-9a60-3f1e8d5b2c07",
+      "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61",
+      "description": "Tempo não usado em Plano mensal",
+      "amount": -5110
+    },
+    {
+      "type": "charge",
+      "item": "c6d2f9a4-7e18-4b35-9a60-3f1e8d5b2c07",
+      "price": "e4c1a7b9-2d60-4f38-9b15-7a0e3c6d8f42",
+      "description": "Tempo restante em Plano Pro",
+      "amount": 10271
+    }
+  ],
+  "amountDue": 5161,
+  "nextAmount": 19900,
+  "items": [
+    {
+      "item": "c6d2f9a4-7e18-4b35-9a60-3f1e8d5b2c07",
+      "price": "e4c1a7b9-2d60-4f38-9b15-7a0e3c6d8f42",
+      "quantity": 1,
+      "amount": 19900
+    }
+  ]
+}
+```
+
+<ParamField body="subscription" type="string">
+  UUID da assinatura.
+</ParamField>
+
+<ParamField body="currency" type="string">
+  Moeda da assinatura.
+</ParamField>
+
+<ParamField body="calculatedAt" type="string">
+  ISO 8601 do momento do cálculo. A fração restante do período é medida a partir dele.
+</ParamField>
+
+<ParamField body="period" type="object">
+  O período pago que está sendo prorateado: `startDate` e `endDate` (ISO 8601), iguais a `currentPeriodStart` e `currentPeriodEnd` da assinatura.
+</ParamField>
+
+<ParamField body="lines" type="array">
+  As linhas da proration. Linhas de valor zero são omitidas.
+
+  - `type`: `credit` (tempo não usado do que sai) ou `charge` (tempo restante do que entra).
+  - `item`: UUID do item. `null` no débito de um preço adicionado, que ainda não é um item.
+  - `price`: UUID do preço da linha.
+  - `description`: texto da linha.
+  - `amount`: em **centavos**, negativo no crédito. É `totalAmount` do item vezes a fração restante do período, arredondado ao centavo.
+</ParamField>
+
+<ParamField body="amountDue" type="integer">
+  Soma das linhas, em centavos. Zero ou negativo quando não há nada a cobrar hoje (por exemplo, num downgrade).
+</ParamField>
+
+<ParamField body="nextAmount" type="integer">
+  O que a próxima renovação cobra com os itens propostos, em centavos.
+</ParamField>
+
+<ParamField body="items" type="array">
+  Os itens que a assinatura teria depois da mudança.
+
+  - `item`: UUID do item; `null` num preço adicionado.
+  - `price`: UUID do preço.
+  - `quantity`: quantidade.
+  - `amount`: valor unitário em centavos.
+</ParamField>
+
+## Erros
+
+| Status | Código | Quando |
+| ------ | ------ | ------ |
+| `404` | `SUBSCRIPTION_NOT_FOUND` | A assinatura não existe ou é de outra conta |
+| `404` | `SUBSCRIPTION_ITEM_NOT_FOUND` | Um `item` não pertence à assinatura |
+| `404` | `PRICE_NOT_FOUND` / `PRODUCT_NOT_FOUND` | Um preço, ou o produto dele, não existe na conta |
+| `400` | `SUBSCRIPTION_NOT_EDITABLE` | A assinatura está `canceled`, `void` ou `ended` |
+| `400` | `SUBSCRIPTION_PRORATION_UNAVAILABLE` | A assinatura não está `active` com um período pago |
+| `400` | `SUBSCRIPTION_PRORATION_DUPLICATE_ITEM` | O mesmo `item` aparece em mais de uma entrada |
+| `400` | `SUBSCRIPTION_DUPLICATE_PRICE` | Um preço adicionado já está na assinatura |
+| `400` | `SUBSCRIPTION_LAST_ITEM` | As remoções deixariam a assinatura sem itens |
+| `400` | `PRICE_ARCHIVED` | Um preço novo está arquivado |
+| `400` | `SUBSCRIPTION_PRICE_NOT_RECURRING` | Um preço não é `recurring` |
+| `400` | `SUBSCRIPTION_PRICE_MISMATCH` | Um preço tem intervalo ou moeda diferentes da assinatura |
+| `422` | `VALIDATION_FAILED` | `items` vazio, entrada que mistura formatos, entrada de troca sem `price` nem `quantity`, campo desconhecido ou `quantity` menor que 1 |

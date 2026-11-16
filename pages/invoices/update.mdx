@@ -5,7 +5,7 @@ sidebarTitle: 'Atualizar'
 api: 'PATCH https://api.upag.io/v1/invoices/{invoiceId}'
 ---
 
-Finaliza um rascunho com `{ "open": true }`, deixando a fatura pronta para [pagamento](./pay). Esta é a única alteração que o endpoint aceita; para mudar o conteúdo de um rascunho, use os endpoints de [itens](./create-item).
+Finaliza um rascunho com `{ "open": true }`, deixando a fatura pronta para [pagamento](./pay). Ao abrir, o saldo do cliente é aplicado à fatura e registrado em `adjustments` (veja o [objeto fatura](./reference)); se o crédito cobre o valor inteiro, a fatura já volta `paid`, sem cobrança. Esta é a única alteração que o endpoint aceita; para mudar o conteúdo de um rascunho, use os endpoints de [itens](./create-item).
 
 Permissão: `invoice.write`. Apenas chave secreta (`sk_…`).
 
@@ -74,6 +74,7 @@ const invoice = await upag.invoices.update('5b0e8d3a-9c71-4e26-a8f4-1d7c3b6e9a02
     }
   ],
   "discounts": [],
+  "adjustments": [],
   "payments": [],
   "createdAt": "2026-10-07T19:00:00.000Z",
   "updatedAt": "2026-10-07T19:02:00.000Z"

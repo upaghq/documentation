@@ -1,0 +1,71 @@
+---
+title: 'Obter transação de saldo'
+description: 'Consulta uma transação de saldo de um cliente pelo ID'
+sidebarTitle: 'Obter'
+api: 'GET https://api.upag.io/v1/customers/{customerId}/balance-transactions/{transactionId}'
+---
+
+Retorna uma transação de saldo do cliente.
+
+Permissão: `customer.read`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.dev/v1/customers/8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83/balance-transactions/e41b7c09-3d6a-4f25-8b1e-7a0c2d9f5e38 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const transaction = await upag.customers.balanceTransactions.retrieve(
+  '8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83',
+  'e41b7c09-3d6a-4f25-8b1e-7a0c2d9f5e38',
+);
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="customerId" type="string (uuid)" required>
+  ID do cliente.
+</ParamField>
+
+<ParamField path="transactionId" type="string (uuid)" required>
+  ID da transação de saldo.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "id": "e41b7c09-3d6a-4f25-8b1e-7a0c2d9f5e38",
+  "type": "adjustment",
+  "amount": -5000,
+  "endingBalance": -5000,
+  "invoice": null,
+  "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "description": "Crédito por indisponibilidade em outubro",
+  "createdAt": "2026-11-13T14:30:00.000Z"
+}
+```
+
+Campos em [Referência](./reference).
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `404` | `CUSTOMER_NOT_FOUND` | Cliente inexistente, excluído ou de outra conta |
+| `404` | `CUSTOMER_BALANCE_TRANSACTION_NOT_FOUND` | Transação inexistente ou de outro cliente |
+| `422` | `VALIDATION_FAILED` | `customerId` ou `transactionId` não é UUID |

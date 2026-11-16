@@ -5,7 +5,9 @@ sidebarTitle: 'Atualizar'
 api: 'PATCH https://api.upag.io/v1/coupons/{couponId}'
 ---
 
-Atualização parcial. `type`, `code`, `percentOff`, `amountOff` e `currency` não podem ser alterados; para isso, crie outro cupom.
+Atualização parcial. `type`, `code`, `percentOff`, `amountOff`, `currency` e `maxCycles` não podem ser alterados; para isso, crie outro cupom. Esses campos são ignorados se enviados.
+
+As mudanças valem só para novos usos do cupom. Uma assinatura que já tem o desconto continua com ele mesmo se o cupom for desativado, expirar ou atingir `maxUses`.
 
 Permissão: `coupon.write` (chave secreta).
 
@@ -87,6 +89,7 @@ const coupon = await upag.coupons.update('a3c4d5e6-7f80-4912-8abc-0d1e2f3a4b5c',
   "currency": null,
   "amountOff": null,
   "percentOff": 20,
+  "maxCycles": 1,
   "uses": 3,
   "maxUses": null,
   "appliesTo": "all",

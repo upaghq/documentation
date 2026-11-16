@@ -91,6 +91,10 @@ Campos desconhecidos no corpo são rejeitados.
   Nome impresso no cartão: 2 a 64 caracteres, só letras sem acento e espaços.
 </ParamField>
 
+<ParamField body="customer" type="string (uuid)">
+  Só com chave secreta. Vincula o cartão a este cliente já na criação; se o cliente ainda não tem cartão padrão, este vira o `defaultCard` dele. Com chave publicável o campo é aceito e ignorado, para que uma página de checkout nunca vincule um cartão a alguém. Para vincular depois, use [Vincular cartão](../customers/cards/attach).
+</ParamField>
+
 <ParamField header="Idempotency-Key" type="string">
   Até 255 caracteres. Por 24 horas, a mesma chave com o mesmo cartão devolve o mesmo cartão em vez de tokenizar de novo; a mesma chave com outro cartão retorna `409`. A chave é isolada por conta e o CVV não entra na comparação.
 </ParamField>
@@ -106,6 +110,7 @@ Campos desconhecidos no corpo são rejeitados.
   "brand": "visa",
   "firstDigits": "424242",
   "lastDigits": "4242",
+  "fingerprint": "9f2c4b7e1a8d3f6c0b5e2a9d4c7f1e3b8a6d0c2f5e9b1a4d7c3f6e0b2a5d8c1f",
   "holderName": "Luke Skywalker",
   "expirationMonth": 11,
   "expirationYear": 2031,
@@ -117,7 +122,7 @@ Campos desconhecidos no corpo são rejeitados.
 }
 ```
 
-Número e CVV nunca voltam na resposta. Campos em [Referência](./reference).
+Número e CVV nunca voltam na resposta. Tokenizar de novo o mesmo número para o mesmo cliente (ou de novo sem cliente) devolve o cartão já existente em vez de criar outro. Campos em [Referência](./reference).
 
 ## Limites de requisição
 
@@ -133,6 +138,7 @@ Chave publicável vive no browser, então tem um orçamento extra mais apertado.
 
 | Status | Código | Causa |
 | ------ | ------ | ----- |
+| `404` | `CUSTOMER_NOT_FOUND` | `customer` inexistente, excluído ou de outra conta |
 | `409` | `idempotency_key_reused` | A `Idempotency-Key` já foi usada com outro cartão |
 | `422` | `card_invalid` | Cartão não aceito: número inválido, vencido ou recusado. A mensagem é genérica de propósito, para o endpoint não servir para testar cartões |
 | `422` | `VALIDATION_FAILED` | Campo ausente ou malformado, ou `Idempotency-Key` com mais de 255 caracteres. As mensagens nunca repetem o que você enviou |

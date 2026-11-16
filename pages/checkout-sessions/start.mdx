@@ -9,7 +9,7 @@ Abre uma sessão de checkout a partir de um [link de pagamento](../payment-links
 
 A sessão é uma cópia do link no momento da abertura (itens, bumps, métodos de pagamento, layout, URLs e teste). Editar o link depois não muda uma sessão já aberta. Ela fica `open` por 24 horas.
 
-A resposta traz o `clientSecret`, **uma única vez**: só o hash dele é guardado e ele não pode ser recuperado. Use-o como `Authorization: Bearer <clientSecret>` para [obter](./retrieve), [confirmar](./confirm) e mexer em [cupom](./apply-coupon) daquela sessão, e nada mais. Outras sessões da conta ficam fora do alcance dele.
+A resposta traz o `clientSecret`. Só o hash dele é guardado, então ele não pode ser lido de novo; para continuar a sessão em outra aba ou depois de recarregar a página, use o código da `url` em [Obter sessão por código](./retrieve-by-code), que emite um `clientSecret` novo e invalida o anterior. Use-o como `Authorization: Bearer <clientSecret>` para [obter](./retrieve), [confirmar](./confirm) e mexer em [cupom](./apply-coupon) daquela sessão, e nada mais. Outras sessões da conta ficam fora do alcance dele.
 
 Limite: 20 sessões por minuto por IP. Excedido, a API responde `429`.
 
@@ -85,7 +85,7 @@ O corpo é opcional. Todos os campos servem para atribuição de marketing e só
 {
   "id": "4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26",
   "status": "open",
-  "url": "https://checkout.upag.io/cs/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26",
+  "url": "https://checkout.upag.io/cs/Hq7Kd2xPzR4tWm9b",
   "paymentLink": "c3f81a5e-2b94-4d70-a6e3-9d0b7c1f4a58",
   "expiresAt": "2026-10-08T19:00:00.000Z",
   "createdAt": "2026-10-07T19:00:00.000Z",
@@ -148,7 +148,7 @@ O corpo é opcional. Todos os campos servem para atribuição de marketing e só
     "displayName": "Loja Exemplo",
     "legalName": "Loja Exemplo Ltda",
     "publishableKey": "pk_test_your_public_key",
-    "threeDSecureEnabled": false
+    "threeDSecureEnabled": true
   }
 }
 ```

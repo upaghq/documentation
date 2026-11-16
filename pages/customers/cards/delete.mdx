@@ -1,0 +1,59 @@
+---
+title: 'Remover cartão do cliente'
+description: 'Remove um cartão de um cliente'
+sidebarTitle: 'Remover'
+api: 'DELETE https://api.upag.io/v1/customers/{customerId}/cards/{cardId}'
+---
+
+Remove o cartão (exclusão lógica). Ele deixa de poder ser cobrado e de aparecer em consultas e listagens. O cartão padrão do cliente não pode ser removido: antes, troque ou limpe o `defaultCard` em [Atualizar cliente](../update).
+
+Permissão: `card.write`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE https://api.upag.dev/v1/customers/8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83/cards/5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+await upag.customers.cards.delete(
+  '8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83',
+  '5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15',
+);
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="customerId" type="string (uuid)" required>
+  ID do cliente.
+</ParamField>
+
+<ParamField path="cardId" type="string (uuid)" required>
+  ID do cartão.
+</ParamField>
+
+## Resposta
+
+`204 No Content`, sem corpo.
+
+Remover de novo um cartão já removido responde `404`.
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `404` | `CUSTOMER_NOT_FOUND` | Cliente inexistente, excluído ou de outra conta |
+| `404` | `CARD_NOT_FOUND` | Cartão inexistente, já removido ou de outro cliente |
+| `409` | `card_is_default` | O cartão é o `defaultCard` do cliente |
+| `422` | `VALIDATION_FAILED` | `customerId` ou `cardId` não é UUID |

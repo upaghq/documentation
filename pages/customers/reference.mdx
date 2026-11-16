@@ -19,6 +19,14 @@ Todos os endpoints exigem **chave secreta** (`sk_…`).
 | `GET` | `/v1/customers/{customerId}` | `customer.read` |
 | `PATCH` | `/v1/customers/{customerId}` | `customer.write` |
 | `DELETE` | `/v1/customers/{customerId}` | `customer.write` |
+| `POST` | `/v1/customers/{customerId}/cards` | `card.write` |
+| `GET` | `/v1/customers/{customerId}/cards` | `card.read` |
+| `GET` | `/v1/customers/{customerId}/cards/{cardId}` | `card.read` |
+| `DELETE` | `/v1/customers/{customerId}/cards/{cardId}` | `card.write` |
+| `GET` | `/v1/customers/{customerId}/balance` | `customer.read` |
+| `POST` | `/v1/customers/{customerId}/balance-transactions` | `customer.write` |
+| `GET` | `/v1/customers/{customerId}/balance-transactions` | `customer.read` |
+| `GET` | `/v1/customers/{customerId}/balance-transactions/{transactionId}` | `customer.read` |
 
 <Note>
   Sandbox: `https://api.upag.dev/v1` com `sk_test_…`. Produção: `https://api.upag.io/v1` com `sk_live_…`.
@@ -50,6 +58,7 @@ Todos os endpoints exigem **chave secreta** (`sk_…`).
     "country": "BR",
     "zip": "01310200"
   },
+  "defaultCard": null,
   "createdAt": "2026-07-27T18:04:11.482Z",
   "updatedAt": "2026-07-27T18:04:11.482Z"
 }
@@ -81,6 +90,10 @@ Todos os endpoints exigem **chave secreta** (`sk_…`).
   Sempre presente; cada campo pode ser `null`: `street`, `number`, `complement`, `neighborhood`, `city`, `state`, `country`, `zip`. Sem endereço conhecido, todos vêm `null`.
 </ParamField>
 
+<ParamField body="defaultCard" type="string | null">
+  UUID do [cartão](./cards/list) padrão do cliente. O primeiro cartão vinculado ao cliente vira o padrão automaticamente; troque ou limpe com [Atualizar cliente](./update). `null` quando não há.
+</ParamField>
+
 <ParamField body="createdAt" type="string">
   ISO 8601.
 </ParamField>
@@ -101,6 +114,8 @@ Um cliente criado só com o nome vem com `"document": null`. Ele pode ser usado 
 ## Referências em outros objetos
 
 [Cobranças](../charges/reference) e [cartões](../cards/reference) guardam o cliente no campo `customer` (UUID). Com `?includes=customer` na cobrança, o campo traz este objeto completo.
+
+Os cartões do cliente ficam em [Cartões do cliente](./cards/list) e o saldo (crédito ou débito aplicado nas faturas) em [Saldo do cliente](./balance).
 
 ## Webhooks
 

@@ -1,0 +1,85 @@
+---
+title: 'Agenda de recebíveis'
+description: 'Quanto a conta ainda vai receber de cobranças de cartão, por dia'
+sidebarTitle: 'Agenda de recebíveis'
+api: 'GET https://api.upag.io/v1/receivables/schedule'
+---
+
+Lista, por dia, o que a conta ainda vai receber de cobranças de cartão pagas, do dia mais próximo para o mais distante. Entram só os recebíveis que a adquirente ainda não liberou. Os do dia de hoje já foram liberados à meia-noite e estão no saldo disponível, então nunca aparecem.
+
+Permissão: `balance.read`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -G https://api.upag.dev/v1/receivables/schedule \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -d "startDate=2026-11-14" \
+  -d "endDate=2026-11-16"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const schedule = await upag.receivables.schedule({
+  startDate: '2026-11-14',
+  endDate: '2026-11-16',
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+Sem `startDate` nem `endDate`, a resposta traz todos os dias futuros que têm algo a receber, sem limite de período e sem `total`. Com qualquer um dos dois, ela traz **todos** os dias do período (inclusive os que têm `0`) e o `total`.
+
+<ParamField query="startDate" type="string">
+  Primeiro dia, `YYYY-MM-DD` (calendário de Brasília). Precisa ser amanhã ou depois. Padrão: amanhã.
+</ParamField>
+
+<ParamField query="endDate" type="string">
+  Último dia, `YYYY-MM-DD`, inclusive. Padrão: 30 dias contando a partir de `startDate`. O período não pode passar de 90 dias.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "data": [
+    { "date": "2026-11-14", "amount": 48250 },
+    { "date": "2026-11-15", "amount": 0 },
+    { "date": "2026-11-16", "amount": 12990 }
+  ],
+  "count": 3,
+  "total": 61240
+}
+```
+
+<ParamField body="data" type="array">
+  Um item por dia: `date` (`YYYY-MM-DD`) e `amount` (centavos a receber naquele dia).
+</ParamField>
+
+<ParamField body="count" type="integer">
+  Quantidade de dias em `data`.
+</ParamField>
+
+<ParamField body="total" type="integer">
+  Soma de `amount` no período, em centavos. Só vem quando `startDate` ou `endDate` é informado.
+</ParamField>
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `403` | `PERMISSION_DENIED` | A chave não tem a permissão `balance.read` |
+| `422` | `VALIDATION_FAILED` | Data fora do formato `YYYY-MM-DD`, `startDate` hoje ou no passado, `startDate` depois de `endDate`, ou período maior que 90 dias |
+
+Formato dos erros em [Erros](../guides/errors).

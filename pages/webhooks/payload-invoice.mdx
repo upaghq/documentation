@@ -7,7 +7,7 @@ sidebarTitle: 'Fatura'
 
 Eventos: `invoice.created`, `invoice.opened`, `invoice.paid`, `invoice.voided`, `invoice.uncollectible` e `invoice.payment_failed`.
 
-`data` é a [fatura](../invoices/reference) sem o array `payments`. Entidades relacionadas vêm como id:
+`data` é a [fatura](../invoices/reference) sem o array `payments`. Entidades relacionadas vêm como id (`includes` não vale para webhooks):
 
 ```json
 {
@@ -39,6 +39,7 @@ Eventos: `invoice.created`, `invoice.opened`, `invoice.paid`, `invoice.voided`, 
       }
     ],
     "discounts": [],
+    "adjustments": [],
     "createdAt": "2026-03-15T10:00:00.000Z",
     "updatedAt": "2026-03-18T12:30:00.000Z"
   }
@@ -56,14 +57,15 @@ Eventos: `invoice.created`, `invoice.opened`, `invoice.paid`, `invoice.voided`, 
 | `status` | `string` | `draft`, `open`, `paid`, `void` ou `uncollectible` |
 | `currency` | `string` | `brl` ou `usd` |
 | `description` | `string \| null` | Descrição |
-| `amountDue` | `integer` | Valor devido, em centavos |
+| `amountDue` | `integer` | Valor devido, em centavos: itens − descontos + ajustes, nunca abaixo de `0` |
 | `amountPaid` | `integer` | Valor pago, em centavos |
 | `attemptCount` | `integer` | Tentativas de pagamento |
 | `dueDate` | `string \| null` | ISO 8601, vencimento |
 | `paidAt` | `string \| null` | ISO 8601, pagamento |
-| `items` | `array` | Itens ativos: `id`, `product`, `price`, `name`, `amount` (unitário), `quantity`, `totalAmount` |
+| `items` | `array` | Itens ativos: `id`, `product`, `price`, `name`, `amount` (unitário), `quantity`, `totalAmount`. `product` e `price` são `null` num item sem preço de catálogo |
 | `discounts` | `array` | Descontos ativos: `id`, `item`, `coupon`, `type` (`coupon`), `amount` |
+| `adjustments` | `array` | Saldo do cliente aplicado: `id`, `amount` (centavos; negativo é crédito, positivo é débito), `customerBalanceTransaction` |
 | `createdAt` | `string` | ISO 8601 |
 | `updatedAt` | `string` | ISO 8601 |
 
-`invoice.created` dispara com a fatura e seus itens já completos. `invoice.paid` dispara com `paidAt` e `amountPaid` preenchidos. `invoice.payment_failed` não muda o `status`: indica uma tentativa de pagamento que falhou. Os pagamentos (cobranças) ligados à fatura não vão no evento; consulte a [fatura](../invoices/get).
+`invoice.created` dispara com a fatura e seus itens já completos. `invoice.paid` dispara com `paidAt` e `amountPaid` preenchidos; também dispara quando uma fatura `uncollectible` é paga depois (Pix vencido pago mesmo assim). `invoice.opened` já traz `adjustments` e o `amountDue` com o saldo aplicado. `invoice.payment_failed` não muda o `status`: indica uma tentativa de pagamento que falhou. Os pagamentos (cobranças) ligados à fatura não vão no evento; consulte a [fatura](../invoices/get).

@@ -57,6 +57,10 @@ const { data, count } = await upag.paymentLinks.list({
   Filtra links que vendem esse produto.
 </ParamField>
 
+<ParamField query="type" type="string">
+  `product` ou `fixed_amount`.
+</ParamField>
+
 ## Resposta
 
 `200 OK`
@@ -66,6 +70,7 @@ const { data, count } = await upag.paymentLinks.list({
   "data": [
     {
       "id": "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70",
+      "type": "product",
       "name": "Plano Pro com trial",
       "description": null,
       "checkoutLayout": null,
@@ -79,7 +84,8 @@ const { data, count } = await upag.paymentLinks.list({
       "cancelUrl": null,
       "subscriptionData": {
         "trial": null,
-        "trialSettings": { "endBehavior": { "missingPaymentMethod": "create_invoice" } }
+        "trialSettings": { "endBehavior": { "missingPaymentMethod": "create_invoice" } },
+        "maxCycles": null
       },
       "paymentMethodCollection": "always",
       "items": [

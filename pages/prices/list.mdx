@@ -7,6 +7,8 @@ api: 'GET https://api.upag.io/v1/products/{productId}/prices'
 
 Permissão: `price.read` (chave secreta).
 
+A lista inclui os preços arquivados (`active: false`).
+
 ## Endpoint
 
 <CodeGroup>
@@ -63,6 +65,7 @@ const { data, count } = await upag.prices.list('0b9c1f3e-6a4d-4c1e-9d55-3f1f6a7c
       "currency": "brl",
       "amount": 4990,
       "metadata": {},
+      "active": true,
       "createdAt": "2026-03-18T11:05:00.000Z",
       "updatedAt": "2026-03-18T11:05:00.000Z"
     }

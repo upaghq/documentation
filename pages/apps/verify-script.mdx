@@ -58,6 +58,19 @@ const result = await upag.apps.verifyScript('c8d9e0f1-a2b3-4c4d-9e5f-6a7b8c9d0e1
 - `not_installed` — nenhum ScriptTag encontrado.
 - `stale_src` — existe, mas com URL diferente da esperada; reinstale.
 - `duplicated` — mais de um ScriptTag; reinstale para deixar só um.
-- `unreachable` — a URL do script não é acessível (`reachability.reason` indica o motivo, por exemplo `not_https`, `private_host`, `bad_status`, `not_javascript`, `dns_not_found` ou `connection_refused`).
+- `unreachable` — a URL do script não é acessível. `reachability.reason` indica o motivo:
+
+  | `reason` | Causa |
+  | -------- | ----- |
+  | `invalid_url` | A URL não é válida |
+  | `not_https` | A URL não usa HTTPS |
+  | `private_host` | O host é local ou de rede privada |
+  | `bad_status` | A URL respondeu com status diferente de 2xx (`reachability.status` traz o status) |
+  | `not_javascript` | A resposta não tem `Content-Type` de JavaScript |
+  | `dns_not_found` | O domínio não resolve |
+  | `connection_refused` | O servidor recusou a conexão |
+  | `timeout` | Sem resposta em 8 segundos |
+  | `invalid_certificate` | O certificado TLS é inválido |
+  | `unreachable` | Outra falha de rede |
 
 Erros: `404` (`APP_NOT_FOUND`); `400` (`APP_SCRIPT_NOT_SUPPORTED` em apps que não são Shopify, `SHOPIFY_CREDENTIALS_INCOMPLETE`).

@@ -211,9 +211,13 @@ const subAccount = await upag.subAccounts.create({
 <ParamField body="paymentMethodConfigurations" type="array">
   Tarifas por método de pagamento na subconta. Métodos omitidos usam o padrão da plataforma. Cada item:
 
-  - `paymentMethodType`: `pix` ou `card` (sem repetir o método).
-  - `installments`: tabela de taxas, de 1 até 12 parcelas × bandeira, sem duplicar a mesma combinação. Cada linha: `installmentNumber` (1–12), `mdrRateBasisPoints` (0–10000, obrigatório), `brand` (bandeira do cartão ou `null` para todas; padrão `null`), `mdrRateFixedAmount` (centavos, 0–10000; padrão 0), `interestRateBasisPoints` (0–10000; padrão 0), `interestResponsibility` (`merchant` ou `buyer`; padrão `buyer`) e `settlementDays` (0–365; padrão 0). Para `pix` só vale uma linha de `installmentNumber: 1` sem `brand`.
+  - `paymentMethodType`: `pix`, `card` ou `boleto` (sem repetir o método). Boleto vem desabilitado por padrão: só fica disponível na subconta se for informado aqui (ou habilitado depois).
+  - `installments`: tabela de taxas, de 1 até 12 parcelas × bandeira, sem duplicar a mesma combinação. Cada linha: `installmentNumber` (1–12), `mdrRateBasisPoints` (0–10000, obrigatório), `brand` (bandeira do cartão ou `null` para todas; padrão `null`), `mdrRateFixedAmount` (centavos, 0–10000; padrão 0), `interestRateBasisPoints` (0–10000; padrão 0), `interestResponsibility` (`merchant` ou `buyer`; padrão `buyer`) e `settlementDays` (0–365; padrão 0). Para `pix` só vale uma linha de `installmentNumber: 1` sem `brand`. Boleto é sempre à vista e usa a linha de `installmentNumber: 1`.
   - `name` (1–100 caracteres; padrão o próprio método), `active` (padrão `true`), `settlementBusinessDays` (padrão `false`), `acceptInstallments` (padrão `false`) e `maxInstallments` (1–12; padrão 1).
+  - `maxChargeAmount`: valor máximo por cobrança, em centavos (1 a 2147483647), ou `null` para sem limite. Omitido, usa o limite padrão do método: 999999 (R$ 9.999,99) em boleto, sem limite em Pix e cartão.
+  - `minChargeAmount`: valor mínimo por cobrança, em centavos (1 a 2147483647), ou `null`. Omitido, não há mínimo. Não pode passar de `maxChargeAmount` (`422`).
+
+  Cobranças fora da faixa são recusadas com `422 PAYMENT_METHOD_AMOUNT_TOO_LOW` ou `PAYMENT_METHOD_AMOUNT_TOO_HIGH`.
 </ParamField>
 
 ## Parâmetros de pessoa física

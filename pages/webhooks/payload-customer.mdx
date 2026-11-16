@@ -30,6 +30,7 @@ Eventos: `customer.created` e `customer.updated`.
       "country": "BR",
       "zip": "01001000"
     },
+    "defaultCard": null,
     "createdAt": "2026-03-18T11:00:00.000Z",
     "updatedAt": "2026-03-18T11:00:00.000Z"
   }
@@ -46,6 +47,7 @@ Eventos: `customer.created` e `customer.updated`.
 | `document` | `object \| null` | `number` (só dígitos) e `type` (`cpf` ou `cnpj`); `null` num cliente sem documento |
 | `phone` | `object \| null` | `countryCode`, `areaCode`, `number` |
 | `address` | `object` | `street`, `number`, `complement`, `neighborhood`, `city`, `state`, `country`, `zip`; cada campo pode ser `null` |
+| `defaultCard` | `string \| null` | UUID do cartão padrão do cliente |
 | `createdAt` | `string` | ISO 8601 |
 | `updatedAt` | `string` | ISO 8601 |
 

@@ -79,3 +79,4 @@ const item = await upag.invoices.updateItem(
 | `404` | `PRICE_NOT_FOUND` / `PRODUCT_NOT_FOUND` | O novo preço, ou o produto dele, não existe na conta |
 | `400` | `INVOICE_NOT_DRAFT` | A fatura já foi aberta |
 | `400` | `INVOICE_CURRENCY_MISMATCH` | O novo preço está em outra moeda |
+| `400` | `PRICE_ARCHIVED` | O novo preço está arquivado (`active: false`). Reenviar o preço atual do item não dá erro |
