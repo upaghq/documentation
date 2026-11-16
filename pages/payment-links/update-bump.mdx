@@ -11,8 +11,8 @@ Permissão: `payment_link.write` (chave secreta).
 
 <CodeGroup>
 ```bash cURL
-curl -X PATCH https://api.upag.dev/v1/payment-links/d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70/bumps/f6a7b8c9-d0e1-4f2a-9b3c-4d5e6f7a8b92 \
-  -H "Authorization: Bearer sk_test_your_api_key" \
+curl -X PATCH https://api.upag.io/v1/payment-links/d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70/bumps/f6a7b8c9-d0e1-4f2a-9b3c-4d5e6f7a8b92 \
+  -H "Authorization: Bearer sk_live_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{ "amount": 1990, "title": "Adicione o guia de boas práticas" }'
 ```
@@ -20,7 +20,7 @@ curl -X PATCH https://api.upag.dev/v1/payment-links/d4e5f6a7-b8c9-4d0e-9f1a-2b3c
 ```javascript Node.js SDK
 import { Upag } from 'upag';
 
-const upag = new Upag('sk_test_your_api_key');
+const upag = new Upag('sk_live_your_api_key');
 
 // upag.paymentLinks.updateBump(paymentLinkId, bumpId, params)
 const bump = await upag.paymentLinks.updateBump(
@@ -32,7 +32,7 @@ const bump = await upag.paymentLinks.updateBump(
 </CodeGroup>
 
 <Note>
-  Em produção use `https://api.upag.io/v1` com `sk_live_...`.
+  Os exemplos usam produção (`https://api.upag.io/v1`) com `sk_live_…`. Para testar, use o sandbox (`https://api.upag.dev/v1`) com `sk_test_…`.
 </Note>
 
 ## Parâmetros

@@ -10,7 +10,7 @@ Cria uma cobrança Pix (`type: "pix"`), de cartão (`type: "card"`) ou boleto (`
 Permissão: `charge.write`. Apenas chave secreta (`sk_…`).
 
 <Note>
-  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+  Os exemplos usam produção (`https://api.upag.io/v1`) com `sk_live_…`. Para testar, use o sandbox (`https://api.upag.dev/v1`) com `sk_test_…`.
 </Note>
 
 ## Endpoint
@@ -19,8 +19,8 @@ Permissão: `charge.write`. Apenas chave secreta (`sk_…`).
 
 <CodeGroup>
 ```bash cURL
-curl -X POST https://api.upag.dev/v1/charges \
-  -H "Authorization: Bearer sk_test_your_api_key" \
+curl -X POST https://api.upag.io/v1/charges \
+  -H "Authorization: Bearer sk_live_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
     "type": "pix",
@@ -37,7 +37,7 @@ curl -X POST https://api.upag.dev/v1/charges \
 ```javascript Node.js SDK
 import { Upag } from 'upag';
 
-const upag = new Upag('sk_test_your_api_key');
+const upag = new Upag('sk_live_your_api_key');
 
 const charge = await upag.charges.create({
   type: 'pix',
@@ -56,8 +56,8 @@ const charge = await upag.charges.create({
 
 <CodeGroup>
 ```bash cURL
-curl -X POST https://api.upag.dev/v1/charges \
-  -H "Authorization: Bearer sk_test_your_api_key" \
+curl -X POST https://api.upag.io/v1/charges \
+  -H "Authorization: Bearer sk_live_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
     "type": "card",
@@ -74,7 +74,7 @@ curl -X POST https://api.upag.dev/v1/charges \
 ```javascript Node.js SDK
 import { Upag } from 'upag';
 
-const upag = new Upag('sk_test_your_api_key');
+const upag = new Upag('sk_live_your_api_key');
 
 const charge = await upag.charges.create({
   type: 'card',
@@ -95,8 +95,8 @@ A cobrança de cartão é processada na hora: a resposta já traz o resultado (`
 
 <CodeGroup>
 ```bash cURL
-curl -X POST https://api.upag.dev/v1/charges \
-  -H "Authorization: Bearer sk_test_your_api_key" \
+curl -X POST https://api.upag.io/v1/charges \
+  -H "Authorization: Bearer sk_live_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
     "type": "boleto",
@@ -116,7 +116,7 @@ curl -X POST https://api.upag.dev/v1/charges \
 ```javascript Node.js SDK
 import { Upag } from 'upag';
 
-const upag = new Upag('sk_test_your_api_key');
+const upag = new Upag('sk_live_your_api_key');
 
 const charge = await upag.charges.create({
   type: 'boleto',
@@ -238,7 +238,7 @@ Em cobranças de cartão, envie `meta.session_id` com o identificador da sessão
 ```javascript upag-js
 import { UpagJs } from 'upag-js';
 
-const upag = new UpagJs('pk_test_your_public_key');
+const upag = new UpagJs('pk_live_your_public_key');
 
 // envie ao seu servidor junto com o card e o clientSecret/sessão 3DS
 const sessionId = upag.antifraud.sessionId();

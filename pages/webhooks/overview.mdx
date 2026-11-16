@@ -17,7 +17,7 @@ Registre URLs para receber eventos de cobranças, clientes, transferências, pag
 ```javascript Node.js SDK
 import { Upag } from 'upag';
 
-const upag = new Upag('sk_test_your_api_key');
+const upag = new Upag('sk_live_your_api_key');
 
 const webhook = await upag.webhooks.create({
   url: 'https://example.com/webhooks/upag',

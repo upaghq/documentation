@@ -15,8 +15,8 @@ Permissão: `price.write` (chave secreta).
 
 <CodeGroup>
 ```bash cURL
-curl -X PATCH https://api.upag.dev/v1/products/0b9c1f3e-6a4d-4c1e-9d55-3f1f6a7c2e10/prices/5f2d7a90-3b1c-4e8a-8f6d-1c9e4b7a2d33 \
-  -H "Authorization: Bearer sk_test_your_api_key" \
+curl -X PATCH https://api.upag.io/v1/products/0b9c1f3e-6a4d-4c1e-9d55-3f1f6a7c2e10/prices/5f2d7a90-3b1c-4e8a-8f6d-1c9e4b7a2d33 \
+  -H "Authorization: Bearer sk_live_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
     "amount": 5990,
@@ -27,7 +27,7 @@ curl -X PATCH https://api.upag.dev/v1/products/0b9c1f3e-6a4d-4c1e-9d55-3f1f6a7c2
 ```javascript Node.js SDK
 import { Upag } from 'upag';
 
-const upag = new Upag('sk_test_your_api_key');
+const upag = new Upag('sk_live_your_api_key');
 
 // upag.prices.update(productId, priceId, params)
 const price = await upag.prices.update(
@@ -39,7 +39,7 @@ const price = await upag.prices.update(
 </CodeGroup>
 
 <Note>
-  Em produção use `https://api.upag.io/v1` com `sk_live_...`.
+  Os exemplos usam produção (`https://api.upag.io/v1`) com `sk_live_…`. Para testar, use o sandbox (`https://api.upag.dev/v1`) com `sk_test_…`.
 </Note>
 
 ## Parâmetros
@@ -97,8 +97,8 @@ const price = await upag.prices.update(
 Para arquivar:
 
 ```bash
-curl -X PATCH https://api.upag.dev/v1/products/0b9c1f3e-6a4d-4c1e-9d55-3f1f6a7c2e10/prices/5f2d7a90-3b1c-4e8a-8f6d-1c9e4b7a2d33 \
-  -H "Authorization: Bearer sk_test_your_api_key" \
+curl -X PATCH https://api.upag.io/v1/products/0b9c1f3e-6a4d-4c1e-9d55-3f1f6a7c2e10/prices/5f2d7a90-3b1c-4e8a-8f6d-1c9e4b7a2d33 \
+  -H "Authorization: Bearer sk_live_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{ "active": false }'
 ```
