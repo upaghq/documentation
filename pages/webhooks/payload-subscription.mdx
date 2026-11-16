@@ -81,5 +81,21 @@ Eventos: `subscription.created`, `subscription.active`, `subscription.trialing`,
 
 - Uma assinatura nova dispara `subscription.created` e, em seguida, `subscription.incomplete`.
 - Cada mudança de status dispara o evento do novo status. `subscription.ended` dispara quando o último período de `maxCycles` acaba; `subscription.canceled` com `cancellationReason: "payment_failed"`, quando todas as tentativas de cobrar a renovação falham.
-- `subscription.updated` dispara quando você altera a assinatura ([atualizar](../subscriptions/update), [cancelar no fim do período](../subscriptions/cancel)) ou troca itens na hora. Mudanças agendadas para o fim do período não disparam o evento ao serem criadas.
+- `subscription.updated` dispara quando você altera a assinatura ([atualizar](../subscriptions/update), [cancelar no fim do período](../subscriptions/cancel)) ou troca itens na hora, e quando o cliente faz uma mudança no portal (com [`source`](#mudanças-feitas-pelo-cliente)). Mudanças agendadas para o fim do período não disparam o evento ao serem criadas.
 - `subscription.trial_ending` dispara uma vez por teste, 3 dias antes de `trialEndDate`.
+
+## Mudanças feitas pelo cliente
+
+Quando o seu cliente muda a assinatura no [portal de cobrança](../billing-portal/portal-overview), o `subscription.updated` traz `source` no topo do envelope, ao lado de `data`:
+
+```json
+{
+  "id": "990e8400-e29b-41d4-a716-446655440000",
+  "event": "subscription.updated",
+  "createdAt": "2026-11-16T12:10:00.000Z",
+  "source": { "type": "billing_portal", "session": "7c2e9a41-3b5d-4f60-8e17-9d0a2c4b6e83" },
+  "data": { "id": "ff1e8400-e29b-41d4-a716-446655440000", "paymentMethod": "pix", "card": null }
+}
+```
+
+`source` aparece na [troca de método de pagamento](../billing-portal/portal-update-payment-method) e nas [trocas de plano](../billing-portal/portal-update-subscription) aplicadas na hora. Uma troca que só vale depois (o upgrade aplicado quando o checkout é pago) chega sem `source`. Mudanças feitas por você, pela API ou pelo dashboard, nunca trazem o campo.

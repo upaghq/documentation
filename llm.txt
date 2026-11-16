@@ -18,7 +18,8 @@
 ## Abas
 
 - **Guias** (`pages/guides/`): quickstart, authentication, conventions, errors; fluxos pix-charge, pix-transfer, card-3ds, checkout-hosted, subscription-recurring, free-trial
-- **Referência** (`pages/<recurso>/`): charges, simulate, receivables, cards, three-d-secure, customers (com `customers/cards` e saldo em `customers/balance*`), products, prices, coupons, invoices, subscriptions, payment-links, checkout-sessions, checkout-layouts, transfers, bills, bill-payments, sub-accounts, apps, me. `bills` e `bill-payments` precisam estar habilitados na conta (senão `403 feature_flag_disabled`).
+- **Referência** (`pages/<recurso>/`): charges, simulate, receivables, cards, three-d-secure, customers (com `customers/cards` e saldo em `customers/balance*`), products, prices, coupons, invoices, subscriptions, payment-links, checkout-sessions, checkout-layouts, transfers, bills, bill-payments, billing-portal, sub-accounts, apps, me. `bills`, `bill-payments` e `billing-portal` precisam estar habilitados na conta (senão `403 feature_flag_disabled`).
+- **Portal de cobrança** (`pages/billing-portal/`): configurações e sessões com `sk_...`; a página do portal chama `/v1/portal/*` com `Authorization: Bearer <token da url da sessão>` (sem chave de API). Mudanças do cliente chegam em `subscription.updated` com `source: { type: "billing_portal", session }`.
 - **Webhooks** (`pages/webhooks/`, `pages/webhook-logs/`): visão geral, referência, segurança, endpoints (incluindo a lista de eventos), payloads, logs de entrega
 - **SDK**: `pages/sdk/`
 - **Simulador**: `pages/simulator.mdx` (cartões de teste no sandbox)

@@ -1,0 +1,108 @@
+---
+title: 'Prévia da troca de plano'
+description: 'Mostra o que a troca de um item para outro preço faria, sem alterar nada'
+sidebarTitle: 'Prévia da troca'
+api: 'POST https://api.upag.io/v1/portal/subscriptions/{subscription}/preview'
+---
+
+Mostra o efeito de trocar um item para outro preço antes de o cliente confirmar. Não altera a assinatura.
+
+Exige `subscriptionUpdate` na sessão. Autenticação pelo token da sessão.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/portal/subscriptions/ff1e8400-e29b-41d4-a716-446655440000/preview \
+  -H "Authorization: Bearer kV3n9xQ2mT8pZr4LwB6yHc1sDf7GjA0eNu5oXiRbYtE" \
+  -H "Content-Type: application/json" \
+  -d '{ "item": "0a1e8400-e29b-41d4-a716-446655440000", "price": "0d1e8400-e29b-41d4-a716-446655440000" }'
+```
+
+```javascript fetch
+const response = await fetch(`https://api.upag.dev/v1/portal/subscriptions/${subscriptionId}/preview`, {
+  method: 'POST',
+  headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+  body: JSON.stringify({ item: itemId, price: priceId }),
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="subscription" type="string" required>
+  UUID da assinatura.
+</ParamField>
+
+<ParamField body="item" type="string" required>
+  UUID do item da assinatura.
+</ParamField>
+
+<ParamField body="price" type="string" required>
+  UUID do novo preço. Precisa estar em `eligiblePrices` do item em [Dados do portal](./portal-me).
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "outcome": "requires_payment",
+  "item": "0a1e8400-e29b-41d4-a716-446655440000",
+  "price": {
+    "id": "0d1e8400-e29b-41d4-a716-446655440000",
+    "name": "Plano Business",
+    "billingType": "recurring",
+    "interval": "month",
+    "intervalCount": 1,
+    "currency": "brl",
+    "amount": 19900,
+    "metadata": {},
+    "active": true,
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "updatedAt": "2026-10-01T00:00:00.000Z"
+  },
+  "quantity": 1,
+  "totalAmount": 19900,
+  "proration": {
+    "subscription": "ff1e8400-e29b-41d4-a716-446655440000",
+    "currency": "brl",
+    "calculatedAt": "2026-11-16T12:00:00.000Z",
+    "period": { "startDate": "2026-11-01T00:00:00.000Z", "endDate": "2026-12-01T00:00:00.000Z" },
+    "lines": [
+      { "type": "credit", "item": "0a1e8400-e29b-41d4-a716-446655440000", "price": "0c1e8400-e29b-41d4-a716-446655440000", "description": "Tempo não usado em Plano Pro", "amount": -4950 },
+      { "type": "charge", "item": "0a1e8400-e29b-41d4-a716-446655440000", "price": "0d1e8400-e29b-41d4-a716-446655440000", "description": "Tempo restante em Plano Business", "amount": 9950 }
+    ],
+    "amountDue": 5000,
+    "nextAmount": 19900,
+    "items": [
+      { "item": "0a1e8400-e29b-41d4-a716-446655440000", "price": "0d1e8400-e29b-41d4-a716-446655440000", "quantity": 1, "amount": 19900 }
+    ]
+  }
+}
+```
+
+<ParamField body="outcome" type="string">
+  O que [Trocar plano](./portal-update-subscription) faria: `requires_payment`, `applied` ou `scheduled`.
+</ParamField>
+
+<ParamField body="totalAmount" type="integer">
+  Novo total do item por período, em centavos (`price.amount × quantity`).
+</ParamField>
+
+<ParamField body="proration" type="object | null">
+  O que seria cobrado (`amountDue` positivo) ou creditado (`amountDue` negativo) agora, no formato de [Prévia de proration](../subscriptions/proration). `null` quando a troca não é prorateada: sem proration na configuração, assinatura fora de `active`, downgrade agendado ou mesmo valor.
+</ParamField>
+
+Fora de `active` (em teste ou com pagamento pendente) a troca não é prorateada: a prévia devolve só o novo valor do item, e `outcome` mostra que a troca valeria na hora.
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `400` | `SUBSCRIPTION_NOT_EDITABLE` | A assinatura está cancelada, void ou encerrada |
+| `403` | `BILLING_PORTAL_FEATURE_DISABLED` | A sessão não permite trocar de plano |
+| `404` | `SUBSCRIPTION_NOT_FOUND` | A assinatura não é do cliente da sessão, ou está fora do `flow` |
+| `404` | `SUBSCRIPTION_ITEM_NOT_FOUND` | O item não é da assinatura |
+| `422` | `BILLING_PORTAL_PRICE_NOT_ELIGIBLE` | O preço não está em `eligiblePrices` do item |

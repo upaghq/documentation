@@ -1,0 +1,84 @@
+---
+title: 'Sessões do portal'
+description: 'Objeto Sessão do portal de cobrança: o link de uso único que você entrega ao cliente'
+sidebarTitle: 'Sessões'
+---
+
+Uma sessão dá ao seu cliente acesso ao portal de cobrança. Você cria a sessão no seu servidor, recebe uma `url` e redireciona o cliente para ela. O caminho da `url` contém o token da sessão, que só aparece nessa resposta: a Upag guarda apenas o hash.
+
+A sessão **copia** a [configuração](./configurations-reference) no momento da criação (as permissões, o comportamento de proration e os preços permitidos). Editar a configuração depois não muda sessões abertas.
+
+| Método | Path | Permissão |
+| ------ | ---- | --------- |
+| `POST` | `/v1/billing-portal/sessions` | `billing_portal.write` |
+
+## Estrutura
+
+```json
+{
+  "id": "7c2e9a41-3b5d-4f60-8e17-9d0a2c4b6e83",
+  "customer": "660e8400-e29b-41d4-a716-446655440001",
+  "configuration": "5b1f0c2e-8d4a-4e6b-9f31-7a2c0e9d4b18",
+  "flow": null,
+  "returnUrl": "https://sualoja.com/conta",
+  "paymentMethodUpdate": true,
+  "subscriptionUpdate": true,
+  "prorationBehavior": "create_prorations",
+  "downgradeTiming": "period_end",
+  "expiresAt": "2026-11-16T13:00:00.000Z",
+  "createdAt": "2026-11-16T12:00:00.000Z",
+  "url": "https://portal.upag.io/kV3n9xQ2mT8pZr4LwB6yHc1sDf7GjA0eNu5oXiRbYtE"
+}
+```
+
+## Atributos
+
+<ParamField body="id" type="string">
+  UUID da sessão.
+</ParamField>
+
+<ParamField body="customer" type="string">
+  UUID do cliente dono da sessão. O portal só mostra dados e assinaturas dele.
+</ParamField>
+
+<ParamField body="configuration" type="string">
+  UUID da configuração copiada.
+</ParamField>
+
+<ParamField body="flow" type="object | null">
+  Leva o cliente direto a uma tarefa numa assinatura: `{ type, subscription }`, com `type` `payment_method_update` ou `subscription_update`. Com `flow`, o portal só alcança essa assinatura.
+</ParamField>
+
+<ParamField body="returnUrl" type="string | null">
+  Para onde o portal leva o cliente ao sair. Sem `returnUrl` na criação, vale o `defaultReturnUrl` da configuração.
+</ParamField>
+
+<ParamField body="paymentMethodUpdate" type="boolean">
+  Cópia da configuração: o cliente pode trocar o método de pagamento.
+</ParamField>
+
+<ParamField body="subscriptionUpdate" type="boolean">
+  Cópia da configuração: o cliente pode trocar de plano.
+</ParamField>
+
+<ParamField body="prorationBehavior" type="string">
+  Cópia da configuração: `create_prorations` ou `none`.
+</ParamField>
+
+<ParamField body="downgradeTiming" type="string">
+  Cópia da configuração: `period_end` ou `immediately`.
+</ParamField>
+
+<ParamField body="expiresAt" type="string">
+  ISO 8601. Depois disso o token deixa de funcionar e o portal responde `401`.
+</ParamField>
+
+<ParamField body="createdAt" type="string">
+  ISO 8601.
+</ParamField>
+
+<ParamField body="url" type="string">
+  Só na resposta de [Criar sessão](./create-session): o endereço do portal com o token no caminho (`<host do portal>/<token>`). Não é enviada em webhooks, não fica nos logs de requisição e não pode ser recuperada depois. Guarde-a só pelo tempo de redirecionar o cliente.
+</ParamField>
+
+Acompanhe a criação pelo webhook [`billing_portal.session.created`](../webhooks/payload-billing-portal-session), que não traz `url` nem token.

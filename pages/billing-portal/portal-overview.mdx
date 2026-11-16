@@ -1,0 +1,42 @@
+---
+title: 'Portal do cliente'
+description: 'Rotas que a página do portal chama com o token da sessão'
+sidebarTitle: 'Visão geral do portal'
+---
+
+As rotas de `/v1/portal` são chamadas pela página do portal, no navegador do seu cliente. Elas não usam chave de API: autenticam pelo **token da sessão**, que é o último segmento da `url` devolvida em [Criar sessão](./create-session).
+
+```javascript
+// url: https://portal.upag.io/kV3n9xQ2mT8pZr4LwB6yHc1sDf7GjA0eNu5oXiRbYtE
+const token = new URL(location.href).pathname.split('/').pop();
+
+const response = await fetch('https://api.upag.io/v1/portal/me', {
+  headers: { Authorization: `Bearer ${token}` },
+});
+```
+
+| Método | Path | Exige na sessão |
+| ------ | ---- | --------------- |
+| `GET` | `/v1/portal/me` | – |
+| `POST` | `/v1/portal/payment-methods` | `paymentMethodUpdate` |
+| `POST` | `/v1/portal/subscriptions/{subscription}/payment-method` | `paymentMethodUpdate` |
+| `POST` | `/v1/portal/subscriptions/{subscription}/preview` | `subscriptionUpdate` |
+| `POST` | `/v1/portal/subscriptions/{subscription}/update` | `subscriptionUpdate` |
+
+## Regras da superfície
+
+- **Autenticação:** `Authorization: Bearer <token>`. Token ausente, desconhecido ou de sessão expirada recebe o mesmo `401 AUTHENTICATION_REQUIRED`.
+- **CORS:** só a origem do portal é aceita, sem cookies nem credenciais.
+- **Cache:** toda resposta vem com `Cache-Control: no-store` e `Referrer-Policy: no-referrer`.
+- **Limite:** 300 requisições a cada 15 minutos por IP; acima disso, `429`.
+- **Habilitação:** com o portal desabilitado para a conta, as rotas respondem `403 feature_flag_disabled` depois da autenticação.
+- **Escopo:** a sessão só alcança o próprio cliente. Assinatura de outro cliente, ou fora do `flow` quando a sessão tem um, responde `404`.
+- **Permissão da sessão:** uma ação que a sessão não permite responde `403 BILLING_PORTAL_FEATURE_DISABLED`.
+
+## Fluxo sugerido
+
+1. Carregue a página com [`GET /v1/portal/me`](./portal-me): cliente, cartões, assinaturas, preços para troca e a chave publicável (`pk_…`).
+2. Para um cartão novo, tokenize com a `publishableKey` em [Criar cartão](../cards/create) e vincule com [Vincular cartão](./portal-attach-card).
+3. Troque o método de uma assinatura com [Trocar método de pagamento](./portal-update-payment-method).
+4. Para trocar de plano, mostre o efeito com [Prévia da troca](./portal-preview-update) e confirme com [Trocar plano](./portal-update-subscription).
+5. Leve o cliente de volta para `session.returnUrl`.

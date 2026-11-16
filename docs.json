@@ -227,6 +227,24 @@
                         ]
                     },
                     {
+                        "group": "Portal de cobrança",
+                        "pages": [
+                            "pages/billing-portal/configurations-reference",
+                            "pages/billing-portal/create-configuration",
+                            "pages/billing-portal/list-configurations",
+                            "pages/billing-portal/get-configuration",
+                            "pages/billing-portal/update-configuration",
+                            "pages/billing-portal/sessions-reference",
+                            "pages/billing-portal/create-session",
+                            "pages/billing-portal/portal-overview",
+                            "pages/billing-portal/portal-me",
+                            "pages/billing-portal/portal-attach-card",
+                            "pages/billing-portal/portal-update-payment-method",
+                            "pages/billing-portal/portal-preview-update",
+                            "pages/billing-portal/portal-update-subscription"
+                        ]
+                    },
+                    {
                         "group": "Layouts de checkout",
                         "pages": [
                             "pages/checkout-layouts/reference",
@@ -347,7 +365,8 @@
                             "pages/webhooks/payload-dispute",
                             "pages/webhooks/payload-invoice",
                             "pages/webhooks/payload-subscription",
-                            "pages/webhooks/payload-checkout"
+                            "pages/webhooks/payload-checkout",
+                            "pages/webhooks/payload-billing-portal-session"
                         ]
                     },
                     {

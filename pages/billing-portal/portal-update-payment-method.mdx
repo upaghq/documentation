@@ -1,0 +1,60 @@
+---
+title: 'Trocar método de pagamento'
+description: 'Troca o método de pagamento de uma assinatura do cliente'
+sidebarTitle: 'Trocar método'
+api: 'POST https://api.upag.io/v1/portal/subscriptions/{subscription}/payment-method'
+---
+
+Troca como a assinatura é paga: Pix, boleto ou um cartão do cliente. Nada é cobrado agora; a próxima fatura usa o novo método. A troca dispara `subscription.updated` com [`source`](../webhooks/payload-subscription#mudanças-feitas-pelo-cliente) e fica registrada no histórico do portal.
+
+Exige `paymentMethodUpdate` na sessão. Autenticação pelo token da sessão.
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/portal/subscriptions/ff1e8400-e29b-41d4-a716-446655440000/payment-method \
+  -H "Authorization: Bearer kV3n9xQ2mT8pZr4LwB6yHc1sDf7GjA0eNu5oXiRbYtE" \
+  -H "Content-Type: application/json" \
+  -d '{ "paymentMethod": "card", "card": "bb1e8400-e29b-41d4-a716-446655440000" }'
+```
+
+```javascript fetch
+await fetch(`https://api.upag.dev/v1/portal/subscriptions/${subscriptionId}/payment-method`, {
+  method: 'POST',
+  headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+  body: JSON.stringify({ paymentMethod: 'pix' }),
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="subscription" type="string" required>
+  UUID da assinatura.
+</ParamField>
+
+<ParamField body="paymentMethod" type="string" required>
+  `pix`, `card` ou `boleto`. Precisa estar ativo na conta (veja `paymentMethods` em [Dados do portal](./portal-me)).
+</ParamField>
+
+<ParamField body="card" type="string">
+  UUID de um cartão do cliente. Obrigatório com `card` e proibido nos outros métodos.
+</ParamField>
+
+## Resposta
+
+`200 OK` com a assinatura atualizada, no formato do [payload de assinatura](../webhooks/payload-subscription).
+
+## Erros
+
+Verificados nesta ordem:
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `404` | `SUBSCRIPTION_NOT_FOUND` | A assinatura não é do cliente da sessão, ou está fora do `flow` |
+| `403` | `BILLING_PORTAL_FEATURE_DISABLED` | A sessão não permite trocar o método de pagamento |
+| `400` | `ACCOUNT_PAYMENT_METHOD_DISABLED` | O método está desativado na conta |
+| `400` | `SUBSCRIPTION_NOT_EDITABLE` | A assinatura está cancelada, void ou encerrada |
+| `404` | `SUBSCRIPTION_CARD_NOT_FOUND` | O cartão não é do cliente ou não está ativo |
+| `422` | `VALIDATION_FAILED` | `card` ausente com `card`, ou enviado com outro método |

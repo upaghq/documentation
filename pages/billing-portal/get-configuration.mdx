@@ -1,0 +1,45 @@
+---
+title: 'Buscar configuração'
+description: 'Retorna uma configuração do portal de cobrança'
+sidebarTitle: 'Buscar configuração'
+api: 'GET https://api.upag.io/v1/billing-portal/configurations/{configurationId}'
+---
+
+Permissão: `billing_portal.read`. Apenas chave secreta (`sk_…`).
+
+<Warning>
+  O portal de cobrança precisa estar habilitado para a conta. Até lá, a rota responde `403 feature_flag_disabled`. Veja [Erros](../guides/errors#recurso-não-habilitado).
+</Warning>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.dev/v1/billing-portal/configurations/5b1f0c2e-8d4a-4e6b-9f31-7a2c0e9d4b18 \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const configuration = await upag.billingPortal.configurations.retrieve('5b1f0c2e-8d4a-4e6b-9f31-7a2c0e9d4b18');
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="configurationId" type="string" required>
+  UUID da configuração.
+</ParamField>
+
+## Resposta
+
+`200 OK` com a [configuração](./configurations-reference).
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `404` | `BILLING_PORTAL_CONFIGURATION_NOT_FOUND` | Configuração inexistente ou de outra conta |

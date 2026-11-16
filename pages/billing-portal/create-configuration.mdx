@@ -1,0 +1,119 @@
+---
+title: 'Criar configuração'
+description: 'Cria uma configuração do portal de cobrança'
+sidebarTitle: 'Criar configuração'
+api: 'POST https://api.upag.io/v1/billing-portal/configurations'
+---
+
+Cria uma configuração do portal. Todos os campos são opcionais.
+
+Permissão: `billing_portal.write`. Apenas chave secreta (`sk_…`).
+
+<Warning>
+  O portal de cobrança precisa estar habilitado para a conta. Até lá, a rota responde `403 feature_flag_disabled`. Veja [Erros](../guides/errors#recurso-não-habilitado).
+</Warning>
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/billing-portal/configurations \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Planos Cloakup",
+    "isDefault": true,
+    "subscriptionUpdate": true,
+    "downgradeTiming": "period_end",
+    "defaultReturnUrl": "https://sualoja.com/conta",
+    "products": [
+      {
+        "product": "0b1e8400-e29b-41d4-a716-446655440000",
+        "prices": ["0c1e8400-e29b-41d4-a716-446655440000", "0d1e8400-e29b-41d4-a716-446655440000"]
+      }
+    ]
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const configuration = await upag.billingPortal.configurations.create({
+  name: 'Planos Cloakup',
+  isDefault: true,
+  subscriptionUpdate: true,
+  downgradeTiming: 'period_end',
+  defaultReturnUrl: 'https://sualoja.com/conta',
+  products: [
+    {
+      product: '0b1e8400-e29b-41d4-a716-446655440000',
+      prices: ['0c1e8400-e29b-41d4-a716-446655440000', '0d1e8400-e29b-41d4-a716-446655440000'],
+    },
+  ],
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField body="name" type="string | null">
+  1 a 255 caracteres.
+</ParamField>
+
+<ParamField body="isDefault" type="boolean" default="false">
+  Marca como default e desmarca a anterior.
+</ParamField>
+
+<ParamField body="active" type="boolean" default="true">
+  Uma configuração default precisa estar ativa.
+</ParamField>
+
+<ParamField body="paymentMethodUpdate" type="boolean" default="true">
+  Permite trocar o método de pagamento.
+</ParamField>
+
+<ParamField body="subscriptionUpdate" type="boolean" default="false">
+  Permite trocar de plano. Exige ao menos um preço em `products`.
+</ParamField>
+
+<ParamField body="prorationBehavior" type="string" default="create_prorations">
+  `create_prorations` ou `none`. Veja [Referência](./configurations-reference).
+</ParamField>
+
+<ParamField body="downgradeTiming" type="string" default="period_end">
+  `period_end` ou `immediately`.
+</ParamField>
+
+<ParamField body="defaultReturnUrl" type="string | null">
+  URL de até 2048 caracteres.
+</ParamField>
+
+<ParamField body="products" type="array">
+  Até 10 produtos, cada um com 1 a 20 preços: `[{ product, prices }]`. Um produto ou preço não pode se repetir.
+</ParamField>
+
+## Resposta
+
+`201 Created` com a [configuração](./configurations-reference).
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `400` | `PRICE_ARCHIVED` | Um preço está arquivado |
+| `403` | `feature_flag_disabled` | Portal de cobrança não habilitado para a conta |
+| `404` | `PRICE_NOT_FOUND` / `PRODUCT_NOT_FOUND` | Preço inexistente ou de outra conta |
+| `409` | `BILLING_PORTAL_DEFAULT_CONFIGURATION_CONFLICT` | Outra configuração virou default ao mesmo tempo; tente de novo |
+| `422` | `BILLING_PORTAL_PRICE_NOT_RECURRING` | Um preço é de pagamento único |
+| `422` | `BILLING_PORTAL_PRICE_PRODUCT_MISMATCH` | Um preço não é do produto em que foi listado |
+| `422` | `BILLING_PORTAL_SUBSCRIPTION_UPDATE_REQUIRES_PRICES` | `subscriptionUpdate: true` sem preços |
+| `422` | `BILLING_PORTAL_DEFAULT_CONFIGURATION_INACTIVE` | `isDefault: true` com `active: false` |
+| `422` | `VALIDATION_FAILED` | Campo inválido, enum desconhecido, produto ou preço repetido, ou limites de `products` excedidos |
+
+Formato dos erros em [Erros](../guides/errors).

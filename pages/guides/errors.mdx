@@ -50,7 +50,7 @@ A maioria das violações de regra de negócio é `400`, e as falhas de schema s
 
 ## Recurso não habilitado
 
-Alguns recursos, como o pagamento de contas (`/bills`), só funcionam quando estão habilitados para a conta. Até lá, as rotas respondem `403` com o código `feature_flag_disabled`. `details.key` traz o nome do recurso. Peça a habilitação ao suporte.
+Alguns recursos, como o pagamento de contas (`/bills`) e o portal de cobrança (`/billing-portal` e `/portal`, chave `billing_portal`), só funcionam quando estão habilitados para a conta. Até lá, as rotas respondem `403` com o código `feature_flag_disabled`. `details.key` traz o nome do recurso. Peça a habilitação ao suporte.
 
 ```json
 {

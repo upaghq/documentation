@@ -50,6 +50,7 @@ Cada entrega é um `POST` com corpo JSON:
 | `event` | Nome do evento (tabelas abaixo) |
 | `createdAt` | ISO 8601 do momento do envio |
 | `data` | Recurso serializado como a API o retorna; entidades relacionadas vêm como id, nunca expandidas |
+| `source` | Só quando a mudança foi feita pelo seu cliente, não por você: `{ "type": "billing_portal", "session": "<uuid>" }` para ações no [portal de cobrança](../billing-portal/portal-overview). Ausente nos demais casos |
 
 Headers enviados em cada entrega:
 
@@ -191,6 +192,16 @@ Só para contas com o [pagamento de contas](../bills/reference) habilitado.
 
 `data`: [Payload checkout](./payload-checkout).
 
+### Portal de cobrança
+
+Só para contas com o [portal de cobrança](../billing-portal/configurations-reference) habilitado.
+
+| Evento | Quando |
+| ------ | ------ |
+| `billing_portal.session.created` | Sessão do portal criada |
+
+`data`: [Payload sessão do portal](./payload-billing-portal-session). As mudanças que o cliente faz no portal chegam como `subscription.updated` com `source`.
+
 <Warning>
   A API aceita em `events` alguns nomes que **não são emitidos hoje**: `charge.pending`, `invoice.updated`, `invoice.drafted`, `checkout-session.opened`, `checkout-session.updated`, além dos prefixos legados `payment.*`, `product.*` e `price.*`. Inscrever-se neles não gera entregas. Não dependa deles.
 </Warning>
@@ -246,6 +257,9 @@ return res.sendStatus(200);
   </Card>
   <Card title="Checkout" icon="cart-shopping" href="./payload-checkout">
     Eventos `checkout-session.*`.
+  </Card>
+  <Card title="Sessão do portal" icon="id-card" href="./payload-billing-portal-session">
+    Evento `billing_portal.session.created`.
   </Card>
 </CardGroup>
 
