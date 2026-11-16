@@ -33,7 +33,7 @@ pnpm add upag-js
 ```html
 <script src="https://js.upag.io/v1/upag.min.js"></script>
 <script>
-  const upag = new UpagJs('pk_test_xxx');
+  const upag = new UpagJs('pk_live_xxx');
 </script>
 ```
 
@@ -42,7 +42,7 @@ pnpm add upag-js
 ```javascript
 import { UpagJs } from 'upag-js';
 
-const upag = new UpagJs('pk_test_your_public_key');
+const upag = new UpagJs('pk_live_your_public_key');
 ```
 
 `pk_test_` usa `https://api.upag.dev/v1` (sandbox) e qualquer outra chave usa `https://api.upag.io/v1`. Passe `{ publicKey, baseURL, timeout }` para sobrescrever o host (`baseURL` precisa ser https, exceto localhost). O ambiente resolvido fica em `upag.environment` (`'sandbox' | 'production'`).
@@ -182,7 +182,7 @@ A sessão autentica um cartão para um valor e parcelas, e pode ser usada por um
 ```jsx
 import { UpagJs } from 'upag-js';
 
-const upag = new UpagJs('pk_test_your_public_key');
+const upag = new UpagJs('pk_live_your_public_key');
 
 function CheckoutButton({ code }) {
   return <button onClick={() => upag.checkout.redirectToCheckout(code)}>Pagar</button>;

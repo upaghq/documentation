@@ -10,15 +10,15 @@ Endpoint **chamado pelo browser**. O `upag-js` o usa dentro de `threeDSecure.aut
 Autentica com **chave publicável** (`pk_…`) e é provado pelo `clientSecret` da sessão. Chave secreta é recusada. Não exige permissão.
 
 <Note>
-  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `pk_live_…`.
+  Os exemplos usam produção (`https://api.upag.io/v1`) com `pk_live_…`. Para testar, use o sandbox (`https://api.upag.dev/v1`) com `pk_test_…`.
 </Note>
 
 ## Endpoint
 
 <CodeGroup>
 ```bash cURL
-curl -X POST https://api.upag.dev/v1/3ds/sessions/complete \
-  -H "Authorization: Bearer pk_test_your_public_key" \
+curl -X POST https://api.upag.io/v1/3ds/sessions/complete \
+  -H "Authorization: Bearer pk_live_your_public_key" \
   -H "Content-Type: application/json" \
   -d '{
     "clientSecret": "4fJq8Wm2Xc7Nb1Rt5Yh9Lk3Vd0Ze6Sa7Xp2Qn9Rt5Yh1Lk3V",
@@ -30,7 +30,7 @@ curl -X POST https://api.upag.dev/v1/3ds/sessions/complete \
 ```javascript upag-js
 import { UpagJs } from 'upag-js';
 
-const upag = new UpagJs('pk_test_your_public_key');
+const upag = new UpagJs('pk_live_your_public_key');
 
 // start e complete são chamados por authenticate()
 const { sessionId, status } = await upag.threeDSecure.authenticate({ clientSecret });

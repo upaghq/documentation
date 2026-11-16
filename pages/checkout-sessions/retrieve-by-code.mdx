@@ -12,20 +12,20 @@ Resolve a sessão de checkout pelo código que fica no fim da `url` dela (`https
 Limite: 30 requisições por minuto por IP. Excedido, a API responde `429`.
 
 <Note>
-  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1`; no navegador, o `upag-js` usa só a chave pública (`pk_test_…` / `pk_live_…`) e escolhe o host por ela.
+  Os exemplos usam produção (`https://api.upag.io/v1`); no navegador, o `upag-js` usa só a chave pública (`pk_test_…` / `pk_live_…`) e escolhe o host por ela. Para testar, use o sandbox (`https://api.upag.dev/v1`).
 </Note>
 
 ## Endpoint
 
 <CodeGroup>
 ```bash cURL
-curl https://api.upag.dev/v1/checkout/sessions/code/Hq7Kd2xPzR4tWm9b
+curl https://api.upag.io/v1/checkout/sessions/code/Hq7Kd2xPzR4tWm9b
 ```
 
 ```javascript upag-js
 import { UpagJs } from 'upag-js';
 
-const upag = new UpagJs('pk_test_your_public_key');
+const upag = new UpagJs('pk_live_your_public_key');
 
 const code = window.location.pathname.split('/cs/')[1];
 const session = await upag.checkout.retrieveByCode(code);
@@ -114,7 +114,7 @@ if (session.status === 'open') {
   "account": {
     "displayName": "Loja Exemplo",
     "legalName": "Loja Exemplo Ltda",
-    "publishableKey": "pk_test_your_public_key",
+    "publishableKey": "pk_live_your_public_key",
     "threeDSecureEnabled": true
   }
 }

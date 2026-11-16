@@ -13,8 +13,8 @@ Permissão: `sub_account.write` (chave secreta; chave publicável não é aceita
 
 <CodeGroup>
 ```bash cURL
-curl -X POST https://api.upag.dev/v1/sub-accounts \
-  -H "Authorization: Bearer sk_test_your_api_key" \
+curl -X POST https://api.upag.io/v1/sub-accounts \
+  -H "Authorization: Bearer sk_live_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
     "type": "individual",
@@ -41,7 +41,7 @@ curl -X POST https://api.upag.dev/v1/sub-accounts \
 ```javascript Node.js SDK
 import { Upag } from 'upag';
 
-const upag = new Upag('sk_test_your_api_key');
+const upag = new Upag('sk_live_your_api_key');
 
 const subAccount = await upag.subAccounts.create({
   type: 'individual',
@@ -70,15 +70,15 @@ console.log(subAccount.apiKey.secret);
 </CodeGroup>
 
 <Note>
-  Em produção use `https://api.upag.io/v1` com `sk_live_...`.
+  Os exemplos usam produção (`https://api.upag.io/v1`) com `sk_live_…`. Para testar, use o sandbox (`https://api.upag.dev/v1`) com `sk_test_…`.
 </Note>
 
 ## Endpoint — pessoa jurídica
 
 <CodeGroup>
 ```bash cURL
-curl -X POST https://api.upag.dev/v1/sub-accounts \
-  -H "Authorization: Bearer sk_test_your_api_key" \
+curl -X POST https://api.upag.io/v1/sub-accounts \
+  -H "Authorization: Bearer sk_live_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
     "type": "company",
@@ -133,7 +133,7 @@ curl -X POST https://api.upag.dev/v1/sub-accounts \
 ```javascript Node.js SDK
 import { Upag } from 'upag';
 
-const upag = new Upag('sk_test_your_api_key');
+const upag = new Upag('sk_live_your_api_key');
 
 const subAccount = await upag.subAccounts.create({
   type: 'company',
@@ -315,7 +315,7 @@ const subAccount = await upag.subAccounts.create({
   "apiKey": {
     "id": "aa0e8400-e29b-41d4-a716-446655440000",
     "type": "secret",
-    "secret": "sk_test_abc123...",
+    "secret": "sk_live_abc123...",
     "description": "Sub-account João Silva",
     "permissions": [
       "customer.read",

@@ -10,14 +10,14 @@ Aplica um [cupom](../coupons/reference) a uma sessão `open` que tenha `couponEn
 Permissão: `checkout_session.write`. Aceita a chave secreta ou o `clientSecret` da sessão. Limite do navegador: 20 por minuto por IP, para que os códigos não sejam adivinhados.
 
 <Note>
-  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`; no navegador, o `upag-js` usa só a chave pública.
+  Os exemplos usam produção (`https://api.upag.io/v1`) com `sk_live_…`; no navegador, o `upag-js` usa só a chave pública. Para testar, use o sandbox (`https://api.upag.dev/v1`) com `sk_test_…` / `pk_test_…`.
 </Note>
 
 ## Endpoint
 
 <CodeGroup>
 ```bash cURL
-curl -X POST https://api.upag.dev/v1/checkout/sessions/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26/coupon \
+curl -X POST https://api.upag.io/v1/checkout/sessions/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26/coupon \
   -H "Authorization: Bearer Zk3v0pQ8xJ2mR7cYt1LwN5dHs9uAeB4gXo6iFqVjT0E" \
   -H "Content-Type: application/json" \
   -d '{ "code": "BEMVINDO10" }'
@@ -26,7 +26,7 @@ curl -X POST https://api.upag.dev/v1/checkout/sessions/4f9d2b71-6c03-4e58-9a1d-8
 ```javascript upag-js
 import { UpagJs } from 'upag-js';
 
-const upag = new UpagJs('pk_test_your_public_key');
+const upag = new UpagJs('pk_live_your_public_key');
 
 const session = await upag.checkout.applyCoupon(id, clientSecret, { code: 'BEMVINDO10' });
 ```
@@ -34,7 +34,7 @@ const session = await upag.checkout.applyCoupon(id, clientSecret, { code: 'BEMVI
 ```javascript Node.js SDK
 import { Upag } from 'upag';
 
-const upag = new Upag('sk_test_your_api_key');
+const upag = new Upag('sk_live_your_api_key');
 
 const session = await upag.checkoutSessions.applyCoupon('4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26', {
   code: 'BEMVINDO10',

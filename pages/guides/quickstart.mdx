@@ -6,7 +6,7 @@ boost: 4
 keywords: ['upag', 'quickstart', 'pix', 'cobrança', 'sdk', 'api']
 ---
 
-Uma única API Upag cobre contas, Pix, cartão, checkout, assinaturas e transferências. Neste guia você cria uma cobrança Pix e consulta o status, usando uma chave de teste (`sk_test_...`).
+Uma única API Upag cobre contas, Pix, cartão, checkout, assinaturas e transferências. Neste guia você cria uma cobrança Pix e consulta o status, usando uma chave de produção (`sk_live_...`).
 
 Valores monetários são **inteiros em centavos**. Identificadores são UUIDs. Veja [Convenções](./conventions).
 
@@ -46,8 +46,8 @@ No browser use [`upag-js`](../sdk/frontend) com a chave publicável (`pk_...`).
 
 <CodeGroup>
 ```bash cURL
-curl -X POST https://api.upag.dev/v1/charges \
-  -H "Authorization: Bearer sk_test_your_api_key" \
+curl -X POST https://api.upag.io/v1/charges \
+  -H "Authorization: Bearer sk_live_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
     "type": "pix",
@@ -65,7 +65,7 @@ curl -X POST https://api.upag.dev/v1/charges \
 ```javascript Node.js SDK
 import { Upag } from 'upag';
 
-const upag = new Upag('sk_test_your_api_key');
+const upag = new Upag('sk_live_your_api_key');
 
 const charge = await upag.charges.create({
   type: 'pix',
@@ -89,8 +89,8 @@ Mostre `pix.qrCodeUrl` (imagem do QR code) e `pix.copyPaste` (copia-e-cola) ao p
 
 <CodeGroup>
 ```bash cURL
-curl https://api.upag.dev/v1/charges/1f7d3c8a-4b52-4c9e-8a11-6d0e2f5b7c34 \
-  -H "Authorization: Bearer sk_test_your_api_key"
+curl https://api.upag.io/v1/charges/1f7d3c8a-4b52-4c9e-8a11-6d0e2f5b7c34 \
+  -H "Authorization: Bearer sk_live_your_api_key"
 ```
 
 ```javascript Node.js SDK

@@ -92,8 +92,8 @@ O header `Idempotency-Key` (até 255 caracteres) torna uma retentativa segura. A
 | `POST /bills/{billId}/payments` | **Obrigatório** | Devolve o pagamento original (`200`) | `422 BILL_PAYMENT_IDEMPOTENCY_KEY_REUSED` |
 
 ```bash
-curl -X POST https://api.upag.dev/v1/3ds/sessions \
-  -H "Authorization: Bearer sk_test_your_api_key" \
+curl -X POST https://api.upag.io/v1/3ds/sessions \
+  -H "Authorization: Bearer sk_live_your_api_key" \
   -H "Idempotency-Key: order-10482" \
   -H "Content-Type: application/json" \
   -d '{ "amount": 10000, "card": "<card id>", "customer": "<customer id>" }'

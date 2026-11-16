@@ -12,15 +12,15 @@ A troca não cobra nada na hora: o novo método é usado na próxima tentativa d
 Permissão: `subscription.write`. Apenas chave secreta (`sk_…`). Assinaturas `canceled`, `void` ou `ended` não podem ser alteradas.
 
 <Note>
-  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+  Os exemplos usam produção (`https://api.upag.io/v1`) com `sk_live_…`. Para testar, use o sandbox (`https://api.upag.dev/v1`) com `sk_test_…`.
 </Note>
 
 ## Endpoint
 
 <CodeGroup>
 ```bash cURL
-curl -X PATCH https://api.upag.dev/v1/subscriptions/9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36 \
-  -H "Authorization: Bearer sk_test_your_api_key" \
+curl -X PATCH https://api.upag.io/v1/subscriptions/9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36 \
+  -H "Authorization: Bearer sk_live_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
     "paymentMethod": "card",
@@ -31,7 +31,7 @@ curl -X PATCH https://api.upag.dev/v1/subscriptions/9a3c6e1f-0d58-4b72-a4e9-7c2f
 ```javascript Node.js SDK
 import { Upag } from 'upag';
 
-const upag = new Upag('sk_test_your_api_key');
+const upag = new Upag('sk_live_your_api_key');
 
 const subscription = await upag.subscriptions.update('9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36', {
   paymentMethod: 'card',
@@ -44,8 +44,8 @@ const subscription = await upag.subscriptions.update('9a3c6e1f-0d58-4b72-a4e9-7c
 
 <CodeGroup>
 ```bash cURL
-curl -X PATCH https://api.upag.dev/v1/subscriptions/9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36 \
-  -H "Authorization: Bearer sk_test_your_api_key" \
+curl -X PATCH https://api.upag.io/v1/subscriptions/9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36 \
+  -H "Authorization: Bearer sk_live_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{ "maxCycles": 6 }'
 ```
@@ -62,8 +62,8 @@ await upag.subscriptions.update('9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36', { maxCyc
 
 <CodeGroup>
 ```bash cURL
-curl -X PATCH https://api.upag.dev/v1/subscriptions/9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36 \
-  -H "Authorization: Bearer sk_test_your_api_key" \
+curl -X PATCH https://api.upag.io/v1/subscriptions/9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36 \
+  -H "Authorization: Bearer sk_live_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{ "cancelAtPeriodEnd": true }'
 ```

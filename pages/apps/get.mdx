@@ -11,21 +11,21 @@ Permissão: `app.read` (chave secreta).
 
 <CodeGroup>
 ```bash cURL
-curl https://api.upag.dev/v1/apps/b7c8d9e0-f1a2-4b3c-8d4e-5f6a7b8c9d01 \
-  -H "Authorization: Bearer sk_test_your_api_key"
+curl https://api.upag.io/v1/apps/b7c8d9e0-f1a2-4b3c-8d4e-5f6a7b8c9d01 \
+  -H "Authorization: Bearer sk_live_your_api_key"
 ```
 
 ```javascript Node.js SDK
 import { Upag } from 'upag';
 
-const upag = new Upag('sk_test_your_api_key');
+const upag = new Upag('sk_live_your_api_key');
 
 const app = await upag.apps.retrieve('b7c8d9e0-f1a2-4b3c-8d4e-5f6a7b8c9d01');
 ```
 </CodeGroup>
 
 <Note>
-  Em produção use `https://api.upag.io/v1` com `sk_live_...`.
+  Os exemplos usam produção (`https://api.upag.io/v1`) com `sk_live_…`. Para testar, use o sandbox (`https://api.upag.dev/v1`) com `sk_test_…`.
 </Note>
 
 ## Parâmetros

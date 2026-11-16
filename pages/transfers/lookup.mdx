@@ -10,15 +10,15 @@ Valida e devolve os dados do destino (titular, banco, e, para copia-e-cola, o va
 Permissão: `transfer.read`. Apenas chave secreta (`sk_…`).
 
 <Note>
-  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+  Os exemplos usam produção (`https://api.upag.io/v1`) com `sk_live_…`. Para testar, use o sandbox (`https://api.upag.dev/v1`) com `sk_test_…`.
 </Note>
 
 ## Endpoint
 
 <CodeGroup>
 ```bash cURL
-curl -X POST https://api.upag.dev/v1/transfers/lookup \
-  -H "Authorization: Bearer sk_test_your_api_key" \
+curl -X POST https://api.upag.io/v1/transfers/lookup \
+  -H "Authorization: Bearer sk_live_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
     "type": "key",
@@ -29,7 +29,7 @@ curl -X POST https://api.upag.dev/v1/transfers/lookup \
 ```javascript Node.js SDK
 import { Upag } from 'upag';
 
-const upag = new Upag('sk_test_your_api_key');
+const upag = new Upag('sk_live_your_api_key');
 
 const destination = await upag.transfers.lookup({
   type: 'key',

@@ -75,7 +75,7 @@ Cada endpoint exige uma permissão. Se a chave não a tiver, a requisição é r
 
 <CodeGroup>
 ```bash cURL
-curl https://api.upag.dev/v1/charges \
+curl https://api.upag.io/v1/charges \
   -H "Authorization: Bearer $UPAG_SECRET_KEY"
 ```
 
@@ -89,6 +89,6 @@ await upag.charges.list();
 ```javascript upag-js
 import { UpagJs } from 'upag-js';
 
-const upag = new UpagJs('pk_test_your_public_key');
+const upag = new UpagJs('pk_live_your_public_key');
 ```
 </CodeGroup>

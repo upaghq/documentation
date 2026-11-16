@@ -31,7 +31,7 @@
 
 - `seo.metatags.canonical`: `https://docs.upag.io` (ajustar se o domínio publicado for outro).
 - Busca in-product: `boost` no grupo **Primeiros passos** (4), SDKs (3) e simulador (0.5).
-- Endpoints de referência: frontmatter `api: 'METHOD https://api.upag.io/v1/...'` (URL completa). Os exemplos usam o sandbox (`api.upag.dev`). Playground Mintlify em `docs.json` → `api.playground.display: interactive`, auth Bearer.
+- Endpoints de referência: frontmatter `api: 'METHOD https://api.upag.io/v1/...'` (URL completa). Os exemplos usam produção (`api.upag.io`, chaves `*_live_`). Playground Mintlify em `docs.json` → `api.playground.display: interactive`, auth Bearer.
 - Sem `icon` nas páginas de endpoint; `searchable: false` só se quiser ocultar da busca interna.
 
 ## Uso para assistentes
