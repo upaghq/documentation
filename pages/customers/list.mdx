@@ -20,7 +20,8 @@ Permissão: `customer.read`. Apenas chave secreta (`sk_…`).
 curl -G https://api.upag.dev/v1/customers \
   -H "Authorization: Bearer sk_test_your_api_key" \
   -d "page=1" \
-  -d "limit=15"
+  -d "limit=15" \
+  -d "document=123.456.789-09"
 ```
 
 ```javascript Node.js SDK
@@ -28,7 +29,11 @@ import { Upag } from 'upag';
 
 const upag = new Upag('sk_test_your_api_key');
 
-const { data, count } = await upag.customers.list({ page: 1, limit: 15 });
+const { data, count } = await upag.customers.list({
+  page: 1,
+  limit: 15,
+  document: '123.456.789-09',
+});
 ```
 </CodeGroup>
 
@@ -42,9 +47,13 @@ const { data, count } = await upag.customers.list({ page: 1, limit: 15 });
   Itens por página, mínimo 1.
 </ParamField>
 
+<ParamField query="document" type="string">
+  CPF ou CNPJ, com ou sem máscara (`123.456.789-09` ou `12345678909`): só os dígitos são comparados. Traz os clientes cujo documento contém esses dígitos (busca parcial).
+</ParamField>
+
 ## Resposta
 
-`200 OK`. `count` é o total de clientes da conta.
+`200 OK`. `count` é o total de clientes que atendem ao filtro.
 
 ```json Response
 {
@@ -65,6 +74,7 @@ const { data, count } = await upag.customers.list({ page: 1, limit: 15 });
         "country": "BR",
         "zip": "01310200"
       },
+      "defaultCard": null,
       "createdAt": "2026-07-27T18:04:11.482Z",
       "updatedAt": "2026-07-27T18:04:11.482Z"
     }

@@ -10,7 +10,7 @@ icon: 'node-js'
 
 ## Requisitos
 
-- Node.js 16 ou superior
+- Node.js 22 ou superior
 - Chave secreta de teste ou produção (`sk_test_...` / `sk_live_...`)
 
 ## Instalação
@@ -67,7 +67,7 @@ const charge = await upag.charges.create({
   },
 });
 
-console.log(charge.pix.qrCode);
+console.log(charge.pix.copyPaste);
 ```
 
 ## Exemplo: cartão com 3D Secure
@@ -97,36 +97,46 @@ Fluxo completo em [Cartão com 3DS](../guides/card-3ds).
 | Recurso | Métodos |
 | ------- | ------- |
 | `charges` | `create`, `retrieve`, `list` |
-| `cards` | `create`, `list`, `retrieve`, `remove` |
+| `simulate` | `charge({ amount })` |
+| `receivables` | `schedule({ startDate, endDate })` |
+| `cards` | `create` |
 | `threeDSecure` | `createSession`, `retrieveSession` |
-| `customers` | `create`, `retrieve`, `update`, `delete`, `list` |
-| `products` | `create`, `retrieve`, `update`, `list` |
+| `customers` | `create`, `retrieve`, `update`, `delete`, `list`; `customers.cards.list(customerId, params)`, `retrieve`, `attach`, `delete`; `customers.balance.retrieve(customerId)`; `customers.balanceTransactions.create`, `list`, `retrieve` |
+| `products` | `create`, `retrieve`, `update`, `list` (aceita `{ includes: 'prices' }`) |
 | `prices` | `create(productId, params)`, `retrieve`, `update`, `list` |
 | `coupons` | `create`, `retrieve`, `update`, `delete`, `list` |
-| `invoices` | `create`, `retrieve`, `update`, `list`, `pay`, `markAsPaid`, `upcoming`, `createItem`, `updateItem`, `deleteItem` |
-| `subscriptions` | `create`, `retrieve`, `update`, `cancel`, `list`, `createItem`, `updateItem`, `deleteItem`, `listScheduledChanges`, `deleteScheduledChange` |
+| `invoices` | `create`, `retrieve`, `update`, `list`, `pay`, `markAsPaid`, `upcoming`, `createItem`, `updateItem`, `deleteItem`. `list` e `retrieve` aceitam `{ includes: 'customer' }` |
+| `subscriptions` | `create`, `retrieve`, `update`, `cancel`, `list`, `proration(subscriptionId, { items })`, `createItem`, `updateItem`, `deleteItem`, `listScheduledChanges(id, { includes: 'price' })`, `deleteScheduledChange`. `list` e `retrieve` aceitam `{ includes: 'customer' }` |
 | `paymentLinks` | `create`, `retrieve`, `update`, `list`, `createItem`, `updateItem`, `deleteItem`, `createBump`, `updateBump`, `deleteBump` |
-| `checkoutSessions` | `create`, `retrieve`, `update`, `delete`, `list`, `confirm`, `createThreeDSecureSession`, `applyCoupon`, `removeCoupon`, `listApps` |
+| `checkoutSessions` | `create`, `retrieve`, `update`, `delete`, `list`, `confirm`, `createThreeDSecureSession`, `applyCoupon`, `removeCoupon`, `listApps(id)` |
 | `checkoutLayouts` | `create`, `retrieve`, `update`, `delete`, `list` |
-| `transfers` | `lookup`, `create`, `retrieve`, `list`, `receipt` |
+| `transfers` | `lookup`, `create(params, { idempotencyKey })`, `retrieve`, `list`, `receipt` |
+| `bills` | `lookup`, `create`, `list`, `retrieve`, `cancel`, `pay(id, params, { idempotencyKey })` |
+| `billPayments` | `list`, `retrieve`, `receipt(id, { format })`, `cancel` |
 | `subAccounts` | `create`, `retrieve`, `list`, `rollApiKey` |
 | `apps` | `create`, `retrieve`, `update`, `delete`, `list`, `install`, `verifyScript`, `uninstall`; `apps.logs.list`, `apps.logs.retrieve` |
-| `webhooks` | `create`, `retrieve`, `update`, `delete`, `list`, `validateSignature`; `webhooks.logs.list`, `retrieve`, `reprocess` |
+| `webhooks` | `create`, `retrieve`, `update`, `delete`, `list`, `validateSignature`; `webhooks.logs.list(webhookId, { page, limit, result, event })`, `retrieve`, `reprocess` |
+| `webhookEvents` | `list` |
+| `files` | `create` |
 | `me` | `retrieve` |
 
 <Note>
-  `subAccounts`, `apps`, `webhooks.validateSignature` e os campos de teste grátis estão no `Unreleased` do changelog do `upag-node`. Confira a versão instalada.
+  `subAccounts`, `apps`, `bills`, `billPayments`, `customers.cards`, `customers.balance`, `customers.balanceTransactions`, `simulate`, `receivables`, `subscriptions.proration`, os filtros de `webhooks.logs.list`, o `idempotencyKey` de `transfers.create` e os parâmetros `includes` estão no `Unreleased` do changelog do `upag-node`. Confira a versão instalada.
 </Note>
 
 Cada página da Referência traz o exemplo do método correspondente.
 
 ## Idempotência
 
-`cards.create` e `threeDSecure.createSession` aceitam `{ idempotencyKey }` como último argumento (header `Idempotency-Key`):
+`cards.create`, `threeDSecure.createSession` e `transfers.create` aceitam `{ idempotencyKey }` como último argumento (header `Idempotency-Key`). Em `bills.pay` ele é obrigatório:
 
 ```javascript
 await upag.cards.create(card, { idempotencyKey: 'card-order-123' });
+
+await upag.bills.pay(billId, { expectedAmount: 15990 }, { idempotencyKey: 'bill-2026-11' });
 ```
+
+Veja [Convenções](../guides/conventions#idempotência).
 
 ## Webhooks: validar a assinatura
 

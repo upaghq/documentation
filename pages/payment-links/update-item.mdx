@@ -69,3 +69,4 @@ const item = await upag.paymentLinks.updateItem(
 
 - `404` — `PAYMENT_LINK_NOT_FOUND`, `PAYMENT_LINK_ITEM_NOT_FOUND`, `PRICE_NOT_FOUND` ou `PRODUCT_NOT_FOUND`.
 - `400` — violação das regras de consistência (veja a [referência](./reference)).
+- `400` — `PRICE_ARCHIVED`: o novo `price` está [arquivado](../prices/reference). Reenviar o preço atual do item é aceito mesmo que ele tenha sido arquivado.

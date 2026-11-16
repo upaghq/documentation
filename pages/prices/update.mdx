@@ -1,11 +1,13 @@
 ---
 title: 'Atualizar preço'
-description: 'Atualiza nome, valor, quantidade de intervalos ou metadata'
+description: 'Atualiza nome, valor, quantidade de intervalos ou metadata, ou arquiva o preço'
 sidebarTitle: 'Atualizar'
 api: 'PATCH https://api.upag.io/v1/products/{productId}/prices/{priceId}'
 ---
 
 Atualização parcial. `currency`, `billingType` e `interval` não podem ser alterados; para isso, crie outro preço.
+
+Também é por aqui que você arquiva um preço (`active: false`) ou o desarquiva (`active: true`).
 
 Permissão: `price.write` (chave secreta).
 
@@ -66,6 +68,10 @@ const price = await upag.prices.update(
   Mesclada com a metadata existente (chaves enviadas sobrescrevem as atuais). Mesmos limites da criação.
 </ParamField>
 
+<ParamField body="active" type="boolean">
+  `false` arquiva o preço e `true` o desarquiva. O preço arquivado continua cobrando o que já o usa, como renovações de assinaturas, mas não pode ser vinculado a nada novo: faturas, links de pagamento, sessões de checkout e assinaturas recusam o preço com `400` `PRICE_ARCHIVED`. Veja [Referência de preços](./reference).
+</ParamField>
+
 ## Resposta
 
 `200 OK`
@@ -80,9 +86,19 @@ const price = await upag.prices.update(
   "currency": "brl",
   "amount": 5990,
   "metadata": { "tier": "pro-plus" },
+  "active": true,
   "createdAt": "2026-03-18T11:05:00.000Z",
   "updatedAt": "2026-03-18T12:30:00.000Z"
 }
 ```
 
 `404` — `PRODUCT_NOT_FOUND` ou `PRICE_NOT_FOUND`.
+
+Para arquivar:
+
+```bash
+curl -X PATCH https://api.upag.dev/v1/products/0b9c1f3e-6a4d-4c1e-9d55-3f1f6a7c2e10/prices/5f2d7a90-3b1c-4e8a-8f6d-1c9e4b7a2d33 \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{ "active": false }'
+```

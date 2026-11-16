@@ -5,12 +5,12 @@ sidebarTitle: 'Criar'
 api: 'POST https://api.upag.io/v1/subscriptions'
 ---
 
-Assina um [cliente](../customers/reference) a um ou mais [preços](../prices/reference) `recurring`. Sem `trialEnd`, o primeiro período é cobrado na hora, pelo método escolhido; com `trialEnd`, a assinatura começa em `trialing` e nada é cobrado até essa data.
+Assina um [cliente](../customers/reference) a um ou mais [preços](../prices/reference) `recurring`. Sem `trialEnd`, o primeiro período é cobrado na hora, pelo método escolhido (Pix, boleto ou cartão); com `trialEnd`, a assinatura começa em `trialing` e nada é cobrado até essa data.
 
 A assinatura nasce `incomplete` e vira `active` quando a fatura do primeiro período é paga:
 
 - **Cartão aprovado**: a resposta já volta `active`.
-- **Pix**: continua `incomplete` até o cliente pagar. A fatura e a cobrança do primeiro período são criadas automaticamente; para achar o QR code, [liste as faturas](../invoices/list) do cliente (`customer`, `status=open`), pegue a de `subscription` igual ao ID e consulte a cobrança em `payments[].charge` (veja [Obter cobrança](../charges/get)).
+- **Pix ou boleto**: continua `incomplete` até o cliente pagar. A fatura e a cobrança do primeiro período são criadas automaticamente; para achar o QR code, [liste as faturas](../invoices/list) do cliente (`customer`, `status=open`), pegue a de `subscription` igual ao ID e consulte a cobrança em `payments[].charge` (veja [Obter cobrança](../charges/get)). O boleto exige cliente com documento, endereço completo e telefone; sem eles a cobrança não é emitida e a assinatura continua `incomplete`.
 - **Cartão recusado**: a assinatura continua `incomplete` (a criação não falha). Acompanhe por [webhook](../webhooks/payload-subscription).
 
 Permissão: `subscription.write`. Apenas chave secreta (`sk_…`).
@@ -102,6 +102,33 @@ const subscription = await upag.subscriptions.create({
 ```
 </CodeGroup>
 
+### Com número fixo de períodos
+
+`maxCycles` limita quantos períodos a assinatura cobra. Aqui, 12 mensalidades; depois da 12ª a assinatura vai para `ended`.
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/subscriptions \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+    "paymentMethod": "boleto",
+    "maxCycles": 12,
+    "items": [{ "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61" }]
+  }'
+```
+
+```javascript Node.js SDK
+const subscription = await upag.subscriptions.create({
+  customer: '8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83',
+  paymentMethod: 'boleto',
+  maxCycles: 12,
+  items: [{ price: '3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61' }],
+});
+```
+</CodeGroup>
+
 Neste endpoint o teste é uma data fixa (`trialEnd`) e o `paymentMethod` é opcional. Para um teste relativo (`14 dias`) e para escolher o que acontece sem método de pagamento (`trialSettings`), use um [link de pagamento](../payment-links/reference) ou uma [sessão de checkout](../checkout-sessions/create). Veja o fluxo completo em [Teste grátis](../guides/free-trial).
 
 ## Parâmetros
@@ -113,16 +140,20 @@ Neste endpoint o teste é uma data fixa (`trialEnd`) e o `paymentMethod` é opci
 <ParamField body="items" type="array" required>
   Pelo menos um item. Todos os preços precisam ser `recurring`, com o mesmo `interval`, `intervalCount` e moeda; o primeiro define os da assinatura. Não repita o mesmo preço.
 
-  - `price` (obrigatório): UUID do preço.
+  - `price` (obrigatório): UUID de um preço ativo. Um preço arquivado retorna `PRICE_ARCHIVED`.
   - `quantity`: inteiro ≥ 1. Padrão `1`.
 </ParamField>
 
 <ParamField body="paymentMethod" type="string">
-  `pix` ou `card`. Obrigatório, exceto quando `trialEnd` é enviado.
+  `pix`, `card` ou `boleto`. Obrigatório, exceto quando `trialEnd` é enviado.
 </ParamField>
 
 <ParamField body="card" type="string (uuid)">
-  UUID de um [cartão tokenizado](../cards/create). Obrigatório quando `paymentMethod` é `card` e proibido nos demais casos. O cartão precisa estar ativo e **já pertencer ao `customer`**. Um cartão recém-tokenizado não pertence a ninguém: ele passa a ser do cliente quando é usado numa [cobrança](../charges/create) de cartão ou numa [confirmação de checkout](../checkout-sessions/confirm). Para assinar um cliente novo no cartão, use o [checkout](../guides/subscription-recurring).
+  UUID de um [cartão tokenizado](../cards/create). Obrigatório quando `paymentMethod` é `card` e proibido nos demais casos. O cartão precisa estar ativo e **já pertencer ao `customer`**. Para isso, tokenize com `customer` em [Tokenizar cartão](../cards/create), vincule o token com `POST /v1/customers/{customerId}/cards`, ou use o cartão antes numa [cobrança](../charges/create) de cartão ou numa [confirmação de checkout](../checkout-sessions/confirm). Um token criado sem cliente não pertence a ninguém. Para assinar um cliente novo no cartão, use o [checkout](../guides/subscription-recurring).
+</ParamField>
+
+<ParamField body="maxCycles" type="integer | null">
+  Quantos períodos de cobrança a assinatura dura, mínimo 1. Omitido ou `null`, renova até ser cancelada. Ao fim do último período ela vai para `ended`. O período de teste não conta.
 </ParamField>
 
 <ParamField body="trialEnd" type="string">
@@ -144,6 +175,8 @@ Neste endpoint o teste é uma data fixa (`trialEnd`) e o `paymentMethod` é opci
   "interval": "month",
   "intervalCount": 1,
   "cancelAtPeriodEnd": false,
+  "maxCycles": null,
+  "currentCycle": 1,
   "startDate": "2026-10-07T19:00:00.000Z",
   "endDate": null,
   "trialStartDate": null,
@@ -171,7 +204,7 @@ Neste endpoint o teste é uma data fixa (`trialEnd`) e o `paymentMethod` é opci
 }
 ```
 
-Com `trialEnd`, `status` vem `trialing`, `trialStartDate` e `trialEndDate` preenchidos, `startDate` e o período atual `null` e nenhuma fatura é criada. Se o teste acabar sem método de pagamento, a fatura é gerada e a assinatura fica `past_due` até você definir um [`paymentMethod`](./update) ou a fatura ser paga.
+Com `trialEnd`, `status` vem `trialing`, `trialStartDate` e `trialEndDate` preenchidos, `startDate` e o período atual `null` e nenhuma fatura é criada. Se o teste acabar sem método de pagamento, a fatura é gerada e a assinatura fica `past_due` até a fatura ser paga.
 
 ## Erros
 
@@ -179,8 +212,9 @@ Com `trialEnd`, `status` vem `trialing`, `trialStartDate` e `trialEndDate` preen
 | ------ | ------ | ------ |
 | `404` | `CUSTOMER_NOT_FOUND` | O cliente não existe na conta |
 | `404` | `PRICE_NOT_FOUND` / `PRODUCT_NOT_FOUND` | O preço, ou o produto dele, não existe na conta |
+| `400` | `PRICE_ARCHIVED` | Um dos preços está arquivado |
 | `404` | `SUBSCRIPTION_CARD_NOT_FOUND` | O cartão não existe, está inativo ou não pertence ao cliente (inclusive um token novo, ainda sem cliente) |
 | `400` | `SUBSCRIPTION_PRICE_NOT_RECURRING` | Um dos preços não é `recurring` |
 | `400` | `SUBSCRIPTION_PRICE_MISMATCH` | Os preços têm intervalo ou moeda diferentes |
 | `400` | `SUBSCRIPTION_DUPLICATE_PRICE` | O mesmo preço aparece mais de uma vez em `items` |
-| `422` | `VALIDATION_FAILED` | Sem `paymentMethod` nem `trialEnd`; `card` ausente com `paymentMethod: "card"` (ou enviado sem ele); `trialEnd` no passado |
+| `422` | `VALIDATION_FAILED` | Sem `paymentMethod` nem `trialEnd`; `card` ausente com `paymentMethod: "card"` (ou enviado sem ele); `trialEnd` no passado; `maxCycles` menor que 1 |

@@ -1,10 +1,10 @@
 ---
 title: 'Referência'
-description: 'Objeto Cobrança (charge): Pix e cartão'
+description: 'Objeto Cobrança (charge): Pix, cartão e boleto'
 sidebarTitle: 'Visão geral'
 ---
 
-Uma cobrança é um pedido de pagamento na conta da chave de API. Pode ser **Pix** (QR code que o pagador escaneia ou copia) ou **cartão** (usando um cartão já tokenizado, ver [Cartões](../cards/reference)).
+Uma cobrança é um pedido de pagamento na conta da chave de API. Pode ser **Pix** (QR code que o pagador escaneia ou copia), **cartão** (usando um cartão já tokenizado, ver [Cartões](../cards/reference)) ou **boleto** (código de barras e PDF que o pagador paga no banco).
 
 Todos os endpoints exigem **chave secreta** (`sk_…`).
 
@@ -32,8 +32,10 @@ Todos os endpoints exigem **chave secreta** (`sk_…`).
   "meta": null,
   "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
   "pix": {
-    "reference": "9d4c2b7f6a1e40538c9b2d7f1a6e0c34",
+    "reference": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",
     "qrCode": "00020101021226930014br.gov.bcb.pix...",
+    "qrCodeUrl": "https://files.upag.io/pix-qr/6f1c2d3e-4a5b-4c6d-8e7f-9a0b1c2d3e4f.png",
+    "copyPaste": "00020101021226930014br.gov.bcb.pix...",
     "expiresAt": "2026-07-28T12:00:00.000Z"
   },
   "splits": [],
@@ -70,9 +72,38 @@ Todos os endpoints exigem **chave secreta** (`sk_…`).
   "updatedAt": "2026-07-27T18:06:04.331Z"
 }
 ```
+
+```json Boleto
+{
+  "id": "4e9a1c27-6b3d-4f58-9c0e-2a7d5b8f1e63",
+  "type": "boleto",
+  "status": "paid",
+  "amount": 25000,
+  "failureCode": null,
+  "description": "Mensalidade outubro",
+  "meta": null,
+  "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "boleto": {
+    "barcode": "34191090080012213037050059980008100000025000",
+    "digitableLine": "34191.09008 00122.130370 50059.980008 1 00000000025000",
+    "pdfUrl": "https://files.upag.io/boletos/4e9a1c27-6b3d-4f58-9c0e-2a7d5b8f1e63.pdf",
+    "dueDate": "2026-11-30",
+    "daysAfterDue": 10,
+    "paidAmount": 25500,
+    "paymentDate": "2026-12-02",
+    "creditDate": "2026-12-03T03:00:00.000Z"
+  },
+  "splits": [],
+  "items": [],
+  "ipAddress": null,
+  "paidAt": "2026-12-02T18:40:12.551Z",
+  "createdAt": "2026-11-13T14:02:11.204Z",
+  "updatedAt": "2026-12-02T18:40:12.551Z"
+}
+```
 </CodeGroup>
 
-Só o bloco do método da cobrança aparece: `pix` em cobranças Pix, `card` em cobranças de cartão.
+Só o bloco do método da cobrança aparece: `pix` em cobranças Pix, `card` em cobranças de cartão, `boleto` em boletos.
 
 ## Atributos
 
@@ -81,7 +112,7 @@ Só o bloco do método da cobrança aparece: `pix` em cobranças Pix, `card` em 
 </ParamField>
 
 <ParamField body="type" type="string">
-  `pix` ou `card`.
+  `pix`, `card` ou `boleto`.
 </ParamField>
 
 <ParamField body="status" type="string">
@@ -93,7 +124,7 @@ Só o bloco do método da cobrança aparece: `pix` em cobranças Pix, `card` em 
 </ParamField>
 
 <ParamField body="failureCode" type="string | null">
-  Motivo da falha. Preenchido só quando `status` é `failed`; `null` nos demais casos. Pix expirado é `status = expired`, não uma falha. Veja [Códigos de falha](#códigos-de-falha).
+  Motivo da falha. Preenchido só quando `status` é `failed`; `null` nos demais casos. Pix ou boleto vencido é `status = expired`, não uma falha. Veja [Códigos de falha](#códigos-de-falha).
 </ParamField>
 
 <ParamField body="description" type="string | null">
@@ -111,9 +142,11 @@ Só o bloco do método da cobrança aparece: `pix` em cobranças Pix, `card` em 
 <ParamField body="pix" type="object">
   Só em cobranças Pix.
 
-  - `reference`: TxId do QR code.
-  - `qrCode`: BR Code (copia-e-cola).
+  - `qrCodeUrl`: URL pública da imagem PNG do QR code, pronta para exibir. `null` nas cobranças criadas antes do recurso ou se a imagem não pôde ser gerada (o `copyPaste` continua válido).
+  - `copyPaste`: BR Code (copia-e-cola).
   - `expiresAt`: vencimento (ISO 8601). `null` no Pix estático.
+  - `reference` (**obsoleto**): identificador legado do Pix. Não use; será removido.
+  - `qrCode` (**obsoleto**): igual a `copyPaste`. Use `copyPaste`; será removido.
 </ParamField>
 
 <ParamField body="card" type="object">
@@ -124,6 +157,21 @@ Só o bloco do método da cobrança aparece: `pix` em cobranças Pix, `card` em 
   - `nsu`: referência da transação na adquirente.
   - `authorizationCode`: código de autorização do banco emissor.
   - `acquirerStatusCode`: código de resposta do emissor (`0000` quando aprovado).
+</ParamField>
+
+<ParamField body="boleto" type="object">
+  Só em boletos. Não há status próprio: o ciclo de vida é o `status` da cobrança.
+
+  - `barcode`: código de barras (44 dígitos).
+  - `digitableLine`: linha digitável.
+  - `pdfUrl`: URL pública do PDF do boleto.
+  - `dueDate`: vencimento, `YYYY-MM-DD`.
+  - `daysAfterDue`: dias em que ainda pode ser pago após o vencimento.
+  - `paidAmount`: quanto o pagador pagou, em centavos, já com multa e juros. `null` até o pagamento.
+  - `paymentDate`: dia do pagamento, `YYYY-MM-DD`. `null` até o pagamento.
+  - `creditDate`: quando o valor fica disponível na conta (ISO 8601). `null` até o pagamento.
+
+  `barcode`, `digitableLine` e `pdfUrl` podem vir `null` logo após a criação, se o registro no banco ainda estiver em andamento.
 </ParamField>
 
 <ParamField body="splits" type="array">
@@ -156,8 +204,8 @@ Só o bloco do método da cobrança aparece: `pix` em cobranças Pix, `card` em 
 | ------ | ----------- |
 | `pending` | Aguardando pagamento |
 | `paid` | Paga |
-| `expired` | Pix venceu sem pagamento |
-| `failed` | Cartão: a adquirente recusou ou a captura falhou |
+| `expired` | Pix venceu sem pagamento, ou boleto passou do último dia de pagamento (`dueDate` + `daysAfterDue`) sem ser pago |
+| `failed` | Cartão: a adquirente recusou ou a captura falhou. Boleto: o banco recusou o registro |
 | `in_review` | Cartão: autorizada e reservada, em análise manual do antifraude |
 | `refunded` | Totalmente reembolsada |
 | `partially_refunded` | Reembolso parcial |
@@ -167,7 +215,7 @@ Acompanhe as mudanças por [webhooks de cobrança](../webhooks/payload-charge).
 
 ## Códigos de falha
 
-Presentes em `failureCode` quando `status` é `failed`. O código bruto do emissor fica em `card.acquirerStatusCode`.
+Presentes em `failureCode` quando `status` é `failed`. Em cartão, o código bruto do emissor fica em `card.acquirerStatusCode`.
 
 | Código | Significado |
 | ------ | ----------- |
@@ -184,6 +232,7 @@ Presentes em `failureCode` quando `status` é `failed`. O código bruto do emiss
 | `authentication_failed` | A autenticação 3-D Secure falhou |
 | `issuer_unavailable` | Emissor indisponível |
 | `processing_error` | Falha da adquirente ou da rede |
+| `boleto_registration_rejected` | Boleto: o banco recusou o registro depois da criação |
 | `unknown` | Código da adquirente ainda não mapeado |
 
 <Note>
@@ -203,7 +252,7 @@ Fatias da cobrança repassadas a outras contas quando ela é paga.
 | `account` | `string` | Conta recebedora (UUID). Só em splits `account` |
 | `createdAt` / `updatedAt` | `string` | ISO 8601 |
 
-Em Pix, a taxa da plataforma aparece como um split `mdr` e é debitada além dos seus splits. Em cartão não há split `mdr`: os splits são pagos direto pela adquirente a cada recebedor, e a taxa é o que sobra.
+Em Pix e boleto, a taxa da plataforma aparece como um split `mdr` e é debitada além dos seus splits. Em cartão não há split `mdr`: os splits são pagos direto pela adquirente a cada recebedor, e a taxa é o que sobra.
 
 ## Itens
 
@@ -224,9 +273,10 @@ Linhas informativas enviadas na criação (até 100). Não alteram valor, taxas,
 
 ## Expansão com `includes`
 
-`?includes=` aceita `customer` e `items`, separados por vírgula. Valores desconhecidos retornam `422`. Na consulta de uma cobrança, `items` já vem sempre.
+`?includes=` aceita `customer` e `items`, separados por vírgula. Valores desconhecidos retornam `422`. Na consulta de uma cobrança, `items` já vem sempre. `card` também é aceito, mas não altera a resposta: o bloco `card` já vem sempre nas cobranças de cartão.
 
 ## Próximos passos
 
-- [Criar cobrança](./create) (Pix e cartão)
+- [Criar cobrança](./create) (Pix, cartão e boleto)
+- [Simular cobrança](../simulate/charge) (taxas e prazos por método)
 - [Guia: cobrança Pix](../guides/pix-charge) e [Guia: cartão com 3DS](../guides/card-3ds)

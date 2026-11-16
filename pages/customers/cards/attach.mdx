@@ -1,0 +1,81 @@
+---
+title: 'Vincular cartão ao cliente'
+description: 'Vincula um cartão tokenizado a um cliente'
+sidebarTitle: 'Vincular'
+api: 'POST https://api.upag.io/v1/customers/{customerId}/cards'
+---
+
+Vincula ao cliente um cartão já [tokenizado](../../cards/create) que ainda não tem cliente. Se o cliente não tem cartão padrão, este vira o `defaultCard` dele.
+
+Para vincular já na tokenização, envie `customer` em [Criar cartão](../../cards/create) com a chave secreta.
+
+Permissão: `card.write`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/customers/8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83/cards \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{ "card": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15" }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const card = await upag.customers.cards.attach('8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83', {
+  card: '5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15',
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="customerId" type="string (uuid)" required>
+  ID do cliente.
+</ParamField>
+
+<ParamField body="card" type="string (uuid)" required>
+  ID do cartão tokenizado. Campos desconhecidos no corpo são rejeitados.
+</ParamField>
+
+## Resposta
+
+`200 OK` com o cartão vinculado.
+
+```json Response
+{
+  "id": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
+  "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "brand": "visa",
+  "firstDigits": "424242",
+  "lastDigits": "4242",
+  "fingerprint": "9f2c4b7e1a8d3f6c0b5e2a9d4c7f1e3b8a6d0c2f5e9b1a4d7c3f6e0b2a5d8c1f",
+  "holderName": "Luke Skywalker",
+  "expirationMonth": 11,
+  "expirationYear": 2031,
+  "funding": "credit",
+  "wallet": null,
+  "status": "active",
+  "createdAt": "2026-07-27T18:04:11.482Z",
+  "updatedAt": "2026-07-27T18:10:02.913Z"
+}
+```
+
+A operação é idempotente: vincular de novo um cartão que já é deste cliente devolve o mesmo cartão. Se o cliente já tem um cartão com o mesmo número (mesmo `fingerprint`), a resposta é **esse** cartão, com outro `id`, e o cartão enviado é removido. Use sempre o `id` da resposta.
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `404` | `CUSTOMER_NOT_FOUND` | Cliente inexistente, excluído ou de outra conta |
+| `404` | `CARD_NOT_FOUND` | Cartão inexistente, removido ou de outra conta |
+| `409` | `card_already_attached` | O cartão já está vinculado a outro cliente |
+| `422` | `VALIDATION_FAILED` | `customerId` ou `card` não é UUID, ou campo desconhecido no corpo |

@@ -1,0 +1,65 @@
+---
+title: 'Listar eventos'
+description: 'Lista os eventos que um webhook pode assinar, com o rótulo de cada um'
+sidebarTitle: 'Listar eventos'
+api: 'GET https://api.upag.io/v1/webhook-events'
+---
+
+Permissão: `webhook.read`
+
+Retorna todos os valores aceitos em `events` ao [criar](./create) ou [atualizar](./update) um webhook, com um rótulo em português para mostrar numa interface. A lista inclui nomes aceitos que hoje não geram entregas; veja [Eventos](./overview#eventos).
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.dev/v1/webhook-events \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const { data, count } = await upag.webhookEvents.list();
+```
+</CodeGroup>
+
+<Note>
+  Em produção use `https://api.upag.io/v1` com `sk_live_...`. O SDK escolhe o host pela chave.
+</Note>
+
+## Parâmetros
+
+Nenhum. A lista não é paginada.
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "data": [
+    { "value": "charge.created", "label": "Cobrança criada" },
+    { "value": "charge.updated", "label": "Cobrança atualizada" },
+    { "value": "charge.paid", "label": "Cobrança confirmada" },
+    { "value": "bill_payment.paid", "label": "Pagamento de conta concluído" }
+  ],
+  "count": 4
+}
+```
+
+O exemplo está resumido: a resposta real traz todos os eventos.
+
+<ParamField body="data[].value" type="string">
+  Nome do evento, como aceito em `events` e enviado em `event` nas entregas.
+</ParamField>
+
+<ParamField body="data[].label" type="string">
+  Rótulo em português.
+</ParamField>
+
+<ParamField body="count" type="integer">
+  Quantidade de eventos.
+</ParamField>

@@ -1,0 +1,105 @@
+---
+title: 'Listar pagamentos de conta'
+description: 'Lista os pagamentos de conta, mais recentes primeiro'
+sidebarTitle: 'Listar'
+api: 'GET https://api.upag.io/v1/bill-payments'
+---
+
+Lista os pagamentos de conta, do mais recente para o mais antigo.
+
+Permissão: `bill.read`. Apenas chave secreta (`sk_…`).
+
+<Warning>
+  O pagamento de contas precisa estar habilitado para a conta. Até lá, a rota responde `403 feature_flag_disabled`. Veja [Erros](../guides/errors#recurso-não-habilitado).
+</Warning>
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -G https://api.upag.dev/v1/bill-payments \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -d "page=1" \
+  -d "limit=15" \
+  -d "status=paid" \
+  -d "startDate=2026-11-01T00:00:00.000Z" \
+  -d "endDate=2026-11-30T23:59:59.999Z"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const { data, count } = await upag.billPayments.list({
+  page: 1,
+  limit: 15,
+  status: 'paid',
+  startDate: '2026-11-01T00:00:00.000Z',
+  endDate: '2026-11-30T23:59:59.999Z',
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField query="page" type="integer" default="1">
+  Página, a partir de 1.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="15">
+  Itens por página, mínimo 1.
+</ParamField>
+
+<ParamField query="bill" type="string (uuid)">
+  Só os pagamentos desta conta.
+</ParamField>
+
+<ParamField query="status" type="string">
+  `pending`, `scheduled`, `awaiting_funds`, `paid`, `failed`, `canceled` ou `reversed`.
+</ParamField>
+
+<ParamField query="startDate" type="string">
+  Só pagamentos criados a partir deste instante (data ou data e hora ISO 8601, inclusive).
+</ParamField>
+
+<ParamField query="endDate" type="string">
+  Só pagamentos criados até este instante (inclusive). Uma data sem hora vale como meia-noite UTC do dia.
+</ParamField>
+
+## Resposta
+
+`200 OK`. `count` é o total de pagamentos que atendem aos filtros.
+
+```json Response
+{
+  "data": [
+    {
+      "id": "b7d2f4e8-1a3c-4e59-8f60-2c9d1e7a4b36",
+      "bill": "3c9e7a10-52d4-4b8f-9e61-0a2f7d4c8b15",
+      "status": "paid",
+      "amount": 25000,
+      "scheduledFor": "2026-11-13",
+      "paidAt": "2026-11-13T15:20:03.000Z",
+      "receiptUrl": "https://api.upag.io/v1/accounts/0c8e9d2a-1b3f-4a6c-9e57-2d4f6a8b0c13/bill-payments/b7d2f4e8-1a3c-4e59-8f60-2c9d1e7a4b36/receipt",
+      "failureCode": null,
+      "createdAt": "2026-11-13T14:05:40.118Z",
+      "updatedAt": "2026-11-13T15:20:04.551Z"
+    }
+  ],
+  "count": 1
+}
+```
+
+Campos em [Referência](./reference).
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `403` | `feature_flag_disabled` | Pagamento de contas não habilitado para a conta |
+| `422` | `VALIDATION_FAILED` | `bill` não é UUID, `status` desconhecido ou data inválida |

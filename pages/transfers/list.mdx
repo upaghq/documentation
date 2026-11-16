@@ -40,7 +40,7 @@ const { data, count } = await upag.transfers.list({
 ## Parâmetros
 
 <ParamField query="direction" type="string">
-  `in` (Pix recebido) ou `out` (Pix enviado). Sem o filtro, traz as duas. Valor desconhecido retorna `422`.
+  `in` (recebidas: Pix e TED) ou `out` (Pix enviado). Sem o filtro, traz as duas. Valor desconhecido retorna `422`.
 </ParamField>
 
 <ParamField query="page" type="integer" default="1">
@@ -62,6 +62,7 @@ const { data, count } = await upag.transfers.list({
       "id": "770e8400-e29b-41d4-a716-446655440000",
       "status": "completed",
       "direction": "out",
+      "method": "pix",
       "type": "key",
       "amount": 10000,
       "pixKey": "55ce1aae-0d2b-4d76-bc77-294d6407349e",

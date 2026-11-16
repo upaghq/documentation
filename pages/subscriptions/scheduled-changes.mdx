@@ -17,8 +17,9 @@ Permissão: `subscription.read`. Apenas chave secreta (`sk_…`).
 
 <CodeGroup>
 ```bash cURL
-curl https://api.upag.dev/v1/subscriptions/9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36/scheduled-changes \
-  -H "Authorization: Bearer sk_test_your_api_key"
+curl -G https://api.upag.dev/v1/subscriptions/9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36/scheduled-changes \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -d "includes=price"
 ```
 
 ```javascript Node.js SDK
@@ -28,6 +29,7 @@ const upag = new Upag('sk_test_your_api_key');
 
 const { data, count } = await upag.subscriptions.listScheduledChanges(
   '9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36',
+  { includes: 'price' },
 );
 ```
 </CodeGroup>
@@ -36,6 +38,10 @@ const { data, count } = await upag.subscriptions.listScheduledChanges(
 
 <ParamField path="subscriptionId" type="string (uuid)" required>
   ID da assinatura.
+</ParamField>
+
+<ParamField query="includes" type="string">
+  `price` troca o UUID em `price` pelo [objeto preço](../prices/reference) completo. Mudanças sem preço (`remove`, ou `update` só de quantidade) continuam com `price: null`. Um valor desconhecido retorna `422`.
 </ParamField>
 
 A lista não é paginada.
@@ -52,7 +58,19 @@ A lista não é paginada.
       "subscription": "9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36",
       "operation": "add",
       "item": null,
-      "price": "b2e7a05c-9d41-4c38-8f6a-1e0d5c3b7a92",
+      "price": {
+        "id": "b2e7a05c-9d41-4c38-8f6a-1e0d5c3b7a92",
+        "name": "Usuário adicional",
+        "billingType": "recurring",
+        "interval": "month",
+        "intervalCount": 1,
+        "currency": "brl",
+        "amount": 2900,
+        "metadata": {},
+        "active": true,
+        "createdAt": "2026-10-01T12:00:00.000Z",
+        "updatedAt": "2026-10-01T12:00:00.000Z"
+      },
       "quantity": 2,
       "createdAt": "2026-10-12T14:20:00.000Z"
     },
@@ -88,8 +106,8 @@ A lista não é paginada.
   UUID do item afetado. `null` em `add`, pois o item ainda não existe.
 </ParamField>
 
-<ParamField body="price" type="string | null">
-  UUID do preço a adicionar (`add`) ou o novo preço (`update`). `null` em `remove`, ou em `update` que só muda a quantidade.
+<ParamField body="price" type="string | object | null">
+  UUID do preço a adicionar (`add`) ou o novo preço (`update`); o objeto preço com `?includes=price`. `null` em `remove`, ou em `update` que só muda a quantidade.
 </ParamField>
 
 <ParamField body="quantity" type="integer | null">

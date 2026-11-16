@@ -6,7 +6,7 @@ boost: 2
 keywords: ['webhooks', 'eventos', 'charge.paid', 'transfer.completed', 'hmac', 'X-Webhook-Signature']
 ---
 
-Registre URLs para receber eventos de cobranças, clientes, transferências, estornos, contestações, faturas, assinaturas e sessões de checkout. Cadastre inscrições pela API ([Criar webhook](./create)); falhas de entrega aparecem em [Logs de entrega](../webhook-logs/list).
+Registre URLs para receber eventos de cobranças, clientes, transferências, pagamentos de conta, estornos, contestações, faturas, assinaturas e sessões de checkout. Cadastre inscrições pela API ([Criar webhook](./create)); falhas de entrega aparecem em [Logs de entrega](../webhook-logs/list).
 
 ## Montagem básica
 
@@ -66,11 +66,11 @@ Os `headers` definidos no cadastro do webhook são aplicados por último: um hea
 
 ## Assinar eventos
 
-Informe em `events` ao menos um evento ao [criar](./create) ou [atualizar](./update) o webhook. Um webhook só recebe os eventos listados e enquanto `active` for `true`. Um valor fora da lista abaixo é rejeitado com erro de validação.
+Informe em `events` ao menos um evento ao [criar](./create) ou [atualizar](./update) o webhook. Um webhook só recebe os eventos listados e enquanto `active` for `true`. Um valor fora da lista é rejeitado com erro de validação. A lista completa, com um rótulo em português para cada evento, vem de [Listar eventos](./events).
 
 ## Eventos
 
-Uma mudança de status dispara **dois** eventos: o específico e o `*.updated` correspondente (por exemplo `charge.paid` e `charge.updated`). Assine só um deles, a menos que queira tratar os dois.
+Em cobranças, transferências, pagamentos de conta, estornos e contestações, uma mudança de status dispara **dois** eventos: o específico e o `*.updated` correspondente (por exemplo `charge.paid` e `charge.updated`). Assine só um deles, a menos que queira tratar os dois. Faturas, assinaturas e sessões de checkout disparam só o evento específico do status.
 
 ### Cobranças
 
@@ -110,8 +110,23 @@ Uma mudança de status dispara **dois** eventos: o específico e o `*.updated` c
 `data`: [Payload transferência](./payload-transfer).
 
 <Note>
-  Um Pix recebido direto numa das suas chaves, sem cobrança, vira uma transferência com `direction: "in"`: dispara `transfer.created`, `transfer.completed` e `transfer.updated` em sequência (sem `transfer.processing`). Só o Pix que quita uma cobrança sua dispara `charge.paid`. Para detectar entrada de dinheiro, assine também `transfer.completed`.
+  Um Pix recebido direto numa das suas chaves, sem cobrança, e toda TED recebida (inclusive a liquidação de cartão pela adquirente) viram uma transferência com `direction: "in"`: disparam `transfer.created`, `transfer.completed` e `transfer.updated` em sequência (sem `transfer.processing`). Só o Pix que quita uma cobrança sua dispara `charge.paid`. Para detectar entrada de dinheiro, assine também `transfer.completed`.
 </Note>
+
+### Pagamentos de conta
+
+Só para contas com o [pagamento de contas](../bills/reference) habilitado.
+
+| Evento | Quando |
+| ------ | ------ |
+| `bill_payment.created` | Pagamento criado, com o valor já debitado do saldo |
+| `bill_payment.paid` | Pagamento liquidado |
+| `bill_payment.failed` | O banco recusou o pagamento; o valor volta ao saldo |
+| `bill_payment.canceled` | Pagamento agendado cancelado; o valor volta ao saldo |
+| `bill_payment.reversed` | O banco devolveu um pagamento já pago; o valor volta ao saldo |
+| `bill_payment.updated` | Qualquer mudança de status, junto do evento específico. É o único evento de `scheduled` e `awaiting_funds` |
+
+`data`: [Payload pagamento de conta](./payload-bill-payment).
 
 ### Estornos
 
@@ -161,6 +176,8 @@ Uma mudança de status dispara **dois** eventos: o específico e o `*.updated` c
 | `subscription.paused` | Assinatura pausada |
 | `subscription.canceled` | Assinatura cancelada |
 | `subscription.void` | Assinatura anulada |
+| `subscription.ended` | Assinatura encerrada depois do último ciclo (`maxCycles`) |
+| `subscription.updated` | Assinatura alterada sem mudar de status: atualização, itens, cancelamento agendado para o fim do período ou proration aplicada |
 
 `data`: [Payload assinatura](./payload-subscription).
 
@@ -175,7 +192,7 @@ Uma mudança de status dispara **dois** eventos: o específico e o `*.updated` c
 `data`: [Payload checkout](./payload-checkout).
 
 <Warning>
-  A API aceita em `events` alguns nomes que **não são emitidos hoje**: `charge.pending`, `invoice.updated`, `invoice.drafted`, `subscription.updated`, `checkout-session.opened`, `checkout-session.updated`, além dos prefixos legados `payment.*`, `product.*` e `price.*`. Inscrever-se neles não gera entregas. Não dependa deles.
+  A API aceita em `events` alguns nomes que **não são emitidos hoje**: `charge.pending`, `invoice.updated`, `invoice.drafted`, `checkout-session.opened`, `checkout-session.updated`, além dos prefixos legados `payment.*`, `product.*` e `price.*`. Inscrever-se neles não gera entregas. Não dependa deles.
 </Warning>
 
 ## Entrega e novas tentativas
@@ -211,6 +228,9 @@ return res.sendStatus(200);
   </Card>
   <Card title="Cliente" icon="user" href="./payload-customer">
     Eventos `customer.*`.
+  </Card>
+  <Card title="Pagamento de conta" icon="file-invoice-dollar" href="./payload-bill-payment">
+    Eventos `bill_payment.*`.
   </Card>
   <Card title="Estorno" icon="rotate-left" href="./payload-refund">
     Eventos `refund.*`.

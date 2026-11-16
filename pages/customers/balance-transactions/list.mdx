@@ -1,0 +1,91 @@
+---
+title: 'Listar transações de saldo'
+description: 'Lista as transações de saldo de um cliente, mais recentes primeiro'
+sidebarTitle: 'Listar'
+api: 'GET https://api.upag.io/v1/customers/{customerId}/balance-transactions'
+---
+
+Lista as transações de saldo do cliente, da mais recente para a mais antiga.
+
+Permissão: `customer.read`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -G https://api.upag.dev/v1/customers/8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83/balance-transactions \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -d "page=1" \
+  -d "limit=15"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const { data, count } = await upag.customers.balanceTransactions.list(
+  '8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83',
+  { page: 1, limit: 15 },
+);
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="customerId" type="string (uuid)" required>
+  ID do cliente.
+</ParamField>
+
+<ParamField query="page" type="integer" default="1">
+  Página, a partir de 1.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="15">
+  Itens por página, mínimo 1.
+</ParamField>
+
+## Resposta
+
+`200 OK`. `count` é o total de transações do cliente.
+
+```json Response
+{
+  "data": [
+    {
+      "id": "a90d2e47-6c1b-4f83-9e25-3b7a0c8d1f64",
+      "type": "applied_to_invoice",
+      "amount": 5000,
+      "endingBalance": 0,
+      "invoice": "6d3f9a12-8b4e-4c71-a05d-2e9b7c1f3a48",
+      "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+      "description": null,
+      "createdAt": "2026-12-01T03:00:12.000Z"
+    },
+    {
+      "id": "e41b7c09-3d6a-4f25-8b1e-7a0c2d9f5e38",
+      "type": "adjustment",
+      "amount": -5000,
+      "endingBalance": -5000,
+      "invoice": null,
+      "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+      "description": "Crédito por indisponibilidade em outubro",
+      "createdAt": "2026-11-13T14:30:00.000Z"
+    }
+  ],
+  "count": 2
+}
+```
+
+Campos em [Referência](./reference).
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `404` | `CUSTOMER_NOT_FOUND` | Cliente inexistente, excluído ou de outra conta |
+| `422` | `VALIDATION_FAILED` | `customerId` não é UUID, ou paginação inválida |

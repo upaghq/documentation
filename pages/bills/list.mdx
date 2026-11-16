@@ -1,0 +1,115 @@
+---
+title: 'Listar contas'
+description: 'Lista as contas a pagar registradas, mais recentes primeiro'
+sidebarTitle: 'Listar'
+api: 'GET https://api.upag.io/v1/bills'
+---
+
+Lista as contas registradas, da mais recente para a mais antiga, cada uma com o seu pagamento vigente.
+
+Permissão: `bill.read`. Apenas chave secreta (`sk_…`).
+
+<Warning>
+  O pagamento de contas precisa estar habilitado para a conta. Até lá, a rota responde `403 feature_flag_disabled`. Veja [Erros](../guides/errors#recurso-não-habilitado).
+</Warning>
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -G https://api.upag.dev/v1/bills \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -d "page=1" \
+  -d "limit=15" \
+  -d "status=open" \
+  -d "type=boleto" \
+  -d "includes=payment"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const { data, count } = await upag.bills.list({
+  page: 1,
+  limit: 15,
+  status: 'open',
+  type: 'boleto',
+  includes: 'payment',
+});
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField query="page" type="integer" default="1">
+  Página, a partir de 1.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="15">
+  Itens por página, mínimo 1.
+</ParamField>
+
+<ParamField query="status" type="string">
+  `open` ou `canceled`.
+</ParamField>
+
+<ParamField query="type" type="string">
+  `boleto` ou `utility`.
+</ParamField>
+
+<ParamField query="includes" type="string">
+  `payment`: devolve o objeto pagamento em `payment` no lugar do UUID. Valor desconhecido retorna `422`.
+</ParamField>
+
+## Resposta
+
+`200 OK`. `count` é o total de contas que atendem aos filtros.
+
+```json Response
+{
+  "data": [
+    {
+      "id": "3c9e7a10-52d4-4b8f-9e61-0a2f7d4c8b15",
+      "type": "boleto",
+      "status": "open",
+      "source": "api",
+      "barcode": "34191090080012213037050059980008100000025000",
+      "amount": 25000,
+      "dueDate": "2026-11-30",
+      "beneficiaryName": "Imobiliária Exemplo LTDA",
+      "beneficiaryTaxNumber": "12345678000199",
+      "description": "Aluguel novembro",
+      "payment": {
+        "id": "b7d2f4e8-1a3c-4e59-8f60-2c9d1e7a4b36",
+        "bill": "3c9e7a10-52d4-4b8f-9e61-0a2f7d4c8b15",
+        "status": "scheduled",
+        "amount": 25000,
+        "scheduledFor": "2026-11-28",
+        "paidAt": null,
+        "receiptUrl": null,
+        "failureCode": null,
+        "createdAt": "2026-11-13T14:05:40.118Z",
+        "updatedAt": "2026-11-13T14:05:41.902Z"
+      },
+      "createdAt": "2026-11-13T14:02:11.204Z",
+      "updatedAt": "2026-11-13T14:02:11.204Z"
+    }
+  ],
+  "count": 1
+}
+```
+
+Campos em [Referência](./reference).
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `403` | `feature_flag_disabled` | Pagamento de contas não habilitado para a conta |
+| `422` | `VALIDATION_FAILED` | `status`, `type` ou `includes` inválido |

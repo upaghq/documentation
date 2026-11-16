@@ -6,10 +6,12 @@ sidebarTitle: 'Visão geral'
 
 Uma sessão de checkout representa uma compra em andamento: os itens, os métodos de pagamento aceitos, o pagador e, depois da confirmação, a fatura e a assinatura que ela gerou. Ela nasce de duas formas:
 
-- **Do seu servidor**, com a chave secreta: [Criar sessão](./create). Você paga a sessão por [Confirmar](./confirm), também no servidor.
-- **Do navegador do pagador**, a partir de um [link de pagamento](../payment-links/reference): [Iniciar sessão](./start). A sessão é uma cópia do link no momento da abertura (itens, bumps, métodos, URLs, trial); editar o link depois não muda uma sessão já aberta. A resposta traz o `clientSecret`, a única credencial que o navegador usa para ler e pagar aquela sessão.
+- **Do seu servidor**, com a chave secreta: [Criar sessão](./create). Você paga a sessão por [Confirmar](./confirm), também no servidor, ou manda o pagador para a `url` da sessão. Com `proration`, a sessão cobra a mudança de itens de uma [assinatura](../subscriptions/reference).
+- **Do navegador do pagador**, a partir de um [link de pagamento](../payment-links/reference): [Iniciar sessão](./start). A sessão é uma cópia do link no momento da abertura (itens, bumps, métodos, URLs, trial); editar o link depois não muda uma sessão já aberta. A resposta traz o `clientSecret`, a credencial que o navegador usa para ler e pagar aquela sessão.
 
-Uma sessão fica `open` por 24 horas (ou até `expiresAt`) e vira `complete` quando o pagamento é aprovado (ou, num teste sem nada a cobrar hoje, quando é confirmada).
+A página hospedada abre a sessão pelo código na `url` (`/cs/<code>`) com [Obter sessão por código](./retrieve-by-code), que emite um `clientSecret` novo. Assim uma sessão criada no servidor também pode ser paga no navegador.
+
+Uma sessão fica `open` por 24 horas (numa sessão de `proration`, 1 hora ou até o fim do período da assinatura, o que vier antes), ou até `expiresAt`, e vira `complete` quando o pagamento é aprovado (ou, num teste sem nada a cobrar hoje, quando é confirmada).
 
 ## Endpoints
 
@@ -39,6 +41,7 @@ Públicos, sem autenticação:
 | ------ | ---- | --------- |
 | `POST` | `/v1/checkout/payment-links/{code}/sessions` | [Iniciar sessão](./start) a partir de um link |
 | `POST` | `/v1/checkout/shopify/sessions` | [Iniciar checkout Shopify](./shopify) |
+| `GET` | `/v1/checkout/sessions/code/{code}` | [Obter sessão por código](./retrieve-by-code) e emitir um `clientSecret` novo |
 
 <Note>
   Sandbox: `https://api.upag.dev/v1` com `sk_test_…`. Produção: `https://api.upag.io/v1` com `sk_live_…`. O `clientSecret` nunca vai para uma chave secreta nem para logs; trate-o como uma senha de uma sessão só.
@@ -60,11 +63,14 @@ Públicos, sem autenticação:
     "trialEnd": null,
     "trialSettings": {
       "endBehavior": { "missingPaymentMethod": "create_invoice" }
-    }
+    },
+    "maxCycles": null
   },
   "paymentMethodCollection": "always",
+  "meta": { "pedido": "A-1042" },
+  "proration": null,
   "status": "open",
-  "url": "https://checkout.upag.io/cs/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26",
+  "url": "https://checkout.upag.io/cs/Hq7Kd2xPzR4tWm9b",
   "expiresAt": "2026-10-08T19:00:00.000Z",
   "createdAt": "2026-10-07T19:00:00.000Z",
   "updatedAt": "2026-10-07T19:00:00.000Z",
@@ -84,6 +90,9 @@ Públicos, sem autenticação:
     {
       "id": "b7e1c4a9-3d52-4f08-86a1-2c9d5e7f0b34",
       "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61",
+      "name": null,
+      "description": null,
+      "amount": null,
       "quantity": 1
     }
   ],
@@ -111,7 +120,7 @@ Públicos, sem autenticação:
 </ParamField>
 
 <ParamField body="paymentMethods" type="array">
-  Métodos aceitos: `pix` e/ou `card`.
+  Métodos aceitos: `pix`, `card` e/ou `boleto`.
 </ParamField>
 
 <ParamField body="subscriptionData" type="object">
@@ -120,10 +129,19 @@ Públicos, sem autenticação:
   - `trial`: duração relativa do teste (`interval`: `day`, `week` ou `month`; `intervalCount`), contada a partir do momento em que a assinatura é criada. `null` sem teste.
   - `trialEnd`: data fixa de fim do teste, em ISO 8601. `null` sem teste ou com `trial`.
   - `trialSettings.endBehavior.missingPaymentMethod`: `create_invoice` (cobra o primeiro período por Pix) ou `cancel`, quando o teste acaba sem método de pagamento. Veja [Teste grátis](../guides/free-trial).
+  - `maxCycles`: quantos períodos a assinatura dura antes de terminar (`ended`). `null` renova até ser cancelada.
 </ParamField>
 
 <ParamField body="paymentMethodCollection" type="string">
   `always` (padrão) ou `if_required`. Com `if_required`, uma sessão sem nada a pagar hoje (teste) pode terminar sem método de pagamento.
+</ParamField>
+
+<ParamField body="meta" type="object">
+  Pares chave-valor seus, copiados para a cobrança que paga a sessão. `{}` quando não enviados.
+</ParamField>
+
+<ParamField body="proration" type="object | null">
+  Só numa sessão de [mudança de assinatura](./create): o cálculo que ela cobra, no formato de [Calcular proration](../subscriptions/proration) (`subscription`, `currency`, `calculatedAt`, `period`, `lines`, `amountDue`, `nextAmount` e `items`). A mudança é aplicada à assinatura quando a fatura da sessão é paga. `null` nas demais sessões.
 </ParamField>
 
 <ParamField body="status" type="string">
@@ -131,7 +149,7 @@ Públicos, sem autenticação:
 </ParamField>
 
 <ParamField body="url" type="string | null">
-  Endereço da página de checkout hospedada da sessão. `null` quando o checkout hospedado não está configurado.
+  Endereço da página de checkout hospedada: `https://<checkout>/cs/<code>`. O código é a credencial da página, que o troca por um `clientSecret` em [Obter sessão por código](./retrieve-by-code); trate a URL como um link de pagamento. `null` quando o checkout hospedado não está configurado, ou na sessão criada antes de existirem códigos.
 </ParamField>
 
 <ParamField body="expiresAt" type="string | null">
@@ -182,7 +200,8 @@ Públicos, sem autenticação:
   Itens da sessão.
 
   - `id`: UUID do item.
-  - `price`: UUID do [preço](../prices/reference).
+  - `price`: UUID do [preço](../prices/reference). `null` num item sem preço de catálogo (link de valor fixo ou `proration`).
+  - `name`, `description`, `amount`: só no item sem preço: nome, descrição e valor unitário em **centavos**. `null` nos itens com `price`.
   - `quantity`: quantidade.
 </ParamField>
 
@@ -210,13 +229,13 @@ Públicos, sem autenticação:
 
 | Status | Significado |
 | ------ | ----------- |
-| `open` | Esperando o pagador. É o único estado em que a sessão pode ser alterada, removida ou receber cupom. Um Pix gerado e ainda não pago, ou um cartão recusado, mantêm a sessão `open`. |
+| `open` | Esperando o pagador. É o único estado em que a sessão pode ser alterada, removida ou receber cupom. Um Pix ou boleto gerado e ainda não pago, ou um cartão recusado, mantêm a sessão `open`. |
 | `complete` | Paga (ou, num teste sem nada a cobrar hoje, confirmada). |
 | `expired` | Passou do `expiresAt` sem ser paga. |
 
 ## Visão do pagador
 
-As rotas que o navegador chama com o `clientSecret` ([Iniciar](./start), [Obter](./retrieve), [Confirmar](./confirm), [cupom](./apply-coupon)) devolvem uma visão achatada e pronta para a página de checkout, em vez da estrutura acima: itens com o preço e o produto expandidos, `subtotal`, `discountAmount` e `amount` (em centavos), opções de parcelamento por método, `trial`, `customer`, `charge`, `invoice` e dados da conta. A forma é a mesma em todas essas rotas; só `clientSecret` muda (vem preenchido apenas em Iniciar, `null` nas demais). Os campos estão em [Obter sessão (pagador)](./retrieve).
+As rotas que o navegador chama ([Iniciar](./start), [Obter por código](./retrieve-by-code), e com o `clientSecret` [Obter](./retrieve), [Confirmar](./confirm) e [cupom](./apply-coupon)) devolvem uma visão achatada e pronta para a página de checkout, em vez da estrutura acima: itens com o preço e o produto expandidos, `subtotal`, `discountAmount` e `amount` (em centavos), opções de parcelamento por método, `trial`, `customer`, `charge`, `invoice` e dados da conta. A forma é a mesma em todas essas rotas; só `clientSecret` muda (vem preenchido em Iniciar e em Obter por código, `null` nas demais). Os campos estão em [Obter sessão (pagador)](./retrieve).
 
 ## Webhooks
 

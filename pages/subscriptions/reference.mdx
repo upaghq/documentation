@@ -4,7 +4,7 @@ description: 'Objeto Assinatura (subscription): cobrança recorrente de preços'
 sidebarTitle: 'Visão geral'
 ---
 
-Uma assinatura cobra um cliente de forma recorrente por um ou mais [preços](../prices/reference) `recurring`. A cada período a Upag gera uma [fatura](../invoices/reference) e a cobra pelo método guardado na assinatura (`pix` ou um cartão tokenizado). Também é possível começar com um período de teste (trial).
+Uma assinatura cobra um cliente de forma recorrente por um ou mais [preços](../prices/reference) `recurring`. A cada período a Upag gera uma [fatura](../invoices/reference) e a cobra pelo método guardado na assinatura (`pix`, `boleto` ou um cartão tokenizado). Também é possível começar com um período de teste (trial) e limitar quantos períodos a assinatura dura (`maxCycles`).
 
 Todos os endpoints exigem **chave secreta** (`sk_…`).
 
@@ -15,6 +15,7 @@ Todos os endpoints exigem **chave secreta** (`sk_…`).
 | `GET` | `/v1/subscriptions/{subscriptionId}` | `subscription.read` |
 | `PATCH` | `/v1/subscriptions/{subscriptionId}` | `subscription.write` |
 | `POST` | `/v1/subscriptions/{subscriptionId}/cancel` | `subscription.write` |
+| `POST` | `/v1/subscriptions/{subscriptionId}/proration` | `subscription.read` |
 | `POST` | `/v1/subscriptions/{subscriptionId}/items` | `subscription.write` |
 | `PATCH` | `/v1/subscriptions/{subscriptionId}/items/{itemId}` | `subscription.write` |
 | `DELETE` | `/v1/subscriptions/{subscriptionId}/items/{itemId}` | `subscription.write` |
@@ -40,6 +41,8 @@ A prévia da próxima cobrança fica em [Próxima fatura](../invoices/upcoming).
   "interval": "month",
   "intervalCount": 1,
   "cancelAtPeriodEnd": false,
+  "maxCycles": null,
+  "currentCycle": 1,
   "startDate": "2026-10-07T19:00:00.000Z",
   "endDate": null,
   "trialStartDate": null,
@@ -73,12 +76,12 @@ A prévia da próxima cobrança fica em [Próxima fatura](../invoices/upcoming).
   UUID da assinatura.
 </ParamField>
 
-<ParamField body="customer" type="string">
-  UUID do [cliente](../customers/reference).
+<ParamField body="customer" type="string | object">
+  UUID do [cliente](../customers/reference). Com `?includes=customer` em [Listar](./list) ou [Obter](./get), vem o objeto cliente completo.
 </ParamField>
 
 <ParamField body="paymentMethod" type="string | null">
-  `pix` ou `card`: o método usado nas cobranças. `null` num teste sem método de pagamento.
+  `pix`, `card` ou `boleto`: o método usado nas cobranças. `null` num teste sem método de pagamento.
 </ParamField>
 
 <ParamField body="card" type="string | null">
@@ -86,7 +89,7 @@ A prévia da próxima cobrança fica em [Próxima fatura](../invoices/upcoming).
 </ParamField>
 
 <ParamField body="status" type="string">
-  `incomplete`, `trialing`, `active`, `past_due`, `paused`, `canceled` ou `void`. Veja [Status](#status).
+  `incomplete`, `trialing`, `active`, `past_due`, `paused`, `canceled`, `void` ou `ended`. Veja [Status](#status).
 </ParamField>
 
 <ParamField body="currency" type="string">
@@ -105,12 +108,20 @@ A prévia da próxima cobrança fica em [Próxima fatura](../invoices/upcoming).
   Quando `true`, a assinatura é cancelada ao fim do período atual em vez de renovar.
 </ParamField>
 
+<ParamField body="maxCycles" type="integer | null">
+  Quantos períodos de cobrança a assinatura dura. `null` renova até ser cancelada. Ao fim do último período ela vai para `ended`, sem gerar nova fatura. Pode ser alterado em [Atualizar assinatura](./update).
+</ParamField>
+
+<ParamField body="currentCycle" type="integer">
+  Períodos iniciados até agora, contando o atual. `0` antes do primeiro período começar (por exemplo, durante o teste).
+</ParamField>
+
 <ParamField body="startDate" type="string | null">
   ISO 8601 do início da assinatura. `null` durante o teste: o primeiro período só começa quando ele acaba.
 </ParamField>
 
 <ParamField body="endDate" type="string | null">
-  ISO 8601 do fim. Preenchido ao cancelar de imediato.
+  ISO 8601 do fim. Preenchido ao cancelar de imediato e, com `maxCycles`, assim que o último período começa (é o fim desse período).
 </ParamField>
 
 <ParamField body="trialStartDate" type="string | null">
@@ -138,7 +149,7 @@ A prévia da próxima cobrança fica em [Próxima fatura](../invoices/upcoming).
 </ParamField>
 
 <ParamField body="cancellationReason" type="string | null">
-  Motivo informado ao cancelar, ou `missing_payment_method` quando o teste acabou sem método de pagamento e o comportamento era `cancel`.
+  Motivo informado ao cancelar. Dois valores são definidos só pelo sistema: `missing_payment_method`, quando o teste acabou sem método de pagamento e o comportamento era `cancel`, e `payment_failed`, quando todas as tentativas de cobrar uma renovação falharam (veja [Renovação](#renovação)).
 </ParamField>
 
 <ParamField body="items" type="array">
@@ -169,16 +180,31 @@ A prévia da próxima cobrança fica em [Próxima fatura](../invoices/upcoming).
 | `incomplete` | Criada, esperando o primeiro pagamento (um Pix ainda não pago, ou um cartão recusado). Vira `active` quando a fatura do primeiro período é paga. |
 | `trialing` | Em período de teste. Nada é cobrado até `trialEndDate`. |
 | `active` | Em dia. |
-| `past_due` | A renovação falhou ou o teste acabou sem método de pagamento; a Upag tenta cobrar de novo. Volta a `active` quando a fatura é paga. |
+| `past_due` | A renovação falhou ou o teste acabou sem método de pagamento. Volta a `active` quando a fatura é paga. Veja [Renovação](#renovação). |
 | `paused` | Pausada. |
 | `canceled` | Cancelada. Final. |
 | `void` | Anulada. Final. |
+| `ended` | Cumpriu todos os períodos de `maxCycles` sem ser cancelada. Final. |
 
-Acompanhe as mudanças por [webhooks de assinatura](../webhooks/payload-subscription): `subscription.created`, `subscription.active`, `subscription.trialing`, `subscription.trial_ending`, `subscription.past_due`, `subscription.incomplete`, `subscription.paused`, `subscription.canceled` e `subscription.void`.
+Acompanhe as mudanças por [webhooks de assinatura](../webhooks/payload-subscription): `subscription.created`, `subscription.active`, `subscription.trialing`, `subscription.trial_ending`, `subscription.past_due`, `subscription.incomplete`, `subscription.paused`, `subscription.canceled`, `subscription.void` e `subscription.ended`, além de `subscription.updated` quando você altera a assinatura ou os itens dela.
 
 ## Renovação
 
-- Cartão: cada período é cobrado em 1 parcela no cartão guardado.
-- Pix: a fatura do período é emitida com um QR code que vence em 3 dias.
-- Recusa ou Pix sem pagamento: a assinatura vai para `past_due` e a cobrança é repetida.
-- Trocas de item agendadas com `applyAt: "period_end"` são aplicadas na renovação. Veja [Mudanças agendadas](./scheduled-changes).
+Quando `currentPeriodEnd` chega:
+
+- Com `cancelAtPeriodEnd: true`, a assinatura é cancelada em vez de renovar.
+- Se o período que acabou era o último de `maxCycles`, a assinatura vai para `ended` e nenhuma fatura é gerada.
+- Senão, as trocas de item agendadas com `applyAt: "period_end"` são aplicadas (veja [Mudanças agendadas](./scheduled-changes)) e a fatura do novo período é gerada e cobrada:
+  - Cartão: 1 parcela no cartão guardado.
+  - Pix: um QR code que vence em 3 dias.
+  - Boleto: um boleto para o cliente pagar.
+
+O período só avança quando a fatura é paga. Enquanto um Pix ou boleto espera pagamento, a assinatura não é cobrada de novo.
+
+### Novas tentativas
+
+Se a cobrança é recusada ou não pode ser feita, a assinatura vai para `past_due` e a cobrança é tentada de novo depois de 1, 5 e 30 minutos e, a partir daí, a cada 60 minutos. Depois de **8 tentativas** sem sucesso, contando a primeira, a assinatura é cancelada com `cancellationReason: "payment_failed"` e a fatura do período, se ainda estiver aberta, vira `uncollectible`.
+
+Um Pix de renovação que vence sem pagamento não gera um novo QR code: a fatura vira `uncollectible`, a assinatura vai para `past_due` e as rodadas seguintes contam como tentativas até o cancelamento por `payment_failed`. Se o cliente pagar o Pix vencido antes disso, a fatura é paga e a assinatura volta a `active`.
+
+As novas tentativas valem para renovações. Quando um teste acaba sem método de pagamento e sem `trialEndBehavior`, a fatura do primeiro período fica aberta e a assinatura fica `past_due` até essa fatura ser [paga](../invoices/pay).

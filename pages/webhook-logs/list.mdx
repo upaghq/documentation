@@ -13,8 +13,12 @@ Cada tentativa de entrega, inclusive reprocessamentos, gera um log.
 
 <CodeGroup>
 ```bash cURL
-curl https://api.upag.dev/v1/webhooks/aa0e8400-e29b-41d4-a716-446655440000/logs \
-  -H "Authorization: Bearer sk_test_your_api_key"
+curl -G https://api.upag.dev/v1/webhooks/aa0e8400-e29b-41d4-a716-446655440000/logs \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -d "page=1" \
+  -d "limit=15" \
+  -d "result=error" \
+  -d "event=charge.paid"
 ```
 
 ```javascript Node.js SDK
@@ -22,7 +26,12 @@ import { Upag } from 'upag';
 
 const upag = new Upag('sk_test_your_api_key');
 
-const { data, count } = await upag.webhooks.logs.list('aa0e8400-e29b-41d4-a716-446655440000');
+const { data, count } = await upag.webhooks.logs.list('aa0e8400-e29b-41d4-a716-446655440000', {
+  page: 1,
+  limit: 15,
+  result: 'error',
+  event: 'charge.paid',
+});
 ```
 </CodeGroup>
 
@@ -36,7 +45,23 @@ const { data, count } = await upag.webhooks.logs.list('aa0e8400-e29b-41d4-a716-4
   ID do webhook.
 </ParamField>
 
-A listagem não é paginada: retorna todos os logs do webhook, ordenados por `createdAt` decrescente.
+<ParamField query="page" type="integer" default="1">
+  Página, a partir de 1.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="15">
+  Itens por página, mínimo 1.
+</ParamField>
+
+<ParamField query="result" type="string">
+  `success` (status HTTP 2xx) ou `error` (outro status, ou sem resposta).
+</ParamField>
+
+<ParamField query="event" type="string">
+  Filtra pelo nome do evento, 1 a 255 caracteres. A busca é parcial e ignora maiúsculas: `charge` traz todos os `charge.*`.
+</ParamField>
+
+Os logs vêm do mais recente para o mais antigo.
 
 ## Resposta
 
@@ -64,4 +89,10 @@ A listagem não é paginada: retorna todos os logs do webhook, ordenados por `cr
 }
 ```
 
-`success` é `true` quando `statusCode` está entre 200 e 299. Detalhes dos campos: [Obter log](./get).
+`count` é o total de logs que atendem aos filtros (não só da página). `success` é `true` quando `statusCode` está entre 200 e 299. Detalhes dos campos: [Obter log](./get).
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `422` | `VALIDATION_FAILED` | `webhookId` não é UUID, `result` desconhecido ou `event` vazio ou longo demais |

@@ -157,6 +157,23 @@ A cobrança é processada na hora: `status` volta `paid`, `in_review` ou `failed
 
 Para antifraude, envie o IP do pagador (`ipAddress`) e o identificador de dispositivo gerado por `upag.antifraud.sessionId()` em `meta.session_id`. Gere um novo a cada tentativa (`upag.antifraud.rotate()`).
 
+### Fatura e checkout
+
+Ao pagar uma [fatura](../invoices/pay) ou [confirmar um checkout](../checkout-sessions/confirm) com cartão, o identificador de dispositivo vai em `deviceSession` (no corpo do pagamento da fatura, ou dentro de `charge` no checkout) (até 500 caracteres), ao lado de `threeDSecureSession`. A Upag o grava na cobrança como `meta.session_id`. Por isso, no `meta` de uma sessão de checkout, `session_id` e `invoice_id` são chaves reservadas. Na cobrança direta (passo 4) você continua enviando `meta.session_id`.
+
+```javascript upag-js
+await upag.checkout.confirm(id, clientSecret, {
+  customer: { name: 'Jane Doe', document: { type: 'cpf', number: '52998224725' } },
+  charge: {
+    method: 'card',
+    card: card.id,
+    installments: 1,
+    threeDSecureSession: sessionId,
+    deviceSession: upag.antifraud.sessionId(),
+  },
+});
+```
+
 ## Limites
 
 | Endpoint | Limite |

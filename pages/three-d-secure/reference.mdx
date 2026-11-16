@@ -89,7 +89,3 @@ A cobrança é recusada, sem cobrar o cartão, quando a sessão:
 - foi autenticada para outro cartão, valor ou parcelas (`409 threeds_session_mismatch`).
 
 A sessão é consumida assim que uma cobrança a usa, mesmo que o banco depois recuse o pagamento. Para tentar de novo, crie outra sessão.
-
-## Disponibilidade
-
-O 3D Secure é habilitado por ambiente. Com ele desligado, todos os endpoints desta seção respondem `404 not_found`.

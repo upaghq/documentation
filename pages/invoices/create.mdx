@@ -55,7 +55,7 @@ const invoice = await upag.invoices.create({
 <ParamField body="items" type="array" required>
   Pelo menos um item. Todos os preços precisam estar na mesma moeda, que passa a ser a da fatura.
 
-  - `price` (obrigatório): UUID do [preço](../prices/reference).
+  - `price` (obrigatório): UUID de um [preço](../prices/reference) ativo; preço arquivado retorna `PRICE_ARCHIVED`.
   - `quantity` (obrigatório): inteiro ≥ 1.
 
   O `amount` e o `name` do item são copiados do preço neste momento; mudar o preço depois não altera a fatura.
@@ -70,7 +70,7 @@ const invoice = await upag.invoices.create({
 </ParamField>
 
 <ParamField body="open" type="boolean">
-  `true` abre a fatura na hora. Sem ele, a fatura fica em `draft` até um [`PATCH`](./update) com `open: true`.
+  `true` abre a fatura na hora. Sem ele, a fatura fica em `draft` até um [`PATCH`](./update) com `open: true`. Ao abrir, o saldo do cliente é aplicado à fatura e registrado em `adjustments` (veja o [objeto fatura](./reference)); se o crédito cobre o valor inteiro, a fatura já volta `paid`, sem cobrança.
 </ParamField>
 
 ## Resposta
@@ -103,6 +103,7 @@ const invoice = await upag.invoices.create({
     }
   ],
   "discounts": [],
+  "adjustments": [],
   "payments": [],
   "createdAt": "2026-10-07T19:00:00.000Z",
   "updatedAt": "2026-10-07T19:00:00.000Z"
@@ -116,6 +117,7 @@ const invoice = await upag.invoices.create({
 | `404` | `CUSTOMER_NOT_FOUND` | O cliente não existe na conta |
 | `404` | `PRICE_NOT_FOUND` / `PRODUCT_NOT_FOUND` | O preço, ou o produto dele, não existe na conta |
 | `400` | `INVOICE_CURRENCY_MISMATCH` | Os preços têm moedas diferentes |
+| `400` | `PRICE_ARCHIVED` | Algum preço está arquivado (`active: false`) |
 | `422` | `VALIDATION_FAILED` | `items` vazio, UUID inválido, `quantity` < 1 etc. |
 
 Veja [Erros](../guides/errors) para o formato.

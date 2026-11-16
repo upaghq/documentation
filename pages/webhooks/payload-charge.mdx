@@ -7,7 +7,7 @@ sidebarTitle: 'Cobrança'
 
 Eventos: `charge.created`, `charge.paid`, `charge.expired`, `charge.refunded`, `charge.partially_refunded`, `charge.failed`, `charge.in_review`, `charge.chargeback` e `charge.updated`.
 
-`data` é a cobrança no formato de evento. Só o bloco do método da própria cobrança aparece: `pix` **ou** `card`. `customer` é sempre o id (UUID), nunca o objeto.
+`data` é a cobrança no formato de evento. Só o bloco do método da própria cobrança aparece: `pix`, `card` **ou** `boleto`. `customer` é sempre o id (UUID), nunca o objeto.
 
 ## Pix
 
@@ -28,8 +28,10 @@ Exemplo de `charge.paid`:
     "meta": { "order": "10482" },
     "customer": "660e8400-e29b-41d4-a716-446655440001",
     "pix": {
-      "reference": "tx-qr-1",
+      "reference": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",
       "qrCode": "00020126580014br.gov.bcb.pix...",
+      "copyPaste": "00020126580014br.gov.bcb.pix...",
+      "qrCodeUrl": "https://files.upag.io/pix-qr/6f1c2d3e-4a5b-4c6d-8e7f-9a0b1c2d3e4f.png",
       "expiresAt": "2026-03-19T11:50:00.000Z"
     },
     "splits": [],
@@ -75,20 +77,60 @@ Exemplo de `charge.failed`:
 }
 ```
 
+## Boleto
+
+Exemplo de `charge.paid`. Um boleto pago depois do vencimento traz em `boleto.paidAmount` o valor com multa e juros; `amount` continua o valor original.
+
+```json
+{
+  "id": "aa0e8400-e29b-41d4-a716-446655440000",
+  "event": "charge.paid",
+  "createdAt": "2026-12-02T18:40:13.004Z",
+  "data": {
+    "id": "552e8400-e29b-41d4-a716-446655440000",
+    "type": "boleto",
+    "status": "paid",
+    "amount": 25000,
+    "failureCode": null,
+    "description": "Mensalidade outubro",
+    "meta": null,
+    "customer": "660e8400-e29b-41d4-a716-446655440001",
+    "boleto": {
+      "barcode": "34191090080012213037050059980008100000025000",
+      "digitableLine": "34191.09008 00122.130370 50059.980008 1 00000000025000",
+      "pdfUrl": "https://files.upag.io/boletos/552e8400-e29b-41d4-a716-446655440000.pdf",
+      "dueDate": "2026-11-30",
+      "daysAfterDue": 10,
+      "paidAmount": 25500,
+      "paymentDate": "2026-12-02",
+      "creditDate": "2026-12-03T03:00:00.000Z"
+    },
+    "splits": [],
+    "ipAddress": null,
+    "paidAt": "2026-12-02T18:40:12.551Z",
+    "createdAt": "2026-11-13T14:02:11.204Z",
+    "updatedAt": "2026-12-02T18:40:12.551Z"
+  }
+}
+```
+
+Se o banco recusar o registro depois da criação, chega `charge.failed` com `failureCode: "boleto_registration_rejected"`. Boleto não pago até `dueDate` + `daysAfterDue` gera `charge.expired`.
+
 ## Campos
 
 | Campo | Tipo | Descrição |
 | ----- | ---- | --------- |
 | `id` | `string (uuid)` | Cobrança |
-| `type` | `string` | `pix` ou `card` |
+| `type` | `string` | `pix`, `card` ou `boleto` |
 | `status` | `string` | `pending`, `paid`, `expired`, `refunded`, `partially_refunded`, `failed`, `in_review` ou `chargeback` |
 | `amount` | `integer` | Valor em centavos (preço da cobrança, sem juros de parcelamento) |
-| `failureCode` | `string \| null` | Motivo da falha, em cobranças de cartão recusadas |
+| `failureCode` | `string \| null` | Motivo da falha, quando `status` é `failed` (cartão recusado ou boleto com registro recusado). Veja [códigos de falha](../charges/reference#códigos-de-falha) |
 | `description` | `string \| null` | Descrição |
 | `meta` | `object \| null` | Metadados enviados na criação |
 | `customer` | `string \| null` | Id do cliente |
-| `pix` | `object` | Só em `type: "pix"`: `reference`, `qrCode` (copia e cola), `expiresAt` |
+| `pix` | `object` | Só em `type: "pix"`: `qrCodeUrl` (imagem PNG do QR code, ou `null`), `copyPaste` (copia e cola), `expiresAt`. `reference` e `qrCode` são obsoletos (`qrCode` = `copyPaste`) e serão removidos |
 | `card` | `object` | Só em `type: "card"`: `id` (cartão), `installments`, `nsu`, `authorizationCode`, `acquirerStatusCode` |
+| `boleto` | `object` | Só em `type: "boleto"`: `barcode`, `digitableLine`, `pdfUrl`, `dueDate`, `daysAfterDue`, `paidAmount`, `paymentDate`, `creditDate`. Veja [Referência](../charges/reference) |
 | `splits` | `array` | Repasses: `id`, `type` (`mdr` ou `account`), `status`, `amount`, `account` (só em `type: "account"`), `createdAt`, `updatedAt` |
 | `items` | `array` | Itens informativos, quando a cobrança os tem: `id`, `externalId`, `kind`, `sku`, `name`, `url`, `quantity`, `unitAmount`, `amount`, `createdAt` |
 | `ipAddress` | `string \| null` | IP do pagador |
@@ -96,6 +138,6 @@ Exemplo de `charge.failed`:
 | `createdAt` | `string` | ISO 8601 |
 | `updatedAt` | `string` | ISO 8601 |
 
-O payload de evento não traz os campos de taxa (`mdr`, `interest`, `gross`, `net`). Consulte a [cobrança](../charges/get) quando precisar deles.
+O payload não traz campos de taxa (`mdr`, `interest`, `gross`, `net`); a API também não os devolve. Use [Simular cobrança](../simulate/charge) para conhecer as taxas de cada método.
 
 Em `charge.paid`, `splits` pode vir vazio: os repasses são liquidados depois do evento. Detalhes da cobrança: [Referência de cobranças](../charges/reference).

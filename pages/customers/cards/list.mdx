@@ -1,13 +1,13 @@
 ---
-title: 'Listar cartões'
-description: 'Lista os cartões ativos da conta, opcionalmente de um cliente'
+title: 'Listar cartões do cliente'
+description: 'Lista os cartões ativos de um cliente'
 sidebarTitle: 'Listar'
-api: 'GET https://api.upag.io/v1/cards'
+api: 'GET https://api.upag.io/v1/customers/{customerId}/cards'
 ---
 
-Lista os cartões ativos da conta (`status: active`, não removidos), do mais recente para o mais antigo. Sem `customer`, traz todos, inclusive os que ainda não têm cliente vinculado.
+Lista os cartões ativos do cliente (`status: active`, não removidos), do mais recente para o mais antigo.
 
-Permissão: `card.read`. Apenas chave secreta (`sk_…`); chave publicável não lista cartões.
+Permissão: `card.read`. Apenas chave secreta (`sk_…`).
 
 <Note>
   Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
@@ -17,9 +17,8 @@ Permissão: `card.read`. Apenas chave secreta (`sk_…`); chave publicável não
 
 <CodeGroup>
 ```bash cURL
-curl -G https://api.upag.dev/v1/cards \
+curl -G https://api.upag.dev/v1/customers/8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83/cards \
   -H "Authorization: Bearer sk_test_your_api_key" \
-  -d "customer=8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83" \
   -d "page=1" \
   -d "limit=15"
 ```
@@ -29,8 +28,7 @@ import { Upag } from 'upag';
 
 const upag = new Upag('sk_test_your_api_key');
 
-const { data, count } = await upag.cards.list({
-  customer: '8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83',
+const { data, count } = await upag.customers.cards.list('8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83', {
   page: 1,
   limit: 15,
 });
@@ -39,8 +37,8 @@ const { data, count } = await upag.cards.list({
 
 ## Parâmetros
 
-<ParamField query="customer" type="string (uuid)">
-  Filtra pelos cartões vinculados a este cliente.
+<ParamField path="customerId" type="string (uuid)" required>
+  ID do cliente.
 </ParamField>
 
 <ParamField query="page" type="integer" default="1">
@@ -53,7 +51,7 @@ const { data, count } = await upag.cards.list({
 
 ## Resposta
 
-`200 OK`. `count` é o total que corresponde ao filtro.
+`200 OK`. `count` é o total de cartões ativos do cliente.
 
 ```json Response
 {
@@ -64,6 +62,7 @@ const { data, count } = await upag.cards.list({
       "brand": "visa",
       "firstDigits": "424242",
       "lastDigits": "4242",
+      "fingerprint": "9f2c4b7e1a8d3f6c0b5e2a9d4c7f1e3b8a6d0c2f5e9b1a4d7c3f6e0b2a5d8c1f",
       "holderName": "Luke Skywalker",
       "expirationMonth": 11,
       "expirationYear": 2031,
@@ -71,18 +70,18 @@ const { data, count } = await upag.cards.list({
       "wallet": null,
       "status": "active",
       "createdAt": "2026-07-27T18:04:11.482Z",
-      "updatedAt": "2026-07-27T18:06:04.331Z"
+      "updatedAt": "2026-07-27T18:10:02.913Z"
     }
   ],
   "count": 1
 }
 ```
 
-Campos em [Referência](./reference).
+O cartão padrão do cliente está em `defaultCard` no [cliente](../reference). Campos do cartão em [Referência de cartões](../../cards/reference).
 
 ## Erros
 
-| Status | Causa |
-| ------ | ----- |
-| `403` | Chave publicável (este endpoint exige chave secreta) ou sem a permissão `card.read` |
-| `422` | `customer` não é UUID, ou `page`/`limit` inválidos |
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `404` | `CUSTOMER_NOT_FOUND` | Cliente inexistente, excluído ou de outra conta |
+| `422` | `VALIDATION_FAILED` | `customerId` não é UUID, ou paginação inválida |

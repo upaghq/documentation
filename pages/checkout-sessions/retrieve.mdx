@@ -5,7 +5,7 @@ sidebarTitle: 'Obter (pagador)'
 api: 'GET https://api.upag.io/v1/checkout/sessions/{sessionId}'
 ---
 
-Recarrega a sessão como a página de checkout a enxerga, autenticada com o `clientSecret` recebido em [Iniciar sessão](./start): itens com preço e produto, valores a pagar hoje, opções de parcelamento, teste, cupom e, depois da confirmação, a cobrança.
+Recarrega a sessão como a página de checkout a enxerga, autenticada com o `clientSecret` recebido em [Iniciar sessão](./start) ou em [Obter sessão por código](./retrieve-by-code): itens com preço e produto, valores a pagar hoje, opções de parcelamento, teste, cupom e, depois da confirmação, a cobrança.
 
 É a **visão do pagador**, a mesma de [Iniciar](./start), [Confirmar](./confirm) e dos [cupons](./apply-coupon). Com a chave secreta, a mesma URL devolve a [estrutura do servidor](./get).
 
@@ -50,7 +50,7 @@ const session = await upag.checkout.retrieve(id, clientSecret);
 {
   "id": "4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26",
   "status": "open",
-  "url": "https://checkout.upag.io/cs/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26",
+  "url": "https://checkout.upag.io/cs/Hq7Kd2xPzR4tWm9b",
   "paymentLink": "c3f81a5e-2b94-4d70-a6e3-9d0b7c1f4a58",
   "expiresAt": "2026-10-08T19:00:00.000Z",
   "createdAt": "2026-10-07T19:00:00.000Z",
@@ -121,7 +121,7 @@ const session = await upag.checkout.retrieve(id, clientSecret);
     "displayName": "Loja Exemplo",
     "legalName": "Loja Exemplo Ltda",
     "publishableKey": "pk_test_your_public_key",
-    "threeDSecureEnabled": false
+    "threeDSecureEnabled": true
   }
 }
 ```
@@ -178,6 +178,8 @@ const session = await upag.checkout.retrieve(id, clientSecret);
   - `id`: UUID do item.
   - `quantity`: quantidade.
   - `price`: `id`, `name`, `billingType` (`one_time` ou `recurring`), `interval`, `intervalCount`, `currency`, `amount` (centavos) e `product` (`id`, `name`, `description`, `image`).
+
+  Um item sem preço de catálogo (link de valor fixo ou mudança de assinatura) vem no mesmo formato de um preço avulso: `price.id` e `price.product.id` são o `id` do item, `name` e `amount` são os do item.
 </ParamField>
 
 <ParamField body="bumps" type="array">
@@ -227,19 +229,21 @@ const session = await upag.checkout.retrieve(id, clientSecret);
 <ParamField body="paymentMethods" type="array">
   Métodos que a conta tem ativados, com o cartão primeiro.
 
-  - `type`: `card` ou `pix`.
+  - `type`: `card`, `pix` ou `boleto`.
   - `interestRate`: juros do parcelamento para o pagador, em percentual, medidos na parcela de 2x. `0` no Pix e quando os juros não são do pagador.
-  - `installments`: opções `{ count, amount, total }`. `total` é o que será cobrado (em centavos); `amount` é a primeira parcela e as demais são `floor(total / count)`. O Pix só tem `count: 1`.
+  - `installments`: opções `{ count, amount, total }`. `total` é o que será cobrado (em centavos); `amount` é a primeira parcela e as demais são `floor(total / count)`. Pix e boleto só têm `count: 1`. Um método cujos limites de valor não cobrem `amount` fica de fora.
 
   Quando nada é cobrado hoje (teste), não há tabela de parcelas: a lista traz só o cartão para guardar (`installments: []`) se `paymentMethodCollection` é `always`, e vem vazia com `if_required`.
 </ParamField>
 
 <ParamField body="customer" type="object | null">
-  Pagador, depois que a sessão foi confirmada: `id`, `name`, `email`, `document` (`type` e `number` **mascarado**) e, quando existirem, `phone` (mascarado) e `address`.
+  Pagador, quando a sessão já tem um cliente (criada com `customer` ou depois da confirmação): `id`, `name`, `email`, `document` (`type` e `number` **mascarado**; `null` se o cliente não tem documento), `cards` e, quando existirem, `phone` (mascarado) e `address`.
+
+  `cards` lista até 5 cartões salvos do cliente, o padrão primeiro: `id`, `brand`, `lastDigits`, `expirationMonth` e `expirationYear`. Só vem preenchido quando a conta tem cartões salvos habilitados, numa sessão de mudança de assinatura (`proration`) aberta, com valor a pagar e `card` entre os métodos; nos demais casos é `[]`. Um cartão salvo é pago com 3D Secure: veja [Confirmar](./confirm).
 </ParamField>
 
 <ParamField body="charge" type="object | null">
-  Última tentativa de pagamento: `id`, `type`, `status`, `amount` (centavos, já com juros), `interestAmount`, `installments`, `paidAt`, `card` (`brand` e `last4`, só cartão), `pix` (`copyPaste` e `expiresAt`, só Pix), `error` (`code` e `message` quando falhou) e `nextAction` (sempre `null`). `null` antes da primeira tentativa.
+  Última tentativa de pagamento: `id`, `type`, `status`, `amount` (centavos, já com juros), `interestAmount`, `installments`, `paidAt`, `card` (`brand` e `last4`, só cartão), `pix` (`qrCodeUrl`, `copyPaste` e `expiresAt`, só Pix), `boleto` (`barcode`, `digitableLine`, `pdfUrl`, `dueDate` e `lastPayableDate`, só boleto), `error` (`code` e `message` quando falhou) e `nextAction` (sempre `null`). `null` antes da primeira tentativa.
 </ParamField>
 
 <ParamField body="invoice" type="object | null">
@@ -247,11 +251,11 @@ const session = await upag.checkout.retrieve(id, clientSecret);
 </ParamField>
 
 <ParamField body="clientSecret" type="string | null">
-  Só vem preenchido em [Iniciar sessão](./start). Aqui é sempre `null`.
+  Só vem preenchido em [Iniciar sessão](./start) e em [Obter sessão por código](./retrieve-by-code). Aqui é sempre `null`.
 </ParamField>
 
 <ParamField body="account" type="object">
-  Dados da conta para a página: `displayName`, `legalName`, `publishableKey` (para tokenizar cartões) e `threeDSecureEnabled` (se a [autenticação 3D Secure](./three-d-secure) está disponível).
+  Dados da conta para a página: `displayName`, `legalName`, `publishableKey` (para tokenizar cartões) e `threeDSecureEnabled` (sempre `true`: a [autenticação 3D Secure](./three-d-secure) está disponível em toda conta).
 </ParamField>
 
 ## Erros

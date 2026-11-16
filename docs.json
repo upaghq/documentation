@@ -78,17 +78,22 @@
                             "pages/charges/reference",
                             "pages/charges/create",
                             "pages/charges/list",
-                            "pages/charges/get"
+                            "pages/charges/get",
+                            "pages/simulate/charge",
+                            "pages/receivables/schedule"
                         ]
                     },
                     {
                         "group": "Cartões",
                         "pages": [
                             "pages/cards/reference",
-                            "pages/cards/create",
-                            "pages/cards/list",
-                            "pages/cards/get",
-                            "pages/cards/delete"
+                            "pages/cards/create"
+                        ]
+                    },
+                    {
+                        "group": "Arquivos",
+                        "pages": [
+                            "pages/files/create"
                         ]
                     },
                     {
@@ -109,7 +114,16 @@
                             "pages/customers/list",
                             "pages/customers/get",
                             "pages/customers/update",
-                            "pages/customers/delete"
+                            "pages/customers/delete",
+                            "pages/customers/cards/attach",
+                            "pages/customers/cards/list",
+                            "pages/customers/cards/get",
+                            "pages/customers/cards/delete",
+                            "pages/customers/balance",
+                            "pages/customers/balance-transactions/reference",
+                            "pages/customers/balance-transactions/create",
+                            "pages/customers/balance-transactions/list",
+                            "pages/customers/balance-transactions/get"
                         ]
                     },
                     {
@@ -168,6 +182,7 @@
                             "pages/subscriptions/get",
                             "pages/subscriptions/update",
                             "pages/subscriptions/cancel",
+                            "pages/subscriptions/proration",
                             "pages/subscriptions/create-item",
                             "pages/subscriptions/update-item",
                             "pages/subscriptions/delete-item",
@@ -202,6 +217,7 @@
                             "pages/checkout-sessions/delete",
                             "pages/checkout-sessions/start",
                             "pages/checkout-sessions/retrieve",
+                            "pages/checkout-sessions/retrieve-by-code",
                             "pages/checkout-sessions/confirm",
                             "pages/checkout-sessions/three-d-secure",
                             "pages/checkout-sessions/apply-coupon",
@@ -230,6 +246,28 @@
                             "pages/transfers/list",
                             "pages/transfers/get",
                             "pages/transfers/receipt"
+                        ]
+                    },
+                    {
+                        "group": "Contas a pagar",
+                        "pages": [
+                            "pages/bills/reference",
+                            "pages/bills/lookup",
+                            "pages/bills/create",
+                            "pages/bills/list",
+                            "pages/bills/get",
+                            "pages/bills/cancel",
+                            "pages/bills/pay"
+                        ]
+                    },
+                    {
+                        "group": "Pagamentos de contas",
+                        "pages": [
+                            "pages/bill-payments/reference",
+                            "pages/bill-payments/list",
+                            "pages/bill-payments/get",
+                            "pages/bill-payments/receipt",
+                            "pages/bill-payments/cancel"
                         ]
                     },
                     {
@@ -294,7 +332,8 @@
                             "pages/webhooks/list",
                             "pages/webhooks/get",
                             "pages/webhooks/update",
-                            "pages/webhooks/delete"
+                            "pages/webhooks/delete",
+                            "pages/webhooks/events"
                         ]
                     },
                     {
@@ -303,6 +342,7 @@
                             "pages/webhooks/payload-charge",
                             "pages/webhooks/payload-transfer",
                             "pages/webhooks/payload-customer",
+                            "pages/webhooks/payload-bill-payment",
                             "pages/webhooks/payload-refund",
                             "pages/webhooks/payload-dispute",
                             "pages/webhooks/payload-invoice",
@@ -463,11 +503,11 @@
         },
         {
             "source": "/pages/billing/payment-methods/get",
-            "destination": "/pages/cards/get"
+            "destination": "/pages/customers/cards/get"
         },
         {
             "source": "/pages/billing/payment-methods/list",
-            "destination": "/pages/cards/list"
+            "destination": "/pages/customers/cards/list"
         },
         {
             "source": "/pages/billing/payment-methods/reference",
@@ -712,6 +752,18 @@
         {
             "source": "/pages/core/webhooks/update",
             "destination": "/pages/webhooks/update"
+        },
+        {
+            "source": "/pages/cards/list",
+            "destination": "/pages/customers/cards/list"
+        },
+        {
+            "source": "/pages/cards/get",
+            "destination": "/pages/customers/cards/get"
+        },
+        {
+            "source": "/pages/cards/delete",
+            "destination": "/pages/customers/cards/delete"
         }
     ]
 }

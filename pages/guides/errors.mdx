@@ -37,16 +37,34 @@ Use `error.code` e `error.meta.errorCode` para decidir o que fazer. Não interpr
 | ------ | ----------- | ------------ |
 | `400` | Bad Request | Regra de negócio violada, como splits maiores que o valor da cobrança |
 | `401` | Unauthorized | Chave ausente, malformada ou revogada |
-| `403` | Forbidden | Chave válida sem a permissão exigida, ou tipo de chave não aceito na rota |
+| `403` | Forbidden | Chave válida sem a permissão exigida, tipo de chave não aceito na rota, ou recurso não habilitado para a conta (`feature_flag_disabled`) |
 | `404` | Not Found | O recurso não existe ou pertence a outra conta |
 | `409` | Conflict | Recurso já existe (documento duplicado) ou `Idempotency-Key` reutilizada com outro corpo |
 | `410` | Gone | Recurso expirado, como uma sessão 3DS vencida |
-| `422` | Unprocessable Entity | Corpo, query ou path falhou na validação de schema |
+| `422` | Unprocessable Entity | Corpo, query ou path falhou na validação de schema, ou o pedido é válido mas não pode ser processado (por exemplo um valor abaixo do mínimo do método de pagamento) |
 | `429` | Too Many Requests | Limite de requisições atingido (veja o header `Retry-After`) |
 | `500` | Internal Server Error | Falha inesperada |
 | `502` | Bad Gateway | Resposta de provedor indisponível ou incompleta |
 
-Violações de regra de negócio são `400` e de schema são `422`. Isso importa nas retentativas: um `422` falha sempre com o mesmo payload, enquanto um `400` pode passar quando o estado mudar.
+A maioria das violações de regra de negócio é `400`, e as falhas de schema são `422` com `VALIDATION_FAILED`. Algumas regras de negócio também respondem `422`, sempre com um `meta.errorCode` próprio, como `PAYMENT_METHOD_AMOUNT_TOO_LOW`, `BOLETO_DUE_DATE_IN_PAST`, `CHECKOUT_SESSION_PRORATION_NOTHING_DUE` ou `TRANSFER_IDEMPOTENCY_KEY_REUSED`. Por isso, decida pelo código e não só pelo status. Nas retentativas, um `VALIDATION_FAILED` falha sempre com o mesmo payload, enquanto um erro de regra de negócio pode passar quando o estado ou o pedido mudar.
+
+## Recurso não habilitado
+
+Alguns recursos, como o pagamento de contas (`/bills`), só funcionam quando estão habilitados para a conta. Até lá, as rotas respondem `403` com o código `feature_flag_disabled`. `details.key` traz o nome do recurso. Peça a habilitação ao suporte.
+
+```json
+{
+  "error": {
+    "message": "This feature is not enabled for the account",
+    "code": "feature_flag_disabled",
+    "details": { "key": "bills" },
+    "meta": {
+      "errorCode": "FEATURE_FLAG_DISABLED",
+      "action": "Ask an administrator to enable the feature for this account."
+    }
+  }
+}
+```
 
 ## Erros de validação
 

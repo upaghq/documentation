@@ -1,0 +1,65 @@
+---
+title: 'Saldo do cliente'
+description: 'Consulta o saldo (crédito ou débito) que o cliente tem com a conta'
+sidebarTitle: 'Saldo'
+api: 'GET https://api.upag.io/v1/customers/{customerId}/balance'
+---
+
+O saldo do cliente é um valor que a conta deve a ele (crédito, negativo) ou que ele deve à conta (débito, positivo). Ele é aplicado automaticamente na próxima fatura do cliente: o crédito abate até o total da fatura (o que sobra continua no saldo) e o débito é somado inteiro. Cada movimento fica registrado em [transações de saldo](./balance-transactions/reference).
+
+Permissão: `customer.read`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl https://api.upag.dev/v1/customers/8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83/balance \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const { balance } = await upag.customers.balance.retrieve('8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83');
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="customerId" type="string (uuid)" required>
+  ID do cliente.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "balance": -5000
+}
+```
+
+<ParamField body="customer" type="string">
+  UUID do cliente.
+</ParamField>
+
+<ParamField body="balance" type="integer">
+  Saldo em centavos. Negativo: crédito do cliente, abatido das próximas faturas. Positivo: débito do cliente, somado à próxima fatura. `0` quando o cliente nunca teve movimento.
+</ParamField>
+
+Para mudar o saldo, crie uma [transação de saldo](./balance-transactions/create).
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `404` | `CUSTOMER_NOT_FOUND` | Cliente inexistente, excluído ou de outra conta |
+| `422` | `VALIDATION_FAILED` | `customerId` não é UUID |

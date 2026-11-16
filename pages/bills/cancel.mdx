@@ -1,0 +1,73 @@
+---
+title: 'Cancelar conta'
+description: 'Cancela uma conta a pagar que não tem pagamento em andamento'
+sidebarTitle: 'Cancelar'
+api: 'POST https://api.upag.io/v1/bills/{billId}/cancel'
+---
+
+Cancela uma conta `open` que não tem pagamento em andamento nem pago. Depois de cancelada, o mesmo código de barras pode ser registrado de novo. Para desistir de um pagamento agendado, use [Cancelar pagamento](../bill-payments/cancel).
+
+Permissão: `bill.write`. Apenas chave secreta (`sk_…`).
+
+<Warning>
+  O pagamento de contas precisa estar habilitado para a conta. Até lá, a rota responde `403 feature_flag_disabled`. Veja [Erros](../guides/errors#recurso-não-habilitado).
+</Warning>
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/bills/3c9e7a10-52d4-4b8f-9e61-0a2f7d4c8b15/cancel \
+  -H "Authorization: Bearer sk_test_your_api_key"
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const bill = await upag.bills.cancel('3c9e7a10-52d4-4b8f-9e61-0a2f7d4c8b15');
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="billId" type="string (uuid)" required>
+  ID da conta.
+</ParamField>
+
+## Resposta
+
+`200 OK`. A conta com `status: "canceled"`.
+
+```json Response
+{
+  "id": "3c9e7a10-52d4-4b8f-9e61-0a2f7d4c8b15",
+  "type": "boleto",
+  "status": "canceled",
+  "source": "api",
+  "barcode": "34191090080012213037050059980008100000025000",
+  "amount": 25000,
+  "dueDate": "2026-11-30",
+  "beneficiaryName": "Imobiliária Exemplo LTDA",
+  "beneficiaryTaxNumber": "12345678000199",
+  "description": "Aluguel novembro",
+  "payment": null,
+  "createdAt": "2026-11-13T14:02:11.204Z",
+  "updatedAt": "2026-11-13T16:40:00.017Z"
+}
+```
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `403` | `feature_flag_disabled` | Pagamento de contas não habilitado para a conta |
+| `404` | `BILL_NOT_FOUND` | Conta inexistente ou de outra conta |
+| `409` | `BILL_HAS_ACTIVE_PAYMENT` | A conta tem um pagamento em andamento ou pago |
+| `409` | `BILL_NOT_OPEN` | A conta já está cancelada |
+| `422` | `VALIDATION_FAILED` | `billId` não é UUID |

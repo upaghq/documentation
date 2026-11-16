@@ -1,0 +1,132 @@
+---
+title: 'Simular cobrança'
+description: 'Calcula, sem criar nada, quanto o pagador paga e quanto a conta recebe em cada método de pagamento'
+sidebarTitle: 'Simular cobrança'
+api: 'POST https://api.upag.io/v1/simulate/charge'
+---
+
+Calcula um valor em todos os métodos de pagamento que a conta pode usar, com as mesmas taxas e regras de uma cobrança real. Nada é criado nem gravado.
+
+Permissão: `charge.read`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/simulate/charge \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{ "amount": 10000 }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const simulation = await upag.simulate.charge({ amount: 10000 });
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField body="amount" type="integer" required>
+  Valor em centavos, maior que zero. É o mesmo `amount` com que a [cobrança](../charges/create) seria criada: o preço cheio, sem juros de parcelamento.
+</ParamField>
+
+## Resposta
+
+`200 OK`
+
+```json Response
+{
+  "amount": 10000,
+  "currency": "brl",
+  "methods": [
+    {
+      "type": "pix",
+      "configurationSource": "default",
+      "total": 10000,
+      "mdr": 99,
+      "interest": 0,
+      "net": 9901,
+      "settlementDays": 0
+    },
+    {
+      "type": "card",
+      "configurationSource": "account",
+      "installments": [
+        {
+          "number": 1,
+          "installmentAmount": 10000,
+          "total": 10000,
+          "mdr": 399,
+          "interest": 0,
+          "net": 9601,
+          "settlementDays": 30
+        },
+        {
+          "number": 2,
+          "installmentAmount": 5150,
+          "total": 10299,
+          "mdr": 449,
+          "interest": 299,
+          "net": 9551,
+          "settlementDays": 30
+        }
+      ]
+    },
+    {
+      "type": "boleto",
+      "configurationSource": "account",
+      "total": 10000,
+      "mdr": 350,
+      "interest": 0,
+      "net": 9650,
+      "settlementDays": 1
+    }
+  ]
+}
+```
+
+<ParamField body="amount" type="integer">
+  O valor simulado, em centavos.
+</ParamField>
+
+<ParamField body="currency" type="string">
+  Sempre `brl`.
+</ParamField>
+
+<ParamField body="methods" type="array">
+  Um item por método que a conta pode cobrar nesse valor, na ordem `pix`, `card`, `boleto`.
+
+  - `type`: `pix`, `card` ou `boleto`.
+  - `configurationSource`: `account` quando a conta tem taxas negociadas para o método, `default` quando usa as taxas padrão da plataforma.
+  - Em `pix` e `boleto` (sempre à vista): `total`, `mdr`, `interest`, `net` e `settlementDays`, direto no item.
+  - Em `card`: `installments`, uma entrada por quantidade de parcelas disponível. Cada uma tem `number` (parcelas), `installmentAmount` (valor da primeira parcela, que absorve os centavos que sobram da divisão) e os mesmos `total`, `mdr`, `interest`, `net` e `settlementDays`.
+
+  Os valores, em centavos:
+
+  | Campo | Significado |
+  | ----- | ----------- |
+  | `total` | Quanto o pagador paga: `amount` mais os juros que ele assume |
+  | `mdr` | Taxa da plataforma (percentual mais parte fixa) |
+  | `interest` | Juros de parcelamento sobre `amount`. `0` à vista |
+  | `net` | Quanto a conta recebe: `amount` menos as taxas que ela assume |
+  | `settlementDays` | Dias até o valor ficar disponível (inteiro, não é centavos) |
+</ParamField>
+
+Um método fica de fora, em vez de gerar erro, quando a cobrança real seria recusada: método desabilitado na conta, valor fora do mínimo/máximo configurado, boleto cuja taxa consome todo o valor, ou quantidade de parcelas sem taxa configurada. Se nenhum método serve, `methods` vem vazio.
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `403` | `PERMISSION_DENIED` | A chave não tem a permissão `charge.read` |
+| `422` | `VALIDATION_FAILED` | `amount` ausente, não inteiro ou menor que 1 |
+
+Formato dos erros em [Erros](../guides/errors).

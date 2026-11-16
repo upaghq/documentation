@@ -49,7 +49,7 @@ const upag = new UpagJs('pk_test_your_public_key');
 
 ## Checkout do pagador
 
-Uma chave publicável não cria sessões nem lista o catálogo. A página do pagador parte do **código de um link de pagamento** (sem autenticação) e usa o `clientSecret` devolvido uma única vez por `start` para ler e pagar a sessão. Veja o fluxo em [Checkout hospedado](../guides/checkout-hosted).
+Uma chave publicável não cria sessões nem lista o catálogo. A página do pagador parte do **código de um link de pagamento** (sem autenticação) e usa o `clientSecret` devolvido por `start` para ler e pagar a sessão. Uma sessão já aberta, inclusive uma criada pelo servidor, é recuperada pelo código da URL `/cs/<code>` com `checkout.retrieveByCode(code)`, que emite um `clientSecret` novo. Veja o fluxo em [Checkout hospedado](../guides/checkout-hosted).
 
 ```javascript
 const session = await upag.checkout.start('link-code', { utmSource: 'ads' });
@@ -128,9 +128,27 @@ await upag.cards.create(params, { idempotencyKey: 'checkout_42' });
 
 `create` é a única operação de cartão que uma chave publicável pode fazer. Listar, obter e remover exigem a chave secreta, no servidor. Referência: [Criar cartão](../cards/create).
 
+## Arquivos
+
+Envia um arquivo, como um logo ou a imagem de um produto, e devolve o arquivo com uma `url` pública.
+
+```javascript
+const input = document.querySelector('input[type="file"]');
+
+const file = await upag.files.create({
+  file: input.files[0], // File ou Blob
+  purpose: 'business_logo',
+  name: 'Logo da loja', // opcional
+});
+
+console.log(file.id, file.url);
+```
+
+Uma chave publicável só envia as finalidades públicas: `business_icon`, `business_logo`, `product_image`, `user_profile_picture` e `checkout_asset`. As demais são privadas, voltam com `url: null` e exigem a chave secreta, no servidor. Formatos aceitos: JPEG, PNG, WEBP, PDF e CSV, até 10 MB. Referência: [Enviar arquivo](../files/create).
+
 ## Antifraude
 
-Instanciar o cliente no browser inicia o coletor de dispositivo. Envie `sessionId()` como `meta.session_id` na cobrança de cartão e chame `rotate()` antes de uma nova tentativa.
+Instanciar o cliente no browser inicia o coletor de dispositivo. Envie `sessionId()` como `meta.session_id` na cobrança de cartão, ou como `charge.deviceSession` ao confirmar um checkout, e chame `rotate()` antes de uma nova tentativa.
 
 ```javascript
 const deviceSessionId = upag.antifraud.sessionId();
@@ -201,14 +219,17 @@ Erros devolvidos pela API trazem o `code` dela (por exemplo `session_expired`, `
 | Recurso | Método | Descrição |
 | ------- | ------ | --------- |
 | `checkout` | `start(code, tracking?)` | Abre a sessão a partir do código do link (sem auth; devolve `clientSecret` uma vez) |
+| `checkout` | `retrieveByCode(code)` | Recupera a sessão pelo código da URL `/cs/<code>` (sem auth). Devolve um `clientSecret` novo e invalida o anterior; sessão encerrada volta só com `{ status, successUrl }` |
 | `checkout` | `retrieve(sessionId, clientSecret)` | Carrega a sessão |
-| `checkout` | `confirm(sessionId, clientSecret, body)` | Paga com Pix ou cartão tokenizado |
+| `checkout` | `confirm(sessionId, clientSecret, body)` | Paga com Pix, boleto ou cartão tokenizado |
+| `checkout` | `createThreeDSecureSession(sessionId, clientSecret, body)` | Abre a sessão 3DS do checkout para um cartão |
 | `checkout` | `applyCoupon(sessionId, clientSecret, { code })` | Aplica cupom |
 | `checkout` | `removeCoupon(sessionId, clientSecret)` | Remove o cupom |
 | `checkout` | `listApps(sessionId, clientSecret)` | Config pública dos apps do checkout |
 | `checkout` | `startShopify({ items })` | Sessão a partir de um carrinho Shopify |
 | `checkout` | `redirectToCheckout(code, tracking?)` | Abre a sessão e redireciona para a página hospedada |
 | `cards` | `create(params, options?)` | Tokeniza um cartão |
+| `files` | `create({ file, purpose, name? })` | Envia um arquivo |
 | `threeDSecure` | `authenticate({ clientSecret }, options?)` | Autenticação 3D Secure de uma sessão criada pelo servidor |
 | `antifraud` | `sessionId()`, `rotate()` | Sessão de dispositivo para antifraude |
 

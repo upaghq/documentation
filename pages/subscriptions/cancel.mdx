@@ -72,6 +72,8 @@ const scheduled = await upag.subscriptions.cancel('9a3c6e1f-0d58-4b72-a4e9-7c2f8
   "interval": "month",
   "intervalCount": 1,
   "cancelAtPeriodEnd": false,
+  "maxCycles": null,
+  "currentCycle": 1,
   "startDate": "2026-10-07T19:00:00.000Z",
   "endDate": "2026-10-12T14:20:00.000Z",
   "trialStartDate": null,
@@ -99,7 +101,7 @@ const scheduled = await upag.subscriptions.cancel('9a3c6e1f-0d58-4b72-a4e9-7c2f8
 }
 ```
 
-O cancelamento imediato dispara o webhook `subscription.canceled`. O agendado só o dispara quando o período acaba. Cancelar não reembolsa faturas já pagas.
+O cancelamento imediato dispara o webhook `subscription.canceled`. O agendado dispara `subscription.updated` na hora e `subscription.canceled` quando o período acaba. Cancelar não reembolsa faturas já pagas.
 
 ## Erros
 
@@ -107,5 +109,5 @@ O cancelamento imediato dispara o webhook `subscription.canceled`. O agendado s�
 | ------ | ------ | ------ |
 | `404` | `SUBSCRIPTION_NOT_FOUND` | A assinatura não existe ou é de outra conta |
 | `400` | `SUBSCRIPTION_ALREADY_CANCELED` | A assinatura já está `canceled` |
-| `400` | `SUBSCRIPTION_NOT_EDITABLE` | A assinatura está `void` |
-| `422` | `VALIDATION_FAILED` | `reason` fora da lista (inclusive `missing_payment_method`, que só o sistema define) |
+| `400` | `SUBSCRIPTION_NOT_EDITABLE` | A assinatura está `void` ou `ended` |
+| `422` | `VALIDATION_FAILED` | `reason` fora da lista (inclusive `missing_payment_method` e `payment_failed`, que só o sistema define) |

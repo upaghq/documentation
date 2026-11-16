@@ -56,7 +56,7 @@ Subcontas (pessoa física ou jurídica) são criadas sob a conta titular da chav
 Além dos campos acima, a criação retorna:
 
 - `apiKey` — chave secreta da subconta: `id`, `type` (`secret`), `secret` (texto completo, **exibido apenas na criação e na rotação**), `description`, `permissions`, `createdAt`, `updatedAt`. A chave não aparece na listagem de chaves da subconta.
-- `paymentMethodConfigurations` — tarifas informadas na abertura (vazio se nenhuma foi enviada; métodos omitidos usam o padrão da plataforma).
+- `paymentMethodConfigurations` — tarifas informadas na abertura (vazio se nenhuma foi enviada; métodos omitidos usam o padrão da plataforma). Cada item: `paymentMethodType` (`pix`, `card` ou `boleto`), `name`, `active`, `settlementBusinessDays`, `acceptInstallments`, `maxInstallments`, `maxChargeAmount` e `minChargeAmount` (centavos ou `null`), `installments` (tabela de taxas), `createdAt` e `updatedAt`.
 
 ## Endpoints
 

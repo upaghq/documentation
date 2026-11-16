@@ -1,9 +1,11 @@
 ---
 title: 'Criar link de pagamento'
-description: 'Cria um link de pagamento com itens e bumps opcionais'
+description: 'Cria um link de pagamento de produtos (itens e bumps) ou de valor fixo'
 sidebarTitle: 'Criar'
 api: 'POST https://api.upag.io/v1/payment-links'
 ---
+
+Cria um link do tipo `product` (padrão), que vende preços do catálogo, ou `fixed_amount`, que cobra um valor próprio sem itens. Veja os [tipos de link](./reference).
 
 Permissão: `payment_link.write` (chave secreta; chave publicável não é aceita).
 
@@ -22,7 +24,8 @@ curl -X POST https://api.upag.dev/v1/payment-links \
     ],
     "subscriptionData": {
       "trial": { "interval": "day", "intervalCount": 14 },
-      "trialSettings": { "endBehavior": { "missingPaymentMethod": "cancel" } }
+      "trialSettings": { "endBehavior": { "missingPaymentMethod": "cancel" } },
+      "maxCycles": 12
     },
     "paymentMethodCollection": "always"
   }'
@@ -40,8 +43,34 @@ const link = await upag.paymentLinks.create({
   subscriptionData: {
     trial: { interval: 'day', intervalCount: 14 }, // day ≤ 730, week ≤ 104, month ≤ 24
     trialSettings: { endBehavior: { missingPaymentMethod: 'cancel' } }, // ou 'create_invoice' (padrão)
+    maxCycles: 12, // null (padrão) renova até cancelar
   },
   paymentMethodCollection: 'always', // ou 'if_required'
+});
+```
+
+```bash cURL (valor fixo)
+curl -X POST https://api.upag.dev/v1/payment-links \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "fixed_amount",
+    "name": "Consultoria avulsa",
+    "amount": 15000,
+    "paymentMethods": ["pix", "card", "boleto"]
+  }'
+```
+
+```javascript Node.js SDK (valor fixo)
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const link = await upag.paymentLinks.create({
+  type: 'fixed_amount',
+  name: 'Consultoria avulsa',
+  amount: 15000, // R$ 150,00
+  paymentMethods: ['pix', 'card', 'boleto'],
 });
 ```
 </CodeGroup>
@@ -52,12 +81,20 @@ const link = await upag.paymentLinks.create({
 
 ## Parâmetros
 
+<ParamField body="type" type="string" default="product">
+  `product` ou `fixed_amount`. Não muda depois da criação.
+</ParamField>
+
 <ParamField body="name" type="string" required>
   Nome do link (1 a 255 caracteres).
 </ParamField>
 
-<ParamField body="items" type="array" required>
-  Mínimo 1 item: `{ "price": "uuid", "quantity": inteiro ≥ 1 }`. O mesmo `price` não pode repetir.
+<ParamField body="items" type="array">
+  Obrigatório em links `product`. Mínimo 1 item: `{ "price": "uuid", "quantity": inteiro ≥ 1 }`. O mesmo `price` não pode repetir, e o preço não pode estar [arquivado](../prices/reference).
+</ParamField>
+
+<ParamField body="amount" type="integer">
+  Obrigatório em links `fixed_amount`. Valor cobrado, em centavos, de `500` (R$ 5,00) a `2147483647`.
 </ParamField>
 
 <ParamField body="description" type="string | null">
@@ -69,7 +106,7 @@ const link = await upag.paymentLinks.create({
 </ParamField>
 
 <ParamField body="paymentMethods" type="string[]" default='["pix", "card"]'>
-  `pix` e/ou `card` (mínimo 1).
+  `pix`, `card` e/ou `boleto` (mínimo 1).
 </ParamField>
 
 <ParamField body="billingAddressCollection" type="string" default="auto">
@@ -85,19 +122,22 @@ const link = await upag.paymentLinks.create({
 </ParamField>
 
 <ParamField body="subscriptionData" type="object">
-  Trial das assinaturas criadas pelo link. Todos os campos são opcionais.
+  Só em links `product`. Configura as assinaturas criadas pelos itens recorrentes. Todos os campos são opcionais.
 
   - `trial`: `{ "interval": "day" | "week" | "month", "intervalCount": inteiro ≥ 1 }` (limites: `day` ≤ 730, `week` ≤ 104, `month` ≤ 24) ou `null` para sem trial.
   - `trialSettings.endBehavior.missingPaymentMethod`: `create_invoice` (padrão) ou `cancel`.
+  - `maxCycles`: inteiro ≥ 1 com o número de períodos cobrados antes de a assinatura terminar (status `ended`), sem contar o trial, ou `null` (padrão) para renovar até ser cancelada.
 </ParamField>
 
 <ParamField body="paymentMethodCollection" type="string" default="always">
-  `always` ou `if_required`. Define se o comprador deve deixar um método de pagamento quando nada é cobrado hoje (trial).
+  Só em links `product`. `always` ou `if_required`. Define se o comprador deve deixar um método de pagamento quando nada é cobrado hoje (trial).
 </ParamField>
 
 <ParamField body="bumps" type="array" default="[]">
-  Ofertas adicionais: `{ "price": "uuid", "quantity": inteiro ≥ 1 (padrão 1), "amount": centavos ≥ 0 (padrão preço × quantidade), "title": string até 255, "description": string }`.
+  Só em links `product`. Ofertas adicionais: `{ "price": "uuid", "quantity": inteiro ≥ 1 (padrão 1), "amount": centavos ≥ 0 (padrão preço × quantidade), "title": string até 255, "description": string }`.
 </ParamField>
+
+Um link `fixed_amount` aceita apenas `type`, `name`, `description`, `checkoutLayout`, `paymentMethods`, `billingAddressCollection`, `successUrl`, `cancelUrl` e `amount`; qualquer outro campo (como `items`, `bumps` ou `subscriptionData`) é recusado com `422`.
 
 O link nasce `active: true` e `couponEnabled: false`; ajuste em [Atualizar link](./update).
 
@@ -108,6 +148,7 @@ O link nasce `active: true` e `couponEnabled: false`; ajuste em [Atualizar link]
 ```json Response
 {
   "id": "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70",
+  "type": "product",
   "name": "Plano Pro com trial",
   "description": null,
   "checkoutLayout": null,
@@ -121,7 +162,8 @@ O link nasce `active: true` e `couponEnabled: false`; ajuste em [Atualizar link]
   "cancelUrl": null,
   "subscriptionData": {
     "trial": { "interval": "day", "intervalCount": 14 },
-    "trialSettings": { "endBehavior": { "missingPaymentMethod": "cancel" } }
+    "trialSettings": { "endBehavior": { "missingPaymentMethod": "cancel" } },
+    "maxCycles": 12
   },
   "paymentMethodCollection": "always",
   "items": [
@@ -139,6 +181,12 @@ O link nasce `active: true` e `couponEnabled: false`; ajuste em [Atualizar link]
 }
 ```
 
+Num link `fixed_amount`, `amount` é o valor fixo, `items` e `bumps` vêm `[]` e `subscriptionData` vem com `trial: null` e `maxCycles: null`.
+
+## Erros
+
 - `404` — `PRICE_NOT_FOUND`, `PRODUCT_NOT_FOUND` ou `CHECKOUT_LAYOUT_NOT_FOUND`.
-- `400` — violações das [regras de consistência](./reference).
-- `422` — validação do corpo.
+- `400` — `PRICE_ARCHIVED` (um item ou bump usa um preço arquivado) ou outras violações das [regras de consistência](./reference).
+- `400` — `ACCOUNT_PAYMENT_METHOD_DISABLED`: num link `fixed_amount`, uma das `paymentMethods` está desativada na conta.
+- `422` — `PAYMENT_METHOD_AMOUNT_TOO_LOW` ou `PAYMENT_METHOD_AMOUNT_TOO_HIGH`: num link `fixed_amount`, o `amount` fica fora dos limites de valor de uma das `paymentMethods`.
+- `422` — validação do corpo (`VALIDATION_FAILED`), inclusive campos de link `product` enviados num link `fixed_amount`.

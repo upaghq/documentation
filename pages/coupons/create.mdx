@@ -19,6 +19,7 @@ curl -X POST https://api.upag.dev/v1/coupons \
     "name": "Black Friday",
     "code": "BLACK20",
     "percentOff": 20,
+    "maxCycles": 3,
     "maxUses": 100,
     "expiresAt": "2026-12-01T00:00:00.000Z",
     "appliesTo": "all"
@@ -35,6 +36,7 @@ const coupon = await upag.coupons.create({
   name: 'Black Friday',
   code: 'BLACK20',
   percentOff: 20,
+  maxCycles: 3,
   maxUses: 100,
   expiresAt: '2026-12-01T00:00:00.000Z',
   appliesTo: 'all',
@@ -99,6 +101,10 @@ await upag.coupons.create({
   Se o cupom pode ser usado.
 </ParamField>
 
+<ParamField body="maxCycles" type="integer | null" default="1">
+  Em quantas faturas de uma assinatura o desconto vale (≥ 1), ou `null` para todas. Padrão `1`: só a primeira fatura. Não pode ser alterado depois. Veja [Ciclos](./reference#ciclos).
+</ParamField>
+
 <ParamField body="maxUses" type="integer">
   Máximo de usos (≥ 1). Padrão `null` (ilimitado).
 </ParamField>
@@ -122,6 +128,7 @@ await upag.coupons.create({
   "currency": null,
   "amountOff": null,
   "percentOff": 20,
+  "maxCycles": 3,
   "uses": 0,
   "maxUses": 100,
   "appliesTo": "all",

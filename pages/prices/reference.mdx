@@ -18,6 +18,7 @@ Um preço define quanto e como um [produto](../products/reference) é cobrado: u
   "currency": "brl",
   "amount": 4990,
   "metadata": { "tier": "pro" },
+  "active": true,
   "createdAt": "2026-03-18T11:05:00.000Z",
   "updatedAt": "2026-03-18T11:05:00.000Z"
 }
@@ -41,7 +42,25 @@ Um preço define quanto e como um [produto](../products/reference) é cobrado: u
   <Accordion title="metadata">
     Mapa de chaves e valores seus: até 10 chaves, chave com até 20 caracteres, valor string (até 255 caracteres) ou booleano.
   </Accordion>
+  <Accordion title="active">
+    `true` para preços ativos. `false` indica um preço arquivado. Todo preço nasce ativo. Veja "Arquivar um preço" abaixo.
+  </Accordion>
 </AccordionGroup>
+
+## Arquivar um preço
+
+Preços não são excluídos, e sim arquivados. Para arquivar, envie `active: false` em [Atualizar preço](./update). Para desarquivar, envie `active: true`.
+
+Um preço arquivado continua aparecendo em [Listar preços](./list), em [Obter preço](./get) e em `GET /products?includes=prices`. Ele também segue cobrando o que já o usa: renovações de assinaturas, mudanças agendadas e sessões de checkout já abertas.
+
+O que muda é que ele não pode ser vinculado a nada novo. Usar um preço arquivado retorna `400` com o código `PRICE_ARCHIVED` nestes casos:
+
+- criar uma [fatura](../invoices/create) ou adicionar ou trocar o preço de um item de fatura;
+- criar um [link de pagamento](../payment-links/create) ou adicionar ou trocar o preço de um item ou de um order bump;
+- criar uma [sessão de checkout](../checkout-sessions/create);
+- criar uma [assinatura](../subscriptions/create), adicionar um item ou trocar o preço de um item.
+
+Reenviar o preço que um item já usa não conta como uso novo e é aceito mesmo com o preço arquivado.
 
 ## Endpoints
 
@@ -50,4 +69,4 @@ Um preço define quanto e como um [produto](../products/reference) é cobrado: u
 - [Obter preço](./get)
 - [Atualizar preço](./update)
 
-Todos exigem chave secreta (`sk_`). Não há endpoint para excluir preços. Preços são referenciados por UUID em itens de [links de pagamento](../payment-links/reference), [sessões de checkout](../checkout-sessions/reference) e [assinaturas](../subscriptions/reference) (campo `price`).
+Todos exigem chave secreta (`sk_`). Não há endpoint para excluir preços: arquive-os com `active: false`. Preços são referenciados por UUID em itens de [links de pagamento](../payment-links/reference), [sessões de checkout](../checkout-sessions/reference) e [assinaturas](../subscriptions/reference) (campo `price`).

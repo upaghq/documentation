@@ -5,7 +5,7 @@ sidebarTitle: 'Atualizar'
 api: 'PATCH https://api.upag.io/v1/checkout/sessions/{sessionId}'
 ---
 
-Altera uma sessão `open`. Os campos omitidos mantêm o valor; `null` limpa o cliente ou uma URL. Itens, bumps e teste não mudam: para isso, [crie outra sessão](./create).
+Altera uma sessão `open`. Os campos omitidos mantêm o valor; `null` limpa o cliente ou uma URL. Itens, bumps, teste, `meta` e `proration` não mudam: para isso, [crie outra sessão](./create).
 
 Permissão: `checkout_session.write`. Apenas chave secreta (`sk_…`).
 
@@ -49,7 +49,7 @@ const session = await upag.checkoutSessions.update('4f9d2b71-6c03-4e58-9a1d-8b3e
 </ParamField>
 
 <ParamField body="paymentMethods" type="array">
-  `pix` e/ou `card`, mínimo 1. Numa sessão com teste e `paymentMethodCollection: "always"`, `card` precisa continuar na lista.
+  `pix`, `card` e/ou `boleto`, mínimo 1. Numa sessão com teste e `paymentMethodCollection: "always"`, `card` precisa continuar na lista.
 </ParamField>
 
 <ParamField body="successUrl" type="string (url) | null">
@@ -76,11 +76,14 @@ const session = await upag.checkoutSessions.update('4f9d2b71-6c03-4e58-9a1d-8b3e
     "trialEnd": null,
     "trialSettings": {
       "endBehavior": { "missingPaymentMethod": "create_invoice" }
-    }
+    },
+    "maxCycles": null
   },
   "paymentMethodCollection": "always",
+  "meta": {},
+  "proration": null,
   "status": "open",
-  "url": "https://checkout.upag.io/cs/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26",
+  "url": "https://checkout.upag.io/cs/Hq7Kd2xPzR4tWm9b",
   "expiresAt": "2026-10-08T19:00:00.000Z",
   "createdAt": "2026-10-07T19:00:00.000Z",
   "updatedAt": "2026-10-07T19:10:00.000Z",
@@ -100,6 +103,9 @@ const session = await upag.checkoutSessions.update('4f9d2b71-6c03-4e58-9a1d-8b3e
     {
       "id": "b7e1c4a9-3d52-4f08-86a1-2c9d5e7f0b34",
       "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61",
+      "name": null,
+      "description": null,
+      "amount": null,
       "quantity": 1
     }
   ],
