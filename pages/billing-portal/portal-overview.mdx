@@ -15,13 +15,27 @@ const response = await fetch('https://api.upag.io/v1/portal/me', {
 });
 ```
 
-| Método | Path | Exige na sessão |
-| ------ | ---- | --------------- |
-| `GET` | `/v1/portal/me` | – |
-| `POST` | `/v1/portal/payment-methods` | `paymentMethodUpdate` |
-| `POST` | `/v1/portal/subscriptions/{subscription}/payment-method` | `paymentMethodUpdate` |
-| `POST` | `/v1/portal/subscriptions/{subscription}/preview` | `subscriptionUpdate` |
-| `POST` | `/v1/portal/subscriptions/{subscription}/update` | `subscriptionUpdate` |
+No SDK `upag` (Node.js), essas rotas ficam em `upag.portal`. Crie o cliente com o token da sessão no lugar da chave de API:
+
+```javascript
+import { Upag } from 'upag';
+
+const { portal } = new Upag({ apiKey: token, baseURL: 'https://api.upag.dev/v1' });
+
+const me = await portal.me();
+```
+
+<Note>
+  O SDK escolhe o sandbox pelo prefixo `sk_test_`, que o token não tem. Sem `baseURL`, o cliente chama produção (`https://api.upag.io/v1`).
+</Note>
+
+| Método | Path | SDK | Exige na sessão |
+| ------ | ---- | --- | --------------- |
+| `GET` | `/v1/portal/me` | `portal.me()` | – |
+| `POST` | `/v1/portal/payment-methods` | `portal.attachCard` | `paymentMethodUpdate` |
+| `POST` | `/v1/portal/subscriptions/{subscription}/payment-method` | `portal.updatePaymentMethod` | `paymentMethodUpdate` |
+| `POST` | `/v1/portal/subscriptions/{subscription}/preview` | `portal.previewSubscriptionUpdate` | `subscriptionUpdate` |
+| `POST` | `/v1/portal/subscriptions/{subscription}/update` | `portal.updateSubscription` | `subscriptionUpdate` |
 
 ## Regras da superfície
 

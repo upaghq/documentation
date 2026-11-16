@@ -26,6 +26,17 @@ const response = await fetch(`https://api.upag.dev/v1/portal/subscriptions/${sub
   body: JSON.stringify({ item: itemId, price: priceId }),
 });
 ```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const { portal } = new Upag({ apiKey: token, baseURL: 'https://api.upag.dev/v1' });
+
+const preview = await portal.previewSubscriptionUpdate(subscriptionId, {
+  item: itemId,
+  price: priceId,
+});
+```
 </CodeGroup>
 
 ## Parâmetros

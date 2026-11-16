@@ -26,6 +26,14 @@ await fetch('https://api.upag.dev/v1/portal/payment-methods', {
   body: JSON.stringify({ card: cardId }),
 });
 ```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const { portal } = new Upag({ apiKey: token, baseURL: 'https://api.upag.dev/v1' });
+
+const card = await portal.attachCard({ card: cardId });
+```
 </CodeGroup>
 
 ## Parâmetros

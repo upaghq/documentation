@@ -26,6 +26,17 @@ await fetch(`https://api.upag.dev/v1/portal/subscriptions/${subscriptionId}/paym
   body: JSON.stringify({ paymentMethod: 'pix' }),
 });
 ```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const { portal } = new Upag({ apiKey: token, baseURL: 'https://api.upag.dev/v1' });
+
+const subscription = await portal.updatePaymentMethod(subscriptionId, {
+  paymentMethod: 'card',
+  card: cardId,
+});
+```
 </CodeGroup>
 
 ## Parâmetros

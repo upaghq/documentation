@@ -33,6 +33,19 @@ const response = await fetch(`https://api.upag.dev/v1/portal/subscriptions/${sub
 const { outcome, checkoutUrl } = await response.json();
 if (outcome === 'requires_payment') location.href = checkoutUrl;
 ```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const { portal } = new Upag({ apiKey: token, baseURL: 'https://api.upag.dev/v1' });
+
+const { outcome, checkoutUrl } = await portal.updateSubscription(
+  subscriptionId,
+  { item: itemId, price: priceId },
+  { idempotencyKey: '6f2b1c84-upgrade-business' },
+);
+// em 'requires_payment', leve o cliente para checkoutUrl
+```
 </CodeGroup>
 
 ## Parâmetros
