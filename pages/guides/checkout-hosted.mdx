@@ -70,6 +70,10 @@ const code = new URL(link.url).pathname.split('/').pop();
 
 Referência: [Criar link de pagamento](../payment-links/create). Para vender com teste grátis, veja [Teste grátis](./free-trial).
 
+<Tip>
+  Para uma cobrança avulsa, sem cadastrar produto nem preço, crie um link de valor fixo: `{ "type": "fixed_amount", "name": "Consultoria de outubro", "amount": 25000 }` (centavos, mínimo R$ 5,00). O restante do fluxo é o mesmo. Veja [Link de valor fixo](../payment-links/reference#link-de-valor-fixo).
+</Tip>
+
 ## 2. Abrir a sessão no navegador
 
 Com o `upag-js` e **só a chave publicável**. Um link inativo responde `410` (`PAYMENT_LINK_INACTIVE`).

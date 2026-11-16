@@ -61,7 +61,7 @@ Eventos: `invoice.created`, `invoice.opened`, `invoice.paid`, `invoice.voided`, 
 | `attemptCount` | `integer` | Tentativas de pagamento |
 | `dueDate` | `string \| null` | ISO 8601, vencimento |
 | `paidAt` | `string \| null` | ISO 8601, pagamento |
-| `items` | `array` | Itens ativos: `id`, `product`, `price`, `name`, `amount` (unitário), `quantity`, `totalAmount` |
+| `items` | `array` | Itens ativos: `id`, `product`, `price`, `name`, `amount` (unitário), `quantity`, `totalAmount`. `product` e `price` são `null` na linha de um [link de valor fixo](../payment-links/reference#link-de-valor-fixo) |
 | `discounts` | `array` | Descontos ativos: `id`, `item`, `coupon`, `type` (`coupon`), `amount` |
 | `createdAt` | `string` | ISO 8601 |
 | `updatedAt` | `string` | ISO 8601 |

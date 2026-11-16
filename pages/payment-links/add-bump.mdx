@@ -84,4 +84,4 @@ const bump = await upag.paymentLinks.createBump('d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5
 ```
 
 - `404` — `PAYMENT_LINK_NOT_FOUND`, `PRICE_NOT_FOUND` ou `PRODUCT_NOT_FOUND`.
-- `400` — `PAYMENT_LINK_CURRENCY_MISMATCH` (o bump deve ter a mesma moeda dos itens).
+- `400` — `PAYMENT_LINK_CURRENCY_MISMATCH` (o bump deve ter a mesma moeda dos itens); `PAYMENT_LINK_TYPE_MISMATCH` em link `fixed_amount`, que não tem bumps.

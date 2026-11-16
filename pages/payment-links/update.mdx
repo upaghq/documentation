@@ -1,11 +1,11 @@
 ---
 title: 'Atualizar link de pagamento'
-description: 'Atualiza dados, ativação, cupons e trial do link'
+description: 'Atualiza dados, ativação, cupons, trial e valor do link'
 sidebarTitle: 'Atualizar'
 api: 'PATCH https://api.upag.io/v1/payment-links/{paymentLinkId}'
 ---
 
-Atualização parcial: campos omitidos permanecem. `null` limpa `description`, `checkoutLayout`, `successUrl` e `cancelUrl`. Para alterar itens e bumps use as rotas de [itens](./add-item) e [bumps](./add-bump).
+Atualização parcial: campos omitidos permanecem. `null` limpa `description`, `checkoutLayout`, `successUrl` e `cancelUrl`. Para alterar itens e bumps use as rotas de [itens](./add-item) e [bumps](./add-bump). Em um link `fixed_amount`, altere o valor com `amount`.
 
 Permissão: `payment_link.write` (chave secreta).
 
@@ -90,6 +90,16 @@ const link = await upag.paymentLinks.update('d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f7
   `always` ou `if_required`.
 </ParamField>
 
+<ParamField body="amount" type="integer">
+  Só em links `fixed_amount`: novo valor em centavos, de `500` (R$ 5,00) a `2147483647`. Vale para as próximas sessões; uma sessão já aberta mantém o valor com que começou.
+</ParamField>
+
+<ParamField body="type" type="string">
+  Opcional; se enviado, deve ser o tipo atual do link (o tipo não muda).
+</ParamField>
+
+Em um link `fixed_amount`, `couponEnabled: true` e trial em `subscriptionData` são recusados. Quando `amount` ou `paymentMethods` mudam, o valor é validado de novo contra cada método.
+
 ## Resposta
 
 `200 OK`
@@ -97,6 +107,7 @@ const link = await upag.paymentLinks.update('d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f7
 ```json Response
 {
   "id": "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70",
+  "type": "product",
   "name": "Plano Pro com trial",
   "description": null,
   "checkoutLayout": null,
@@ -129,4 +140,5 @@ const link = await upag.paymentLinks.update('d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f7
 ```
 
 - `404` — `PAYMENT_LINK_NOT_FOUND` ou `CHECKOUT_LAYOUT_NOT_FOUND`.
-- `400` — alterações de trial ou métodos que violem as [regras de consistência](./reference).
+- `400` — alterações de trial ou métodos que violem as [regras de consistência](./reference); `PAYMENT_LINK_TYPE_MISMATCH` (`type` diferente do atual, `amount` em link `product`, cupom ou trial em link `fixed_amount`); `ACCOUNT_PAYMENT_METHOD_DISABLED` em link `fixed_amount`.
+- `422` — validação do corpo; `PAYMENT_METHOD_AMOUNT_TOO_LOW` / `PAYMENT_METHOD_AMOUNT_TOO_HIGH` se o valor de um link `fixed_amount` ficar fora dos limites de um método.

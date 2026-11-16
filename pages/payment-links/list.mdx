@@ -14,6 +14,7 @@ Permissão: `payment_link.read` (chave secreta).
 curl -G https://api.upag.dev/v1/payment-links \
   -H "Authorization: Bearer sk_test_your_api_key" \
   -d "active=true" \
+  -d "type=fixed_amount" \
   -d "page=1" \
   -d "limit=15"
 ```
@@ -25,6 +26,7 @@ const upag = new Upag('sk_test_your_api_key');
 
 const { data, count } = await upag.paymentLinks.list({
   active: true,
+  type: 'fixed_amount', // ou 'product'
   page: 1,
   limit: 15,
 });
@@ -57,6 +59,10 @@ const { data, count } = await upag.paymentLinks.list({
   Filtra links que vendem esse produto.
 </ParamField>
 
+<ParamField query="type" type="string">
+  `product` ou `fixed_amount`.
+</ParamField>
+
 ## Resposta
 
 `200 OK`
@@ -66,6 +72,7 @@ const { data, count } = await upag.paymentLinks.list({
   "data": [
     {
       "id": "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70",
+      "type": "product",
       "name": "Plano Pro com trial",
       "description": null,
       "checkoutLayout": null,

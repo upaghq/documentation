@@ -68,4 +68,4 @@ const item = await upag.paymentLinks.createItem('d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5
 ```
 
 - `404` — `PAYMENT_LINK_NOT_FOUND`, `PRICE_NOT_FOUND` ou `PRODUCT_NOT_FOUND`.
-- `400` — `PAYMENT_LINK_DUPLICATE_PRICE`, `PAYMENT_LINK_CURRENCY_MISMATCH`, `PAYMENT_LINK_RECURRING_INTERVAL_MISMATCH` (veja a [referência](./reference)).
+- `400` — `PAYMENT_LINK_DUPLICATE_PRICE`, `PAYMENT_LINK_CURRENCY_MISMATCH`, `PAYMENT_LINK_RECURRING_INTERVAL_MISMATCH` (veja a [referência](./reference)); `PAYMENT_LINK_TYPE_MISMATCH` em link `fixed_amount`, que não tem itens.

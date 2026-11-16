@@ -4,13 +4,19 @@ description: 'Objeto Link de pagamento (payment link)'
 sidebarTitle: 'Visão geral'
 ---
 
-Um link de pagamento é uma página de checkout reutilizável: você define itens (preços), formas de pagamento e opções, e a Upag gera uma `url` para compartilhar. Cada compra inicia uma [sessão de checkout](../checkout-sessions/reference).
+Um link de pagamento é uma página de checkout reutilizável: você define o que vende, formas de pagamento e opções, e a Upag gera uma `url` para compartilhar. Cada compra inicia uma [sessão de checkout](../checkout-sessions/reference).
+
+Há dois tipos, definidos na criação e que não mudam depois:
+
+- `product` (padrão): vende itens do catálogo ([preços](../prices/reference)), com bumps, trial e cupons opcionais.
+- `fixed_amount`: link avulso que cobra um valor fixo, sem produto nem preço. Veja [Link de valor fixo](#link-de-valor-fixo).
 
 ## Estrutura
 
 ```json
 {
   "id": "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70",
+  "type": "product",
   "name": "Plano Pro com trial",
   "description": null,
   "checkoutLayout": null,
@@ -47,8 +53,11 @@ As referências a outras entidades usam o nome da entidade (`checkoutLayout`, `p
 ## Atributos
 
 <AccordionGroup>
+  <Accordion title="type">
+    `product` ou `fixed_amount`. Definido na criação (padrão `product`) e imutável.
+  </Accordion>
   <Accordion title="amount">
-    Soma dos totais dos itens ativos, em **centavos**. Bumps não entram na soma.
+    Em **centavos**. Em `fixed_amount`, o valor do link. Em `product`, a soma dos totais dos itens ativos; bumps não entram na soma.
   </Accordion>
   <Accordion title="url">
     URL pública do checkout do link. Pode vir `null` se a URL de checkout não estiver configurada no ambiente.
@@ -63,7 +72,7 @@ As referências a outras entidades usam o nome da entidade (`checkoutLayout`, `p
     `couponEnabled` (padrão `false`) permite o comprador aplicar [cupons](../coupons/reference). `active` (padrão `true`): link inativo recusa novas compras (`410`, `PAYMENT_LINK_INACTIVE`).
   </Accordion>
   <Accordion title="items">
-    Preços vendidos pelo link: `id`, `product`, `price`, `quantity` e `amount` (preço × quantidade, em centavos). Mínimo 1 item; o mesmo preço não pode repetir.
+    Preços vendidos por um link `product` (sempre `[]` em `fixed_amount`): `id`, `product`, `price`, `quantity` e `amount` (preço × quantidade, em centavos). Mínimo 1 item; o mesmo preço não pode repetir.
   </Accordion>
   <Accordion title="bumps">
     Ofertas adicionais (order bump): `id`, `product`, `price`, `quantity`, `amount` (centavos), `title` e `description`.
@@ -73,6 +82,43 @@ As referências a outras entidades usam o nome da entidade (`checkoutLayout`, `p
   </Accordion>
 </AccordionGroup>
 
+## Link de valor fixo
+
+Um link `fixed_amount` cobra o `amount` dele, sem produto nem preço do catálogo. Serve para cobranças avulsas, como um serviço ou uma consultoria.
+
+- Aceita `name`, `description`, `checkoutLayout`, `paymentMethods`, `billingAddressCollection`, `successUrl`, `cancelUrl` e `amount` (obrigatório, inteiro em centavos, mínimo `500` = R$ 5,00).
+- Não tem itens, bumps, trial nem cupom: `items`, `bumps`, `subscriptionData` e `paymentMethodCollection` são recusados na criação (`422`), e `couponEnabled: true` ou trial na atualização retornam `400` `PAYMENT_LINK_TYPE_MISMATCH`.
+- O valor pode ser alterado em [Atualizar link](./update); a mudança vale para as próximas sessões, não para as já abertas.
+- Na criação, e sempre que `amount` ou `paymentMethods` mudam, cada método precisa estar ativo na conta e o valor precisa caber nos limites de cobrança de cada método.
+- Cada compra abre uma sessão com um único item sem preço: `price: null`, `name` igual ao nome do link e `amount` igual ao valor do link. A fatura gerada tem a linha com `product` e `price` `null`.
+
+```json
+{
+  "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+  "type": "fixed_amount",
+  "name": "Consultoria de outubro",
+  "description": null,
+  "checkoutLayout": null,
+  "active": true,
+  "amount": 25000,
+  "url": "https://checkout.upag.io/buy/Rt7mWq2PxZk9Vd3N",
+  "paymentMethods": ["pix", "card"],
+  "couponEnabled": false,
+  "billingAddressCollection": "auto",
+  "successUrl": null,
+  "cancelUrl": null,
+  "subscriptionData": {
+    "trial": null,
+    "trialSettings": { "endBehavior": { "missingPaymentMethod": "create_invoice" } }
+  },
+  "paymentMethodCollection": "always",
+  "items": [],
+  "bumps": [],
+  "createdAt": "2026-10-29T14:00:00.000Z",
+  "updatedAt": "2026-10-29T14:00:00.000Z"
+}
+```
+
 ## Regras de consistência
 
 - Todos os preços (itens e bumps) devem ter a mesma moeda — `PAYMENT_LINK_CURRENCY_MISMATCH`.
@@ -80,8 +126,14 @@ As referências a outras entidades usam o nome da entidade (`checkoutLayout`, `p
 - Não repita o mesmo preço em itens — `PAYMENT_LINK_DUPLICATE_PRICE`.
 - Um trial exige pelo menos um item recorrente — `PAYMENT_LINK_TRIAL_REQUIRES_RECURRING_ITEM`.
 - Com trial e `paymentMethodCollection: "always"`, `card` precisa estar em `paymentMethods` — `PAYMENT_LINK_TRIAL_REQUIRES_CARD`.
+- Itens, bumps, trial e cupons são só de links `product`; `amount` só de links `fixed_amount`; o tipo não muda — `PAYMENT_LINK_TYPE_MISMATCH`.
 
 Todas essas violações retornam `400`.
+
+Em links `fixed_amount`, valem também as regras dos métodos de pagamento da conta, com os próprios status:
+
+- Método desativado na conta — `400` `ACCOUNT_PAYMENT_METHOD_DISABLED`.
+- Valor abaixo do mínimo ou acima do máximo de cobrança do método — `422` `PAYMENT_METHOD_AMOUNT_TOO_LOW` / `PAYMENT_METHOD_AMOUNT_TOO_HIGH`.
 
 ## Endpoints
 
