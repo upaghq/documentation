@@ -39,6 +39,19 @@ Um campo que aponta para outra entidade tem o nome da **entidade**, sem sufixo `
 { "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83" }
 ```
 
+### `includes`
+
+`includes` recebe um ou mais nomes separados por vírgula (`?includes=customer,items`). Um nome que o endpoint não conhece retorna `422 VALIDATION_FAILED`.
+
+| Endpoint | Valores |
+| -------- | ------- |
+| `GET /charges` e `GET /charges/{chargeId}` | `customer`, `items`, `card` |
+| `GET /invoices` e `GET /invoices/{invoiceId}` | `customer` |
+| `GET /subscriptions` e `GET /subscriptions/{subscriptionId}` | `customer` |
+| `GET /subscriptions/{subscriptionId}/scheduled-changes` | `price` |
+| `GET /products` | `prices` (lista de preços de cada produto) |
+| `GET /bills` e `GET /bills/{billId}` | `payment` |
+
 ## Datas
 
 Timestamps são strings ISO 8601 em UTC:
@@ -66,11 +79,17 @@ Endpoints de listagem devolvem:
 }
 ```
 
-`data` vem do mais recente para o mais antigo (por `createdAt`) e `count` é o total de registros da conta. A maioria das listagens aceita `page` (a partir de 1, padrão `1`) e `limit` (padrão `15`). Subcontas usam `limit` e `offset`, e os logs de entrega de webhook não são paginados. Cada página da Referência indica os parâmetros do endpoint.
+`data` vem do mais recente para o mais antigo (por `createdAt`) e `count` é o total de registros da conta. A maioria das listagens aceita `page` (a partir de 1, padrão `1`) e `limit` (padrão `15`), inclusive os logs de entrega de webhook. Subcontas usam `limit` (padrão `20`, máximo `100`) e `offset`. Cada página da Referência indica os parâmetros do endpoint.
 
 ## Idempotência
 
-`POST /cards` e `POST /3ds/sessions` aceitam o header `Idempotency-Key` (até 255 caracteres). Por 24 horas, repetir a chave com o mesmo corpo devolve o mesmo recurso. A mesma chave com corpo diferente retorna `409 idempotency_key_reused`. As chaves são isoladas por conta.
+O header `Idempotency-Key` (até 255 caracteres) torna uma retentativa segura. As chaves são isoladas por conta.
+
+| Endpoint | Header | Repetir com o mesmo corpo | Mesma chave, corpo diferente |
+| -------- | ------ | ------------------------- | ---------------------------- |
+| `POST /cards`, `POST /3ds/sessions` | Opcional | Devolve o mesmo recurso, por 24 horas | `409 idempotency_key_reused` |
+| `POST /transfers` | Opcional | Devolve a transferência original (`200`) sem enviá-la de novo | `422 TRANSFER_IDEMPOTENCY_KEY_REUSED` |
+| `POST /bills/{billId}/payments` | **Obrigatório** | Devolve o pagamento original (`200`) | `422 BILL_PAYMENT_IDEMPOTENCY_KEY_REUSED` |
 
 ```bash
 curl -X POST https://api.upag.dev/v1/3ds/sessions \

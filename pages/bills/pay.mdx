@@ -1,0 +1,114 @@
+---
+title: 'Pagar conta'
+description: 'Paga uma conta registrada com o saldo da conta, na hora ou agendado'
+sidebarTitle: 'Pagar'
+api: 'POST https://api.upag.io/v1/bills/{billId}/payments'
+---
+
+Paga uma conta `open` com o saldo da conta Upag. O valor é consultado de novo no banco e precisa ser igual a `expectedAmount`, o valor que o usuário confirmou. O débito é feito na hora, mesmo num pagamento agendado, e volta para o saldo se o pagamento falhar ou for cancelado.
+
+Permissão: `bill.write`. Apenas chave secreta (`sk_…`). Não exige PIN: a chave com `bill.write` autoriza o pagamento.
+
+<Warning>
+  O pagamento de contas precisa estar habilitado para a conta. Até lá, a rota responde `403 feature_flag_disabled`. Veja [Erros](../guides/errors#recurso-não-habilitado).
+</Warning>
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/bills/3c9e7a10-52d4-4b8f-9e61-0a2f7d4c8b15/payments \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: bill-3c9e7a10-1" \
+  -d '{
+    "expectedAmount": 25000,
+    "paymentDate": "2026-11-28"
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const payment = await upag.bills.pay(
+  '3c9e7a10-52d4-4b8f-9e61-0a2f7d4c8b15',
+  { expectedAmount: 25000, paymentDate: '2026-11-28' },
+  { idempotencyKey: 'bill-3c9e7a10-1' },
+);
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField header="Idempotency-Key" type="string" required>
+  Obrigatório, 1 a 255 caracteres. Repetir a requisição com a mesma chave, a mesma conta, o mesmo valor e o mesmo dia devolve o pagamento original com `200 OK`, sem pagar de novo. A mesma chave com outro pedido retorna `422 BILL_PAYMENT_IDEMPOTENCY_KEY_REUSED`. Use uma chave nova para cada tentativa de pagamento.
+</ParamField>
+
+<ParamField path="billId" type="string (uuid)" required>
+  ID da conta.
+</ParamField>
+
+<ParamField body="expectedAmount" type="integer" required>
+  Valor confirmado pelo usuário, em centavos, maior que zero. Se o banco informar outro valor hoje (juros, multa ou desconto mudaram), a resposta é `409 BILL_AMOUNT_CHANGED` com o valor atual em `error.amount`: confirme o novo valor e tente de novo.
+</ParamField>
+
+<ParamField body="paymentDate" type="string">
+  Dia do pagamento, `YYYY-MM-DD`. Omitido, paga no primeiro dia possível (hoje, ou o próximo dia útil se o horário limite do banco já passou). Regras:
+
+  - Boleto não pode ser agendado para depois do vencimento (vencimento em fim de semana passa para o próximo dia útil).
+  - Boleto vencido só pode ser pago hoje, até o prazo limite definido pelo banco emissor.
+  - Boleto com desconto por pagamento antecipado só pode ser pago no primeiro dia possível.
+
+  Se o dia pedido não serve mas outro serve, a resposta é `422 BILL_PAYMENT_DATE_INVALID` com o dia sugerido em `error.suggestedDate`. Se nenhum dia serve, `422 BILL_EXPIRED`.
+</ParamField>
+
+## Resposta
+
+O corpo é sempre o [pagamento de conta](../bill-payments/reference). O status HTTP diz o que aconteceu:
+
+| Status | Significado |
+| ------ | ----------- |
+| `201 Created` | O banco respondeu. O pagamento vem `pending` (aceito; o status muda por webhook) ou `failed` (recusado, com o débito já devolvido e o motivo em `failureCode`) |
+| `202 Accepted` | O banco não respondeu a tempo. O pagamento fica `pending` com o débito reservado até a conciliação; acompanhe pelo webhook ou por [Obter pagamento](../bill-payments/get). Não pague de novo com outra chave |
+| `200 OK` | Repetição com a mesma `Idempotency-Key`: o pagamento original, no status atual |
+
+```json Response
+{
+  "id": "b7d2f4e8-1a3c-4e59-8f60-2c9d1e7a4b36",
+  "bill": "3c9e7a10-52d4-4b8f-9e61-0a2f7d4c8b15",
+  "status": "pending",
+  "amount": 25000,
+  "scheduledFor": "2026-11-28",
+  "paidAt": null,
+  "receiptUrl": null,
+  "failureCode": null,
+  "createdAt": "2026-11-13T14:05:40.118Z",
+  "updatedAt": "2026-11-13T14:05:40.903Z"
+}
+```
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `400` | `ACCOUNT_NOT_ACTIVE` | A conta não está ativa |
+| `403` | `feature_flag_disabled` | Pagamento de contas não habilitado para a conta |
+| `404` | `BILL_NOT_FOUND` | Conta inexistente ou de outra conta |
+| `409` | `BILL_NOT_OPEN` | A conta está cancelada |
+| `409` | `BILL_PAYMENT_ALREADY_ACTIVE` | A conta já tem um pagamento em andamento ou pago |
+| `409` | `BILL_ALREADY_PAID` | O banco informa que a conta já foi paga |
+| `409` | `BILL_AMOUNT_CHANGED` | O valor de hoje é diferente de `expectedAmount`. O valor atual vem em `error.amount` |
+| `422` | `BILL_PAYMENT_DATE_INVALID` | Não dá para pagar em `paymentDate`. O dia possível vem em `error.suggestedDate` |
+| `422` | `BILL_EXPIRED` | A conta não pode mais ser paga |
+| `422` | `BILL_PAYMENT_INSUFFICIENT_BALANCE` | Saldo insuficiente |
+| `422` | `BILL_PAYMENT_IDEMPOTENCY_KEY_REUSED` | A `Idempotency-Key` já foi usada para outro pagamento |
+| `422` | `BILL_BARCODE_REJECTED` | O banco recusou o código na nova consulta |
+| `422` | `VALIDATION_FAILED` | Corpo inválido, `paymentDate` fora do formato, ou `Idempotency-Key` ausente ou com mais de 255 caracteres |
+
+Formato dos erros em [Erros](../guides/errors).

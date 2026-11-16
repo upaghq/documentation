@@ -85,7 +85,7 @@ Ambos devolvem `type: "key"`:
 }
 ```
 
-`isBeneficiary` indica se o titular já é um beneficiário salvo na conta. Em consulta por chave, `branch`, `account`, `accountDigit`, `accountType` e `tradingName` vêm `null`: o diretório de chaves Pix não os informa.
+`isBeneficiary` indica se o titular já é um beneficiário salvo na conta. `pixKeyType` vem como o diretório de chaves Pix informa (por exemplo `random`), sem normalização. Em consulta por chave, `branch`, `account`, `accountDigit`, `accountType` e `tradingName` vêm `null`: o diretório de chaves Pix não os informa.
 
 ### Copia-e-cola (`hash`)
 
@@ -120,5 +120,9 @@ Ambos devolvem `type: "key"`:
 | Status | Mensagem | Causa |
 | ------ | -------- | ----- |
 | `400` | `Os dados da conta de origem e destino são iguais` | `hash` aponta para a própria conta |
+| `400` | `A chave Pix não pertence ao titular cadastrado no beneficiário` | `beneficiary`: a chave mudou de dono (`LOOKUP_HOLDER_MISMATCH`) |
 | `404` | `Account not found` | A conta da chave não foi encontrada |
+| `404` | `Beneficiary not found` | `beneficiary`: beneficiário inexistente na conta |
+| `404` | `Beneficiary account not found` | `beneficiary`: conta do beneficiário inexistente |
+| `409` | `Beneficiary account is not transferable` | `beneficiary`: a conta do beneficiário não tem chave Pix (`LOOKUP_PIX_DESTINATION_REQUIRED`) |
 | `422` | `VALIDATION_FAILED` | Corpo inválido (`type` desconhecido, campo ausente) |

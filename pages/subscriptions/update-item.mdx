@@ -7,7 +7,7 @@ api: 'PATCH https://api.upag.io/v1/subscriptions/{subscriptionId}/items/{itemId}
 
 Altera o preço e/ou a quantidade de um item da assinatura. Com `applyAt: "now"` (padrão) a mudança vale na hora; com `applyAt: "period_end"` ela vira uma [mudança agendada](./scheduled-changes), aplicada na próxima renovação.
 
-A alteração não gera fatura nem cobrança proporcional: o novo valor passa a valer na próxima renovação.
+A alteração não gera fatura nem cobrança proporcional: o novo valor passa a valer na próxima renovação. Para saber quanto custaria cobrar a diferença agora, use [Prévia de proration](./proration).
 
 Permissão: `subscription.write`. Apenas chave secreta (`sk_…`).
 
@@ -52,7 +52,7 @@ const result = await upag.subscriptions.updateItem(
 </ParamField>
 
 <ParamField body="price" type="string (uuid)">
-  UUID do novo [preço](../prices/reference): `recurring`, com o mesmo `interval`, `intervalCount` e moeda da assinatura.
+  UUID do novo [preço](../prices/reference): `recurring`, ativo (não arquivado), com o mesmo `interval`, `intervalCount` e moeda da assinatura.
 </ParamField>
 
 <ParamField body="quantity" type="integer">
@@ -102,6 +102,7 @@ Envie pelo menos `price` ou `quantity`.
 | `404` | `SUBSCRIPTION_NOT_FOUND` | A assinatura não existe ou é de outra conta |
 | `404` | `SUBSCRIPTION_ITEM_NOT_FOUND` | O item não pertence à assinatura |
 | `404` | `PRICE_NOT_FOUND` / `PRODUCT_NOT_FOUND` | O novo preço, ou o produto dele, não existe na conta |
-| `400` | `SUBSCRIPTION_NOT_EDITABLE` | A assinatura está `canceled` ou `void` |
+| `400` | `PRICE_ARCHIVED` | O novo preço está arquivado (reenviar o preço que o item já tem é aceito, mesmo arquivado) |
+| `400` | `SUBSCRIPTION_NOT_EDITABLE` | A assinatura está `canceled`, `void` ou `ended` |
 | `400` | `SUBSCRIPTION_PRICE_MISMATCH` | Intervalo ou moeda do novo preço diferentes da assinatura |
 | `422` | `VALIDATION_FAILED` | Nem `price` nem `quantity` enviados |

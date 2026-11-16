@@ -1,15 +1,15 @@
 ---
 title: 'Atualizar assinatura'
-description: 'Troca o método de pagamento ou agenda/desfaz o cancelamento no fim do período'
+description: 'Troca o método de pagamento, muda o número de períodos ou agenda/desfaz o cancelamento no fim do período'
 sidebarTitle: 'Atualizar'
 api: 'PATCH https://api.upag.io/v1/subscriptions/{subscriptionId}'
 ---
 
-Troca o método de pagamento da assinatura e/ou marca (ou desmarca) o cancelamento ao fim do período. Todos os campos são opcionais; envie apenas o que mudar. Para alterar itens, use [Adicionar item](./create-item) e [Atualizar item](./update-item).
+Troca o método de pagamento da assinatura, muda quantos períodos ela dura (`maxCycles`) e/ou marca (ou desmarca) o cancelamento ao fim do período. Todos os campos são opcionais; envie apenas o que mudar. Para alterar itens, use [Adicionar item](./create-item) e [Atualizar item](./update-item).
 
 A troca não cobra nada na hora: o novo método é usado na próxima tentativa de cobrança, seja a renovação ou a nova tentativa de uma assinatura `past_due`. É também assim que você define o método de uma assinatura criada em teste sem `paymentMethod`.
 
-Permissão: `subscription.write`. Apenas chave secreta (`sk_…`). Assinaturas `canceled` ou `void` não podem ser alteradas.
+Permissão: `subscription.write`. Apenas chave secreta (`sk_…`). Assinaturas `canceled`, `void` ou `ended` não podem ser alteradas.
 
 <Note>
   Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
@@ -37,6 +37,24 @@ const subscription = await upag.subscriptions.update('9a3c6e1f-0d58-4b72-a4e9-7c
   paymentMethod: 'card',
   card: 'e1b84d70-3a9c-4f26-8d15-6c0a7f2b9e43',
 });
+```
+</CodeGroup>
+
+### Mudar o número de períodos
+
+<CodeGroup>
+```bash cURL
+curl -X PATCH https://api.upag.dev/v1/subscriptions/9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36 \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{ "maxCycles": 6 }'
+```
+
+```javascript Node.js SDK
+await upag.subscriptions.update('9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36', { maxCycles: 6 });
+
+// Volta a renovar até ser cancelada
+await upag.subscriptions.update('9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36', { maxCycles: null });
 ```
 </CodeGroup>
 
@@ -69,11 +87,15 @@ await upag.subscriptions.update('9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36', {
 </ParamField>
 
 <ParamField body="paymentMethod" type="string">
-  `pix` ou `card`.
+  `pix`, `card` ou `boleto`.
 </ParamField>
 
 <ParamField body="card" type="string (uuid)">
-  UUID de um [cartão tokenizado](../cards/create) ativo que já pertença ao cliente da assinatura (um token novo ainda não pertence a ninguém; veja [Criar assinatura](./create)). Obrigatório com `paymentMethod: "card"`; proibido com `pix`; não pode ser enviado sem `paymentMethod`.
+  UUID de um [cartão tokenizado](../cards/create) ativo que já pertença ao cliente da assinatura (um token criado sem cliente ainda não pertence a ninguém; veja [Criar assinatura](./create)). Obrigatório com `paymentMethod: "card"`; proibido com `pix` e `boleto`; não pode ser enviado sem `paymentMethod`.
+</ParamField>
+
+<ParamField body="maxCycles" type="integer | null">
+  Quantos períodos a assinatura dura no total, contando os já cobrados. Não pode ser menor que `currentCycle`; com o valor igual a `currentCycle`, o período atual passa a ser o último e `endDate` recebe o fim dele. `null` remove o limite e a assinatura renova até ser cancelada.
 </ParamField>
 
 <ParamField body="cancelAtPeriodEnd" type="boolean">
@@ -95,6 +117,8 @@ await upag.subscriptions.update('9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36', {
   "interval": "month",
   "intervalCount": 1,
   "cancelAtPeriodEnd": false,
+  "maxCycles": null,
+  "currentCycle": 1,
   "startDate": "2026-10-07T19:00:00.000Z",
   "endDate": null,
   "trialStartDate": null,
@@ -128,5 +152,6 @@ await upag.subscriptions.update('9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36', {
 | ------ | ------ | ------ |
 | `404` | `SUBSCRIPTION_NOT_FOUND` | A assinatura não existe ou é de outra conta |
 | `404` | `SUBSCRIPTION_CARD_NOT_FOUND` | O cartão não existe, está inativo ou não pertence ao cliente da assinatura |
-| `400` | `SUBSCRIPTION_NOT_EDITABLE` | A assinatura está `canceled` ou `void` |
-| `422` | `VALIDATION_FAILED` | `card` ausente com `paymentMethod: "card"`, `card` com `pix`, ou `card` sem `paymentMethod` |
+| `400` | `SUBSCRIPTION_NOT_EDITABLE` | A assinatura está `canceled`, `void` ou `ended` |
+| `400` | `SUBSCRIPTION_MAX_CYCLES_BELOW_CURRENT` | `maxCycles` é menor que o `currentCycle` da assinatura |
+| `422` | `VALIDATION_FAILED` | `card` ausente com `paymentMethod: "card"`, `card` com `pix` ou `boleto`, `card` sem `paymentMethod`, ou `maxCycles` menor que 1 |

@@ -18,6 +18,7 @@ Eventos: `transfer.created`, `transfer.processing`, `transfer.completed`, `trans
     "id": "770e8400-e29b-41d4-a716-446655440000",
     "status": "completed",
     "direction": "out",
+    "method": "pix",
     "type": "key",
     "amount": 15000,
     "pixKey": "55ce1aae-0d2b-4d76-bc77-294d6407349e",
@@ -41,20 +42,49 @@ Eventos: `transfer.created`, `transfer.processing`, `transfer.completed`, `trans
 }
 ```
 
+Uma TED recebida (`method: "ted"`) não traz `pixKey`, `pixKeyType` nem `endToEndId`. Na liquidação de cartão pela adquirente (`type: "card_settlement"`), `from` traz só `name`:
+
+```json
+{
+  "id": "990e8400-e29b-41d4-a716-446655440000",
+  "event": "transfer.completed",
+  "createdAt": "2026-03-19T09:00:00.123Z",
+  "data": {
+    "id": "9a1e8400-e29b-41d4-a716-446655440000",
+    "status": "completed",
+    "direction": "in",
+    "method": "ted",
+    "type": "card_settlement",
+    "amount": 482500,
+    "from": { "name": "Adquirente S.A." },
+    "to": {
+      "name": "Acme LTDA",
+      "taxNumber": "12345678000199",
+      "bankName": "Upag"
+    },
+    "providerTransactionId": "7781",
+    "url": null,
+    "createdAt": "2026-03-19T09:00:00.000Z",
+    "updatedAt": "2026-03-19T09:00:00.000Z"
+  }
+}
+```
+
 ## Campos
 
 | Campo | Tipo | Descrição |
 | ----- | ---- | --------- |
 | `id` | `string (uuid)` | Transferência |
-| `status` | `string` | `awaiting_approval`, `pending`, `processing`, `completed`, `canceled` ou `failed`. Pix recebido nasce `completed` |
+| `status` | `string` | `awaiting_approval`, `pending`, `processing`, `completed`, `canceled` ou `failed`. Pix e TED recebidos nascem `completed` |
 | `direction` | `string` | `in` (recebido) ou `out` (enviado) |
-| `type` | `string` | Como o destino foi resolvido: `key`, `hash` ou `beneficiary` |
+| `method` | `string` | `pix` ou `ted` |
+| `type` | `string` | `key`, `hash` ou `beneficiary` (Pix); `bank_transfer` (TED de outro banco) ou `card_settlement` (TED de liquidação de cartão) |
 | `amount` | `integer` | Valor em centavos |
-| `pixKey` | `string` | Chave Pix usada |
-| `pixKeyType` | `string` | `cpf`, `cnpj`, `email`, `phone` ou `random` |
-| `from` | `object` | Pagador: `name`, `taxNumber`, `bankName` |
+| `pixKey` | `string \| null` | Só em `method: "pix"`. Chave Pix usada |
+| `pixKeyType` | `string \| null` | Só em `method: "pix"`. `cpf`, `cnpj`, `email`, `phone` ou `random` |
+| `from` | `object` | Pagador: `name`, `taxNumber`, `bankName`. Em `card_settlement`, só `name` |
 | `to` | `object` | Recebedor: `name`, `taxNumber`, `bankName` |
-| `endToEndId` | `string \| null` | Identificador fim a fim do Pix |
+| `endToEndId` | `string \| null` | Só em `method: "pix"`. Identificador fim a fim do Pix |
 | `providerTransactionId` | `string \| null` | Id da transação no provedor |
 | `url` | `string \| null` | Comprovante do provedor, quando existe |
 | `createdAt` | `string` | ISO 8601 |
@@ -62,4 +92,4 @@ Eventos: `transfer.created`, `transfer.processing`, `transfer.completed`, `trans
 
 `from` e `to` sempre nomeiam quem pagou e quem recebeu: em uma transferência recebida, `to` é a sua conta. `bankName` pode ser `null` quando o provedor não informa a instituição.
 
-Um Pix recebido sem cobrança dispara `transfer.created`, `transfer.completed` e `transfer.updated` em sequência. Detalhes: [Referência de transferências](../transfers/reference).
+Um Pix recebido sem cobrança, e toda TED recebida, dispara `transfer.created`, `transfer.completed` e `transfer.updated` em sequência. Detalhes: [Referência de transferências](../transfers/reference).

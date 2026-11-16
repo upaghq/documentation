@@ -1,11 +1,11 @@
 ---
 title: 'Criar cobrança'
-description: 'Cria uma cobrança Pix ou de cartão na conta da chave de API'
+description: 'Cria uma cobrança Pix, de cartão ou boleto na conta da chave de API'
 sidebarTitle: 'Criar'
 api: 'POST https://api.upag.io/v1/charges'
 ---
 
-Cria uma cobrança Pix (`type: "pix"`) ou de cartão (`type: "card"`). Pix dinâmico exige `customer`; cartão exige `card` (UUID de um [cartão tokenizado](../cards/create)) e `customer`.
+Cria uma cobrança Pix (`type: "pix"`), de cartão (`type: "card"`) ou boleto (`type: "boleto"`). Pix dinâmico exige `customer`; cartão exige `card` (UUID de um [cartão tokenizado](../cards/create)) e `customer`; boleto exige `customer` com endereço e telefone, e `boleto`.
 
 Permissão: `charge.write`. Apenas chave secreta (`sk_…`).
 
@@ -91,12 +91,57 @@ const charge = await upag.charges.create({
 
 A cobrança de cartão é processada na hora: a resposta já traz o resultado (`paid`, `in_review` ou `failed`). O `card` precisa pertencer à conta; veja o fluxo completo em [Cartão com 3DS](../guides/card-3ds).
 
+### Boleto
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/charges \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "boleto",
+    "amount": 25000,
+    "description": "Mensalidade outubro",
+    "boleto": {
+      "dueDate": "2026-11-30",
+      "daysAfterDue": 10,
+      "fine": { "type": "percentage", "percentage": 2 },
+      "interest": { "type": "monthly_percentage", "percentage": 1 },
+      "instructions": "Não receber após 10 dias do vencimento"
+    },
+    "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83"
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const charge = await upag.charges.create({
+  type: 'boleto',
+  amount: 25000,
+  description: 'Mensalidade outubro',
+  boleto: {
+    dueDate: '2026-11-30',
+    daysAfterDue: 10,
+    fine: { type: 'percentage', percentage: 2 },
+    interest: { type: 'monthly_percentage', percentage: 1 },
+    instructions: 'Não receber após 10 dias do vencimento',
+  },
+  customer: '8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83',
+});
+```
+</CodeGroup>
+
+O boleto é registrado no banco durante a requisição e volta `pending`, com `barcode`, `digitableLine` e `pdfUrl`. Boleto vem desabilitado por padrão: precisa ser habilitado na conta, senão a criação retorna `400 ACCOUNT_PAYMENT_METHOD_DISABLED`.
+
 ## Parâmetros
 
 ### Comuns
 
 <ParamField body="type" type="string" required>
-  `pix` ou `card`.
+  `pix`, `card` ou `boleto`.
 </ParamField>
 
 <ParamField body="amount" type="integer" required>
@@ -124,7 +169,7 @@ A cobrança de cartão é processada na hora: a resposta já traz o resultado (`
 </ParamField>
 
 <ParamField body="splits" type="array">
-  Repasses para outras contas: `{ "account": "uuid", "amount": centavos }` (`amount` inteiro maior que zero). A soma dos splits precisa ser menor que o valor líquido da cobrança (`amount` menos a taxa da plataforma). A conta recebedora precisa estar ativa e não pode ser a sua.
+  Repasses para outras contas: `{ "account": "uuid", "amount": centavos }` (`amount` inteiro maior que zero). A soma dos splits precisa ser menor que o valor líquido da cobrança (`amount` menos a taxa da plataforma). A conta recebedora precisa estar ativa e não pode ser a sua. Em Pix e boleto, os splits são liquidados por transferência interna depois do pagamento.
 </ParamField>
 
 ### Pix (`type: "pix"`)
@@ -170,6 +215,22 @@ A cobrança de cartão é processada na hora: a resposta já traz o resultado (`
   Texto na fatura do pagador, 1 a 13 caracteres. Padrão: o descritivo da conta.
 </ParamField>
 
+### Boleto (`type: "boleto"`)
+
+<ParamField body="customer" type="string | object" required>
+  UUID do cliente ou objeto cliente inline (mesmas regras do Pix: `document` obrigatório). O boleto imprime os dados do pagador, então o cliente precisa ter `phone` e, em `address`, `street`, `number`, `neighborhood`, `city`, `state` e `zip`. Faltando algum, a resposta é `422 BOLETO_CUSTOMER_INCOMPLETE` com os campos ausentes. `ipAddress` não é aceito.
+</ParamField>
+
+<ParamField body="boleto" type="object" required>
+  Condições do boleto.
+
+  - `dueDate` (obrigatório): vencimento, `YYYY-MM-DD`. Hoje ou depois (horário de Brasília).
+  - `daysAfterDue`: dias em que o boleto ainda pode ser pago depois do vencimento, 0 a 59. Padrão `0`.
+  - `fine`: multa cobrada uma vez, se pago após o vencimento. `{ "type": "percentage", "percentage": 2 }` (percentual do valor, até 100, com até 2 casas decimais) ou `{ "type": "fixed", "amount": 500 }` (centavos, não pode passar de `amount`).
+  - `interest`: juros por atraso. `{ "type": "monthly_percentage", "percentage": 1 }` (percentual ao mês, até 100, com até 2 casas decimais) ou `{ "type": "daily_fixed", "amount": 30 }` (centavos por dia).
+  - `instructions`: texto impresso no boleto, 1 a 100 caracteres.
+</ParamField>
+
 ## Antifraude
 
 Em cobranças de cartão, envie `meta.session_id` com o identificador da sessão de dispositivo do pagador e `ipAddress` com o IP dele. No browser, o `upag-js` gera o identificador e carrega o coletor de dispositivo:
@@ -204,8 +265,10 @@ Gere um `session_id` novo a cada tentativa de pagamento: reutilizar reduz a apro
   "meta": null,
   "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
   "pix": {
-    "copyPaste": "00020101021226930014br.gov.bcb.pix...",
+    "reference": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",
+    "qrCode": "00020101021226930014br.gov.bcb.pix...",
     "qrCodeUrl": "https://files.upag.io/pix-qr/6f1c2d3e-4a5b-4c6d-8e7f-9a0b1c2d3e4f.png",
+    "copyPaste": "00020101021226930014br.gov.bcb.pix...",
     "expiresAt": "2026-07-28T12:00:00.000Z"
   },
   "splits": [
@@ -251,15 +314,54 @@ Gere um `session_id` novo a cada tentativa de pagamento: reutilizar reduz a apro
   "updatedAt": "2026-07-27T18:06:04.331Z"
 }
 ```
+```json Boleto
+{
+  "id": "4e9a1c27-6b3d-4f58-9c0e-2a7d5b8f1e63",
+  "type": "boleto",
+  "status": "pending",
+  "amount": 25000,
+  "failureCode": null,
+  "description": "Mensalidade outubro",
+  "meta": null,
+  "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "boleto": {
+    "barcode": "34191090080012213037050059980008100000025000",
+    "digitableLine": "34191.09008 00122.130370 50059.980008 1 00000000025000",
+    "pdfUrl": "https://files.upag.io/boletos/4e9a1c27-6b3d-4f58-9c0e-2a7d5b8f1e63.pdf",
+    "dueDate": "2026-11-30",
+    "daysAfterDue": 10,
+    "paidAmount": null,
+    "paymentDate": null,
+    "creditDate": null
+  },
+  "splits": [
+    {
+      "id": "d3f1a8b2-7c4e-4a95-b0d6-1e2f3a4b5c6d",
+      "type": "mdr",
+      "status": "pending",
+      "amount": 350,
+      "createdAt": "2026-11-13T14:02:11.204Z",
+      "updatedAt": "2026-11-13T14:02:11.204Z"
+    }
+  ],
+  "items": [],
+  "ipAddress": null,
+  "paidAt": null,
+  "createdAt": "2026-11-13T14:02:11.204Z",
+  "updatedAt": "2026-11-13T14:02:12.870Z"
+}
+```
 </CodeGroup>
 
-Se a adquirente recusar, a resposta continua `201`, com `status: "failed"` e `failureCode` preenchido (ver [códigos de falha](./reference#códigos-de-falha)). Campos completos em [Referência de cobranças](./reference).
+Se a adquirente recusar, a resposta continua `201`, com `status: "failed"` e `failureCode` preenchido (ver [códigos de falha](./reference#códigos-de-falha)). Num boleto, se o banco não responder a tempo, a cobrança volta `pending` com `barcode`, `digitableLine` e `pdfUrl` em `null` e é registrada em seguida. Nenhum webhook avisa quando os dados chegam: consulte [Obter cobrança](./get) até `barcode` vir preenchido. `pdfUrl` também pode ficar `null` se o PDF não puder ser gerado (o código de barras continua válido). Campos completos em [Referência de cobranças](./reference).
 
 ## Erros
 
 | Status | Mensagem / código | Causa |
 | ------ | ----------------- | ----- |
 | `400` | `Account is not active` | Conta ainda não pode receber |
+| `400` | `ACCOUNT_PAYMENT_METHOD_DISABLED` | O método (`pix`, `card` ou `boleto`) está desabilitado na conta. Boleto vem desabilitado por padrão |
+| `400` | `ACCOUNT_INTERNAL_BANK_COORDINATES_MISSING` | Boleto: a conta ainda não tem os dados bancários internos completos |
 | `400` | `Splits exceed the charge amount` | Splits (mais taxa) não cabem no valor |
 | `400` | `Split recipient cannot be the charged account` | Split para a própria conta |
 | `400` | `Split recipient account not found or inactive` | Recebedor do split inexistente ou inativo |
@@ -275,6 +377,13 @@ Se a adquirente recusar, a resposta continua `201`, com `status: "failed"` e `fa
 | `409` | `invalid_session_state` | Sessão 3DS não concluída ou já usada |
 | `409` | `threeds_session_mismatch` | Sessão autenticada para outro cartão, valor ou parcelas |
 | `410` | `session_expired` | Sessão 3DS expirada |
-| `422` | `VALIDATION_FAILED` | Corpo inválido, inclusive Pix dinâmico sem `customer` |
+| `422` | `PAYMENT_METHOD_AMOUNT_TOO_LOW` / `PAYMENT_METHOD_AMOUNT_TOO_HIGH` | `amount` fora do mínimo/máximo configurado para o método na conta |
+| `422` | `BOLETO_CUSTOMER_INCOMPLETE` | Boleto: o cliente não tem endereço completo ou telefone |
+| `422` | `BOLETO_DUE_DATE_IN_PAST` | Boleto: `dueDate` já passou (horário de Brasília) |
+| `422` | `BOLETO_AMOUNT_TOO_LOW` | Boleto: o valor não cobre a taxa do boleto |
+| `422` | `BOLETO_REJECTED` | Boleto: o banco recusou os dados do boleto ou do cliente. Nada foi criado |
+| `422` | `VALIDATION_FAILED` | Corpo inválido, inclusive Pix dinâmico sem `customer` ou multa fixa maior que `amount` |
+| `502` | `BOLETO_ISSUE_REJECTED` | Boleto: o banco recusou a emissão por um motivo não identificado. Nada foi criado; tente de novo |
+| `502` | `BOLETO_PROVIDER_MISCONFIGURED` | Boleto indisponível para a conta no momento; se persistir, fale com o suporte |
 
 Formato dos erros em [Erros](../guides/errors).

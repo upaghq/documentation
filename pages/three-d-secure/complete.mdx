@@ -78,7 +78,6 @@ A resposta traz só `id` e `status`: o browser fica sabendo como a autenticaçã
 | `400` | `invalid_params` | Corpo malformado, ou `completed` sem `result` válido |
 | `401` | `unauthorized` | `clientSecret` desconhecido, substituído por um mais novo ou de outra conta |
 | `403` | — | Chave secreta usada neste endpoint (exige chave publicável) |
-| `404` | `not_found` | 3D Secure não está habilitado neste ambiente |
 | `409` | `invalid_session_state` | O estado da sessão não permite, ou o resultado pertence a outro cartão |
 | `410` | `session_expired` | A sessão expirou |
 | `429` | `too_many_attempts` | Mais de 20 chamadas por minuto do mesmo IP |

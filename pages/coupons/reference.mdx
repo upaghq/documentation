@@ -19,6 +19,7 @@ Um cupom dá desconto percentual ou de valor fixo em um checkout. Para o comprad
   "currency": null,
   "amountOff": null,
   "percentOff": 20,
+  "maxCycles": 1,
   "uses": 0,
   "maxUses": 100,
   "appliesTo": "all",
@@ -50,7 +51,16 @@ Um cupom dá desconto percentual ou de valor fixo em um checkout. Para o comprad
   <Accordion title="active / expiresAt">
     Cupom inativo ou expirado é recusado na aplicação. `expiresAt` é uma data ISO 8601 ou `null`.
   </Accordion>
+  <Accordion title="maxCycles">
+    Em quantas faturas de uma assinatura o cupom dá desconto (inteiro ≥ 1), ou `null` para todas. Padrão `1`. Não pode ser alterado depois de criado. Veja [Ciclos](#ciclos).
+  </Accordion>
 </AccordionGroup>
+
+## Ciclos
+
+`maxCycles` só importa em assinaturas, e só quando o desconto recorrente em assinaturas está habilitado para a sua conta. Enquanto o recurso não está habilitado, um cupom aplicado no checkout desconta apenas a primeira fatura.
+
+A primeira fatura do checkout conta como o primeiro ciclo. Com `maxCycles: 1` (o padrão), o cupom desconta só essa fatura. Com `maxCycles: 3`, desconta também as duas renovações seguintes. Com período de teste, o primeiro ciclo é a primeira fatura depois do teste.
 
 ## Endpoints
 

@@ -1,13 +1,13 @@
 ---
 title: 'Criar sessão de checkout'
-description: 'Abre uma sessão de checkout no servidor para pagar com Pix, cartão ou teste grátis'
+description: 'Abre uma sessão de checkout no servidor para pagar com Pix, cartão, boleto, teste grátis ou mudança de assinatura'
 sidebarTitle: 'Criar'
 api: 'POST https://api.upag.io/v1/checkout/sessions'
 ---
 
-Abre uma sessão de checkout para um ou mais [preços](../prices/reference). Ela fica `open` por 24 horas, a menos que você envie `expiresAt`.
+Abre uma sessão de checkout para um ou mais [preços](../prices/reference). Ela fica `open` por 24 horas, a menos que você envie `expiresAt`. Com `proration`, a sessão cobra a [mudança de itens de uma assinatura](#mudança-de-assinatura).
 
-A sessão criada com a chave secreta **não tem `clientSecret`**: ela é para você pagar do seu servidor com [Confirmar](./confirm). Para uma página de pagamento no navegador do cliente, crie um [link de pagamento](../payment-links/create) e abra a sessão com [Iniciar sessão](./start).
+A resposta não traz `clientSecret`. Você pode pagar a sessão do seu servidor com [Confirmar](./confirm), ou mandar o pagador para a `url` dela: a página hospedada lê o código da URL e recebe um `clientSecret` em [Obter sessão por código](./retrieve-by-code).
 
 Permissão: `checkout_session.write`. Apenas chave secreta (`sk_…`).
 
@@ -69,7 +69,8 @@ curl -X POST https://api.upag.dev/v1/checkout/sessions \
       "trial": { "interval": "day", "intervalCount": 14 },
       "trialSettings": {
         "endBehavior": { "missingPaymentMethod": "cancel" }
-      }
+      },
+      "maxCycles": 12
     }
   }'
 ```
@@ -82,7 +83,45 @@ const session = await upag.checkoutSessions.create({
   subscriptionData: {
     trial: { interval: 'day', intervalCount: 14 },
     trialSettings: { endBehavior: { missingPaymentMethod: 'cancel' } },
+    maxCycles: 12,
   },
+});
+```
+</CodeGroup>
+
+### Mudança de assinatura
+
+Com `proration`, a sessão cobra o que mudar os itens de uma [assinatura](../subscriptions/reference) custa hoje, proporcional ao resto do período pago. O cálculo é o mesmo de [Calcular proration](../subscriptions/proration) e é feito pela Upag na criação; você não informa valor. O cliente é o da assinatura, e a sessão tem um único item sem preço de catálogo (`name: "Alteração da assinatura"`, `amount` igual a `proration.amountDue`). A mudança só é aplicada à assinatura quando a fatura da sessão é paga.
+
+Nesse formato o corpo aceita só `proration`, `meta`, `paymentMethods`, `billingAddressCollection`, `successUrl`, `cancelUrl` e `expiresAt`. A sessão expira em 1 hora, ou no fim do período da assinatura se ele vier antes, porque o valor só vale enquanto o período dura. `expiresAt` não aceita `null`.
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/checkout/sessions \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "proration": {
+      "subscription": "d4b8f2a6-1c3e-4f5a-9b7d-2e6c8a0f4b13",
+      "items": [
+        { "item": "a1c3e5f7-2b4d-4c6e-8f0a-1b3d5f7a9c2e", "price": "6e8a0c2e-4f6b-4d8a-9c1e-3f5b7d9a1c4e" }
+      ]
+    },
+    "paymentMethods": ["pix", "card"],
+    "successUrl": "https://exemplo.com.br/plano-alterado"
+  }'
+```
+
+```javascript Node.js SDK
+const session = await upag.checkoutSessions.create({
+  proration: {
+    subscription: 'd4b8f2a6-1c3e-4f5a-9b7d-2e6c8a0f4b13',
+    items: [
+      { item: 'a1c3e5f7-2b4d-4c6e-8f0a-1b3d5f7a9c2e', price: '6e8a0c2e-4f6b-4d8a-9c1e-3f5b7d9a1c4e' },
+    ],
+  },
+  paymentMethods: ['pix', 'card'],
+  successUrl: 'https://exemplo.com.br/plano-alterado',
 });
 ```
 </CodeGroup>
@@ -90,10 +129,19 @@ const session = await upag.checkoutSessions.create({
 ## Parâmetros
 
 <ParamField body="items" type="array" required>
-  Pelo menos um item. Os preços não podem se repetir (nem entre `items` e `bumps`), precisam estar na mesma moeda e, se recorrentes, ter o mesmo intervalo.
+  Obrigatório, exceto com `proration` (que não aceita `items`). Pelo menos um item. Os preços não podem se repetir (nem entre `items` e `bumps`), precisam estar na mesma moeda e, se recorrentes, ter o mesmo intervalo.
 
   - `price` (obrigatório): UUID do [preço](../prices/reference).
   - `quantity` (obrigatório): inteiro ≥ 1.
+
+  Um preço [arquivado](../prices/update) não pode ser usado (`PRICE_ARCHIVED`).
+</ParamField>
+
+<ParamField body="proration" type="object">
+  Cria uma sessão de [mudança de assinatura](#mudança-de-assinatura) em vez de uma sessão de preços. Não pode vir com `items`, `customer`, `bumps`, `couponEnabled`, `subscriptionData` nem `paymentMethodCollection`.
+
+  - `subscription` (obrigatório): UUID da [assinatura](../subscriptions/reference). Precisa estar `active`, com o período atual pago.
+  - `items` (obrigatório): as mudanças, no mesmo formato de [Calcular proration](../subscriptions/proration): `{ item, deleted: true }` remove um item, `{ item, price?, quantity? }` muda um item e `{ price, quantity? }` adiciona um preço.
 </ParamField>
 
 <ParamField body="customer" type="string (uuid)">
@@ -110,7 +158,7 @@ const session = await upag.checkoutSessions.create({
 </ParamField>
 
 <ParamField body="paymentMethods" type="array">
-  `pix` e/ou `card`. Padrão `["pix", "card"]`. Mínimo 1.
+  `pix`, `card` e/ou `boleto`. Padrão `["pix", "card"]`. Mínimo 1.
 </ParamField>
 
 <ParamField body="successUrl" type="string (url)">
@@ -135,14 +183,19 @@ const session = await upag.checkoutSessions.create({
   - `trial`: `{ interval, intervalCount }` com `interval` `day`, `week` ou `month`. Duração máxima de 730 dias (`day` até 730, `week` até 104, `month` até 24). Contada a partir da criação da assinatura.
   - `trialEnd`: data fixa de fim, com pelo menos 48 horas a partir de agora. Aceita ISO 8601 ou Unix em segundos. Não pode ser enviada junto com `trial`.
   - `trialSettings.endBehavior.missingPaymentMethod`: `create_invoice` (padrão: cobra o primeiro período por Pix) ou `cancel`. É o que acontece quando o teste acaba sem método de pagamento.
+  - `maxCycles`: inteiro ≥ 1, ou `null`. Quantos períodos a assinatura cobra antes de terminar com status `ended`. Omitido ou `null`, renova até ser cancelada. Não exige teste.
 </ParamField>
 
 <ParamField body="paymentMethodCollection" type="string" default="always">
   `always` ou `if_required`. Com `if_required`, uma sessão sem nada a pagar hoje pode ser confirmada sem cartão. Com `always` e um teste, `card` precisa estar em `paymentMethods`.
 </ParamField>
 
+<ParamField body="meta" type="object">
+  Seus pares chave-valor, copiados para a cobrança que paga a sessão. Até 50 chaves; chave de 1 a 40 caracteres e valor de até 500. As chaves `invoice_id` e `session_id` são reservadas pela Upag e recusadas.
+</ParamField>
+
 <ParamField body="expiresAt" type="string">
-  ISO 8601, no futuro. Padrão: 24 horas a partir de agora. `null` faz a sessão nunca expirar.
+  ISO 8601, no futuro. Padrão: 24 horas a partir de agora (com `proration`, 1 hora ou o fim do período da assinatura). `null` faz a sessão nunca expirar; não é aceito com `proration`.
 </ParamField>
 
 ## Resposta
@@ -161,11 +214,14 @@ const session = await upag.checkoutSessions.create({
     "trialEnd": null,
     "trialSettings": {
       "endBehavior": { "missingPaymentMethod": "create_invoice" }
-    }
+    },
+    "maxCycles": null
   },
   "paymentMethodCollection": "always",
+  "meta": {},
+  "proration": null,
   "status": "open",
-  "url": "https://checkout.upag.io/cs/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26",
+  "url": "https://checkout.upag.io/cs/Hq7Kd2xPzR4tWm9b",
   "expiresAt": "2026-10-08T19:00:00.000Z",
   "createdAt": "2026-10-07T19:00:00.000Z",
   "updatedAt": "2026-10-07T19:00:00.000Z",
@@ -185,6 +241,9 @@ const session = await upag.checkoutSessions.create({
     {
       "id": "b7e1c4a9-3d52-4f08-86a1-2c9d5e7f0b34",
       "price": "3a7e9c14-6b2d-4f85-9e10-5c8d2a7b4f61",
+      "name": null,
+      "description": null,
+      "amount": null,
       "quantity": 1
     }
   ],
@@ -193,15 +252,27 @@ const session = await upag.checkoutSessions.create({
 }
 ```
 
+Numa sessão de `proration`, `customer` é o cliente da assinatura, `items` tem o item sem preço (`price: null`, com `name`, `description` e `amount`) e `proration` traz o cálculo cobrado.
+
 ## Erros
 
 | Status | Código | Quando |
 | ------ | ------ | ------ |
 | `404` | `CUSTOMER_NOT_FOUND` | O cliente não existe na conta |
 | `404` | `PRICE_NOT_FOUND` / `PRODUCT_NOT_FOUND` | Um preço, ou o produto dele, não existe na conta |
+| `400` | `PRICE_ARCHIVED` | Um preço de `items` ou `bumps` (ou da `proration`) está arquivado |
 | `400` | `CHECKOUT_SESSION_DUPLICATE_PRICE` | O mesmo preço aparece duas vezes |
 | `400` | `CHECKOUT_SESSION_CURRENCY_MISMATCH` | Os preços têm moedas diferentes |
 | `400` | `CHECKOUT_SESSION_RECURRING_INTERVAL_MISMATCH` | Os preços recorrentes têm intervalos diferentes |
 | `400` | `CHECKOUT_SESSION_TRIAL_REQUIRES_RECURRING_ITEM` | Há teste, mas nenhum item é recorrente |
 | `400` | `CHECKOUT_SESSION_TRIAL_REQUIRES_CARD` | Há teste com `paymentMethodCollection: "always"` e `card` fora de `paymentMethods` |
-| `422` | `VALIDATION_FAILED` | Corpo inválido: `trial` e `trialEnd` juntos, `trialEnd` com menos de 48 horas, `expiresAt` no passado, `trial` acima do máximo |
+| `404` | `SUBSCRIPTION_NOT_FOUND` | `proration`: a assinatura não existe na conta |
+| `404` | `SUBSCRIPTION_ITEM_NOT_FOUND` | `proration`: um `item` não é da assinatura |
+| `400` | `SUBSCRIPTION_NOT_EDITABLE` | `proration`: a assinatura está `canceled`, `void` ou `ended` |
+| `400` | `SUBSCRIPTION_PRORATION_UNAVAILABLE` | `proration`: a assinatura não está `active` com um período pago |
+| `400` | `SUBSCRIPTION_PRORATION_DUPLICATE_ITEM` | `proration`: o mesmo item aparece em mais de uma mudança |
+| `400` | `SUBSCRIPTION_DUPLICATE_PRICE` | `proration`: o preço adicionado já está na assinatura |
+| `422` | `CHECKOUT_SESSION_PRORATION_NOTHING_DUE` | `proration`: a mudança não custa nada hoje (crédito ou zero). Altere a assinatura direto. A resposta traz `amountDue` |
+| `400` | `ACCOUNT_PAYMENT_METHOD_DISABLED` | `proration`: um método de `paymentMethods` está desligado na conta |
+| `422` | `PAYMENT_METHOD_AMOUNT_TOO_LOW` / `PAYMENT_METHOD_AMOUNT_TOO_HIGH` | `proration`: o valor fica fora dos limites de cobrança de um método de `paymentMethods` |
+| `422` | `VALIDATION_FAILED` | Corpo inválido: `trial` e `trialEnd` juntos, `trialEnd` com menos de 48 horas, `expiresAt` no passado, `trial` acima do máximo, `meta` com chave reservada ou acima dos limites, campo desconhecido com `proration` |

@@ -50,7 +50,7 @@ const preview = await upag.invoices.upcoming({
   "currency": "brl",
   "periodStart": "2026-11-07T19:00:00.000Z",
   "periodEnd": "2026-12-07T19:00:00.000Z",
-  "amountDue": 9900,
+  "amountDue": 7900,
   "items": [
     {
       "product": "7d2b5e90-1c34-4a68-b9f7-0e3a6c8d1f25",
@@ -60,6 +60,9 @@ const preview = await upag.invoices.upcoming({
       "quantity": 1,
       "totalAmount": 9900
     }
+  ],
+  "adjustments": [
+    { "amount": -2000 }
   ]
 }
 ```
@@ -68,14 +71,15 @@ const preview = await upag.invoices.upcoming({
 | ----- | --------- |
 | `periodStart` | Início do período cobrado: o fim do teste (`trialing`) ou o fim do período atual |
 | `periodEnd` | Fim desse período, somando o intervalo da assinatura a `periodStart` |
-| `amountDue` | Total em centavos: soma dos itens da assinatura |
+| `amountDue` | Total em centavos: soma dos itens mais `adjustments`, nunca abaixo de `0` |
 | `items[]` | `product`, `price`, `name`, `amount` (unitário), `quantity` e `totalAmount`, em centavos |
+| `adjustments[]` | O saldo do cliente que a fatura aplicaria, com `amount` em centavos: negativo é crédito, positivo é débito. Vazio quando o saldo é `0` |
 
-A prévia usa os itens atuais da assinatura; mudanças [agendadas](../subscriptions/scheduled-changes) para o fim do período não entram.
+A prévia aplica as mudanças [agendadas](../subscriptions/scheduled-changes) para o fim do período, como a renovação fará, e o saldo atual do cliente. Mudanças que não cabem mais na assinatura são ignoradas, como na renovação. Descontos de cupom não entram na prévia.
 
 ## Erros
 
 | Status | Código | Quando |
 | ------ | ------ | ------ |
 | `404` | `SUBSCRIPTION_NOT_FOUND` | A assinatura não existe ou é de outra conta |
-| `400` | `SUBSCRIPTION_NO_UPCOMING_INVOICE` | A assinatura não vai renovar: está `canceled`, `incomplete`, `paused` ou `void`, ou tem `cancelAtPeriodEnd: true` |
+| `400` | `SUBSCRIPTION_NO_UPCOMING_INVOICE` | A assinatura não vai renovar: está `canceled`, `incomplete`, `paused`, `void` ou `ended`, tem `cancelAtPeriodEnd: true` ou já está no último ciclo (`currentCycle` igual a `maxCycles`) |

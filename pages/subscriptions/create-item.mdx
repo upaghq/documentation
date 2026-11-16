@@ -7,7 +7,7 @@ api: 'POST https://api.upag.io/v1/subscriptions/{subscriptionId}/items'
 
 Adiciona um preço `recurring` à assinatura. Com `applyAt: "now"` (padrão) o item entra na hora; com `applyAt: "period_end"` a adição fica registrada como uma [mudança agendada](./scheduled-changes) e é aplicada na próxima renovação.
 
-Adicionar um item não gera fatura nem cobrança proporcional: o novo valor passa a valer na próxima renovação.
+Adicionar um item não gera fatura nem cobrança proporcional: o novo valor passa a valer na próxima renovação. Para saber quanto custaria cobrar a diferença agora, use [Prévia de proration](./proration).
 
 Permissão: `subscription.write`. Apenas chave secreta (`sk_…`).
 
@@ -49,7 +49,7 @@ const item = await upag.subscriptions.createItem('9a3c6e1f-0d58-4b72-a4e9-7c2f8b
 </ParamField>
 
 <ParamField body="price" type="string (uuid)" required>
-  UUID de um [preço](../prices/reference) `recurring`, com o mesmo `interval`, `intervalCount` e moeda da assinatura, e que ainda não esteja nela.
+  UUID de um [preço](../prices/reference) `recurring` e ativo (não arquivado), com o mesmo `interval`, `intervalCount` e moeda da assinatura, e que ainda não esteja nela.
 </ParamField>
 
 <ParamField body="quantity" type="integer" default="1">
@@ -100,7 +100,8 @@ Com `period_end`, é a [mudança agendada](./scheduled-changes):
 | ------ | ------ | ------ |
 | `404` | `SUBSCRIPTION_NOT_FOUND` | A assinatura não existe ou é de outra conta |
 | `404` | `PRICE_NOT_FOUND` / `PRODUCT_NOT_FOUND` | O preço, ou o produto dele, não existe na conta |
-| `400` | `SUBSCRIPTION_NOT_EDITABLE` | A assinatura está `canceled` ou `void` |
+| `400` | `PRICE_ARCHIVED` | O preço está arquivado |
+| `400` | `SUBSCRIPTION_NOT_EDITABLE` | A assinatura está `canceled`, `void` ou `ended` |
 | `400` | `SUBSCRIPTION_PRICE_NOT_RECURRING` | O preço não é `recurring` |
 | `400` | `SUBSCRIPTION_PRICE_MISMATCH` | Intervalo ou moeda diferentes da assinatura |
 | `400` | `SUBSCRIPTION_DUPLICATE_PRICE` | O preço já está na assinatura; altere a quantidade do item existente |

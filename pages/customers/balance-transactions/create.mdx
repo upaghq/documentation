@@ -1,0 +1,77 @@
+---
+title: 'Criar transação de saldo'
+description: 'Dá crédito ao cliente ou registra um débito no saldo dele'
+sidebarTitle: 'Criar'
+api: 'POST https://api.upag.io/v1/customers/{customerId}/balance-transactions'
+---
+
+Ajusta o [saldo do cliente](../balance). `amount` negativo dá crédito (por exemplo, um reembolso em forma de desconto na próxima fatura); positivo registra um débito, cobrado na próxima fatura. Não há limite de valor.
+
+Permissão: `customer.write`. Apenas chave secreta (`sk_…`).
+
+<Note>
+  Os exemplos usam o sandbox (`https://api.upag.dev/v1`). Em produção use `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.upag.dev/v1/customers/8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83/balance-transactions \
+  -H "Authorization: Bearer sk_test_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": -5000,
+    "description": "Crédito por indisponibilidade em outubro"
+  }'
+```
+
+```javascript Node.js SDK
+import { Upag } from 'upag';
+
+const upag = new Upag('sk_test_your_api_key');
+
+const transaction = await upag.customers.balanceTransactions.create(
+  '8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83',
+  { amount: -5000, description: 'Crédito por indisponibilidade em outubro' },
+);
+```
+</CodeGroup>
+
+## Parâmetros
+
+<ParamField path="customerId" type="string (uuid)" required>
+  ID do cliente.
+</ParamField>
+
+<ParamField body="amount" type="integer" required>
+  Centavos, diferente de zero. Negativo: crédito para o cliente. Positivo: débito do cliente.
+</ParamField>
+
+<ParamField body="description" type="string">
+  1 a 350 caracteres.
+</ParamField>
+
+## Resposta
+
+`201 Created`. A transação, com `type: "adjustment"` e o saldo resultante em `endingBalance`.
+
+```json Response
+{
+  "id": "e41b7c09-3d6a-4f25-8b1e-7a0c2d9f5e38",
+  "type": "adjustment",
+  "amount": -5000,
+  "endingBalance": -5000,
+  "invoice": null,
+  "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "description": "Crédito por indisponibilidade em outubro",
+  "createdAt": "2026-11-13T14:30:00.000Z"
+}
+```
+
+## Erros
+
+| Status | Código | Causa |
+| ------ | ------ | ----- |
+| `404` | `CUSTOMER_NOT_FOUND` | Cliente inexistente, excluído ou de outra conta |
+| `422` | `VALIDATION_FAILED` | `amount` zero, ausente ou não inteiro, ou `description` vazia ou com mais de 350 caracteres |

@@ -21,6 +21,7 @@ curl -G https://api.upag.dev/v1/invoices \
   -H "Authorization: Bearer sk_test_your_api_key" \
   -d "status=open" \
   -d "customer=8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83" \
+  -d "includes=customer" \
   -d "page=1" \
   -d "limit=15"
 ```
@@ -33,6 +34,7 @@ const upag = new Upag('sk_test_your_api_key');
 const { data, count } = await upag.invoices.list({
   status: 'open',
   customer: '8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83',
+  includes: 'customer',
   page: 1,
   limit: 15,
 });
@@ -51,6 +53,10 @@ const { data, count } = await upag.invoices.list({
 
 <ParamField query="id" type="string (uuid)">
   Filtra por um ID específico.
+</ParamField>
+
+<ParamField query="includes" type="string">
+  `customer` troca o UUID em `customer` pelo [objeto cliente](../customers/reference) completo. Valor desconhecido retorna `422`.
 </ParamField>
 
 <ParamField query="page" type="integer" default="1">
@@ -93,6 +99,7 @@ const { data, count } = await upag.invoices.list({
         }
       ],
       "discounts": [],
+      "adjustments": [],
       "payments": [],
       "createdAt": "2026-10-07T19:00:00.000Z",
       "updatedAt": "2026-10-07T19:00:00.000Z"
@@ -102,4 +109,4 @@ const { data, count } = await upag.invoices.list({
 }
 ```
 
-Cada item tem o mesmo formato do [objeto fatura](./reference).
+Cada item tem o mesmo formato do [objeto fatura](./reference). No exemplo, `customer` vem como UUID; com `includes=customer`, vem o objeto cliente.

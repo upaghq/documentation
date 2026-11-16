@@ -21,6 +21,7 @@ curl -G https://api.upag.dev/v1/subscriptions \
   -H "Authorization: Bearer sk_test_your_api_key" \
   -d "status=active" \
   -d "customer=8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83" \
+  -d "includes=customer" \
   -d "page=1" \
   -d "limit=15"
 ```
@@ -33,6 +34,7 @@ const upag = new Upag('sk_test_your_api_key');
 const { data, count } = await upag.subscriptions.list({
   status: 'active',
   customer: '8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83',
+  includes: 'customer',
   page: 1,
   limit: 15,
 });
@@ -42,7 +44,7 @@ const { data, count } = await upag.subscriptions.list({
 ## Query
 
 <ParamField query="status" type="string">
-  Filtra por status: `active`, `canceled`, `past_due`, `trialing`, `incomplete`, `paused` ou `void`.
+  Filtra por status: `active`, `canceled`, `past_due`, `trialing`, `incomplete`, `paused`, `void` ou `ended`.
 </ParamField>
 
 <ParamField query="customer" type="string (uuid)">
@@ -55,6 +57,10 @@ const { data, count } = await upag.subscriptions.list({
 
 <ParamField query="id" type="string (uuid)">
   Filtra por um ID específico.
+</ParamField>
+
+<ParamField query="includes" type="string">
+  `customer` troca o UUID em `customer` pelo [objeto cliente](../customers/reference) completo. Um valor desconhecido retorna `422`.
 </ParamField>
 
 <ParamField query="page" type="integer" default="1">
@@ -74,7 +80,26 @@ const { data, count } = await upag.subscriptions.list({
   "data": [
     {
       "id": "9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36",
-      "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+      "customer": {
+        "id": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+        "name": "Maria Souza",
+        "email": "maria@example.com",
+        "document": { "number": "12345678909", "type": "cpf" },
+        "phone": { "countryCode": "55", "areaCode": "11", "number": "999998888" },
+        "address": {
+          "street": "Avenida Paulista",
+          "number": "1578",
+          "complement": null,
+          "neighborhood": "Bela Vista",
+          "city": "São Paulo",
+          "state": "SP",
+          "country": "BR",
+          "zip": "01310200"
+        },
+        "defaultCard": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
+        "createdAt": "2026-07-27T18:04:11.482Z",
+        "updatedAt": "2026-07-27T18:04:11.482Z"
+      },
       "paymentMethod": "card",
       "card": "5f0c3d1a-7b2e-4c9d-8a41-0e6f2b9d7c15",
       "status": "active",
@@ -82,6 +107,8 @@ const { data, count } = await upag.subscriptions.list({
       "interval": "month",
       "intervalCount": 1,
       "cancelAtPeriodEnd": false,
+      "maxCycles": null,
+      "currentCycle": 1,
       "startDate": "2026-10-07T19:00:00.000Z",
       "endDate": null,
       "trialStartDate": null,
@@ -112,4 +139,4 @@ const { data, count } = await upag.subscriptions.list({
 }
 ```
 
-Cada item tem o mesmo formato do [objeto assinatura](./reference).
+Cada item tem o mesmo formato do [objeto assinatura](./reference). Sem `includes=customer`, `customer` é só o UUID.

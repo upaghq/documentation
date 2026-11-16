@@ -16,7 +16,7 @@ sequenceDiagram
   API-->>Loja: subscription (incomplete ou active)
   API-->>Loja: webhook subscription.active
   Note over API: Cada renovação gera uma fatura e uma cobrança
-  API-->>Loja: webhooks invoice.paid / subscription.past_due
+  API-->>Loja: webhooks invoice.paid / subscription.past_due / subscription.ended
 ```
 
 <Note>
@@ -119,15 +119,18 @@ Para pegar o QR code do primeiro período, [liste as faturas](../invoices/list) 
 
 ### Cartão
 
-`POST /subscriptions` com `paymentMethod: "card"` exige um cartão ativo que **já pertença ao cliente**. Um cartão recém-tokenizado ([Criar cartão](../cards/create)) não pertence a ninguém; ele passa a ser do cliente quando é usado numa cobrança de cartão do cliente ([Criar cobrança](../charges/create)) ou numa confirmação de checkout. Usá-lo antes disso devolve `404 SUBSCRIPTION_CARD_NOT_FOUND`.
+`POST /subscriptions` com `paymentMethod: "card"` exige um cartão ativo que **já pertença ao cliente**. Um cartão tokenizado no browser ([Criar cartão](../cards/create) com a chave publicável) ainda não pertence a ninguém. Usá-lo antes de vinculá-lo devolve `404 SUBSCRIPTION_CARD_NOT_FOUND`. Há dois caminhos:
 
-Por isso, para o **primeiro cartão** de um cliente, o caminho é o [checkout](./checkout-hosted): crie um link de pagamento com o preço recorrente e deixe o pagador confirmar com o cartão. A confirmação cria a fatura, cobra, vincula o cartão ao cliente e cria a assinatura. Depois disso o cartão fica na conta do cliente:
+- **Checkout**: crie um link de pagamento com o preço recorrente e deixe o pagador confirmar com o cartão ([Checkout hospedado](./checkout-hosted)). A confirmação cria a fatura, cobra, vincula o cartão ao cliente e cria a assinatura.
+- **Vincular no servidor**: envie o id do cartão tokenizado para o seu servidor e vincule-o ao cliente com a chave secreta ([Vincular cartão](../customers/cards/attach)).
 
 ```javascript Node.js SDK
-const { data: cards } = await upag.cards.list({ customer: customer.id });
+await upag.customers.cards.attach(customer.id, { card: cardId });
+
+const { data: cards } = await upag.customers.cards.list(customer.id);
 ```
 
-e pode ser usado em novas assinaturas:
+O cartão do cliente pode ser usado em novas assinaturas:
 
 <CodeGroup>
 ```bash cURL
@@ -163,7 +166,8 @@ Valide a assinatura do webhook (`upag.webhooks.validateSignature` sobre o corpo 
 | `subscription.active` | Liberar o acesso |
 | `invoice.paid` | Registrar o pagamento do período |
 | `subscription.past_due` | A renovação falhou: avise o cliente; a Upag tenta de novo |
-| `subscription.canceled` | Revogar o acesso |
+| `subscription.canceled` | Revogar o acesso (`cancellationReason: "payment_failed"` quando as tentativas se esgotaram) |
+| `subscription.ended` | A assinatura cumpriu os `maxCycles` períodos: revogar o acesso |
 
 ```javascript Node.js SDK
 app.post('/webhooks/upag', express.raw({ type: '*/*' }), async (req, res) => {
@@ -187,10 +191,25 @@ Payloads: [assinatura](../webhooks/payload-subscription) e [fatura](../webhooks/
 
 ## Renovações
 
-A cada período a Upag cria a fatura e cobra: no cartão, à vista, e no Pix, com um novo QR code de 3 dias. Se a cobrança falhar, a assinatura vai para `past_due` e novas tentativas são feitas. Para ver o valor da próxima fatura antes de ela existir, use [Fatura futura](../invoices/upcoming):
+A cada período a Upag cria a fatura e cobra: no cartão, à vista, no Pix, com um novo QR code de 3 dias, e no boleto, com um novo boleto que o cliente paga. Se a cobrança falhar, a assinatura vai para `past_due` e é tentada de novo depois de 1, 5 e 30 minutos e, a partir daí, a cada 60 minutos. Depois de 8 tentativas sem sucesso, contando a primeira, ela é cancelada com `cancellationReason: "payment_failed"`. Enquanto um Pix ou boleto aguarda pagamento, a espera não conta como tentativa. Um Pix que vence sem pagamento não gera outro QR code: a fatura vira `uncollectible` e as rodadas seguintes contam como tentativas. Detalhes em [Novas tentativas](../subscriptions/reference#novas-tentativas).
+
+Para ver o valor da próxima fatura antes de ela existir, use [Fatura futura](../invoices/upcoming):
 
 ```javascript Node.js SDK
 const preview = await upag.invoices.upcoming({ subscription: subscription.id });
+```
+
+## Número fixo de períodos
+
+Com `maxCycles` a assinatura cobra só esse número de períodos (o teste grátis não conta). Quando o último período termina, ela vira `ended`, sem gerar nova fatura, e emite `subscription.ended`. `currentCycle` mostra em que período ela está. `maxCycles` pode ser alterado depois, mas não para menos que `currentCycle` (`SUBSCRIPTION_MAX_CYCLES_BELOW_CURRENT`); `null` faz a assinatura renovar até ser cancelada.
+
+```javascript Node.js SDK
+const subscription = await upag.subscriptions.create({
+  customer: customer.id,
+  paymentMethod: 'pix',
+  items: [{ price: price.id }],
+  maxCycles: 12,
+});
 ```
 
 ## Mudar itens
@@ -205,6 +224,18 @@ await upag.subscriptions.createItem(subscription.id, {
   applyAt: 'period_end',
 });
 ```
+
+Para mostrar ao cliente quanto custaria mudar os itens agora, com o crédito do que não foi usado e a cobrança proporcional, use a [prévia de proporcional](../subscriptions/proration). Ela não altera a assinatura:
+
+```javascript Node.js SDK
+const preview = await upag.subscriptions.proration(subscription.id, {
+  items: [{ item: subscription.items[0].id, price: upgradePrice.id }],
+});
+
+console.log(preview.amountDue, preview.lines);
+```
+
+Para cobrar essa diferença e aplicar a mudança, crie uma [sessão de checkout com `proration`](../checkout-sessions/create#mudança-de-assinatura): a mudança só é aplicada quando o cliente paga a fatura da sessão.
 
 Veja [Criar item](../subscriptions/create-item), [Atualizar item](../subscriptions/update-item), [Remover item](../subscriptions/delete-item) e as [mudanças agendadas](../subscriptions/scheduled-changes).
 

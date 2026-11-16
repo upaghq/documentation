@@ -1,0 +1,109 @@
+---
+title: 'Referência'
+description: 'Objeto Conta (bill): boletos e contas de consumo a pagar'
+sidebarTitle: 'Visão geral'
+---
+
+Uma conta (`bill`) é um boleto ou uma conta de consumo (água, luz, telefone…) que a sua conta Upag vai pagar com o saldo. Você registra a conta pelo código de barras ou linha digitável e depois a paga com [Pagar conta](./pay), que cria um [pagamento de conta](../bill-payments/reference).
+
+<Warning>
+  O pagamento de contas precisa estar habilitado para a conta. Até lá, todas as rotas de `/bills` e `/bill-payments` respondem `403` com o código `feature_flag_disabled`. Peça a habilitação ao suporte. Veja [Erros](../guides/errors#recurso-não-habilitado).
+</Warning>
+
+Todos os endpoints exigem **chave secreta** (`sk_…`). Pagar com a chave não exige PIN: a permissão `bill.write` autoriza. Valores sempre em **centavos**.
+
+| Método | Path | Permissão |
+| ------ | ---- | --------- |
+| `POST` | `/v1/bills/lookup` | `bill.read` |
+| `POST` | `/v1/bills` | `bill.write` |
+| `GET` | `/v1/bills` | `bill.read` |
+| `GET` | `/v1/bills/{billId}` | `bill.read` |
+| `POST` | `/v1/bills/{billId}/cancel` | `bill.write` |
+| `POST` | `/v1/bills/{billId}/payments` | `bill.write` |
+
+<Note>
+  Sandbox: `https://api.upag.dev/v1` com `sk_test_…`. Produção: `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Estrutura
+
+```json
+{
+  "id": "3c9e7a10-52d4-4b8f-9e61-0a2f7d4c8b15",
+  "type": "boleto",
+  "status": "open",
+  "source": "api",
+  "barcode": "34191090080012213037050059980008100000025000",
+  "amount": 25000,
+  "dueDate": "2026-11-30",
+  "beneficiaryName": "Imobiliária Exemplo LTDA",
+  "beneficiaryTaxNumber": "12345678000199",
+  "description": "Aluguel novembro",
+  "payment": null,
+  "createdAt": "2026-11-13T14:02:11.204Z",
+  "updatedAt": "2026-11-13T14:02:11.204Z"
+}
+```
+
+## Atributos
+
+<ParamField body="id" type="string">
+  UUID da conta.
+</ParamField>
+
+<ParamField body="type" type="string">
+  `boleto` (boleto bancário: código de barras de 44 dígitos ou linha digitável de 47) ou `utility` (conta de consumo: código que começa com `8`, linha digitável de 48 dígitos). Tributos (DARF, GPS e similares) ainda não são aceitos.
+</ParamField>
+
+<ParamField body="status" type="string">
+  `open` (pode ser paga ou cancelada) ou `canceled`.
+</ParamField>
+
+<ParamField body="source" type="string">
+  De onde a conta veio: `api` (chave de API) ou `manual` (app ou dashboard).
+</ParamField>
+
+<ParamField body="barcode" type="string | null">
+  Código de barras normalizado, 44 dígitos, mesmo quando a conta foi criada pela linha digitável.
+</ParamField>
+
+<ParamField body="amount" type="integer">
+  Valor em centavos, como o banco informou na última consulta (juros, multa e desconto mudam o valor com o tempo). [Pagar conta](./pay) consulta o valor de novo.
+</ParamField>
+
+<ParamField body="dueDate" type="string | null">
+  Vencimento, `YYYY-MM-DD`. `null` quando a conta não tem vencimento.
+</ParamField>
+
+<ParamField body="beneficiaryName" type="string | null">
+  Nome de quem recebe.
+</ParamField>
+
+<ParamField body="beneficiaryTaxNumber" type="string | null">
+  CPF ou CNPJ de quem recebe, só dígitos.
+</ParamField>
+
+<ParamField body="description" type="string | null">
+  Descrição informada na criação.
+</ParamField>
+
+<ParamField body="payment" type="string | object | null">
+  O pagamento vigente da conta (em andamento ou pago): o UUID, ou o [objeto pagamento](../bill-payments/reference) com `?includes=payment`. `null` quando não há. Pagamentos que falharam, foram cancelados ou devolvidos não contam.
+</ParamField>
+
+<ParamField body="createdAt" type="string">
+  ISO 8601.
+</ParamField>
+
+<ParamField body="updatedAt" type="string">
+  ISO 8601.
+</ParamField>
+
+## Ciclo de vida
+
+1. [Consultar](./lookup) o código para ver valor, vencimento e beneficiário (opcional, não grava nada).
+2. [Registrar](./create) a conta. Um mesmo código de barras só pode estar em uma conta não cancelada.
+3. [Pagar](./pay). O valor é debitado do saldo na hora e o pagamento segue os status em [Pagamentos de conta](../bill-payments/reference#status).
+4. Enquanto não houver pagamento em andamento ou pago, a conta pode ser [cancelada](./cancel).
+
+Acompanhe os pagamentos por [webhooks de pagamento de conta](../webhooks/payload-bill-payment).

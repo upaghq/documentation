@@ -1,11 +1,13 @@
 ---
 title: 'Atualizar link de pagamento'
-description: 'Atualiza dados, ativação, cupons e trial do link'
+description: 'Atualiza dados, ativação, cupons, trial e valor do link'
 sidebarTitle: 'Atualizar'
 api: 'PATCH https://api.upag.io/v1/payment-links/{paymentLinkId}'
 ---
 
 Atualização parcial: campos omitidos permanecem. `null` limpa `description`, `checkoutLayout`, `successUrl` e `cancelUrl`. Para alterar itens e bumps use as rotas de [itens](./add-item) e [bumps](./add-bump).
+
+O tipo do link não muda. Num link `fixed_amount`, `couponEnabled: true`, um `trial` ou um `maxCycles` são recusados; num link `product`, `amount` é recusado. Os dois casos retornam `400 PAYMENT_LINK_TYPE_MISMATCH`.
 
 Permissão: `payment_link.write` (chave secreta).
 
@@ -59,7 +61,7 @@ const link = await upag.paymentLinks.update('d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f7
 </ParamField>
 
 <ParamField body="paymentMethods" type="string[]">
-  `pix` e/ou `card` (mínimo 1).
+  `pix`, `card` e/ou `boleto` (mínimo 1). Num link `fixed_amount`, cada forma precisa estar ativa na conta e aceitar o `amount` atual.
 </ParamField>
 
 <ParamField body="billingAddressCollection" type="string">
@@ -79,11 +81,19 @@ const link = await upag.paymentLinks.update('d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f7
 </ParamField>
 
 <ParamField body="couponEnabled" type="boolean">
-  Permite o comprador aplicar cupons.
+  Permite o comprador aplicar cupons. Só em links `product`.
+</ParamField>
+
+<ParamField body="amount" type="integer">
+  Só em links `fixed_amount`. Novo valor, em centavos, de `500` a `2147483647`.
+</ParamField>
+
+<ParamField body="type" type="string">
+  Aceito apenas se for igual ao tipo atual do link (`product` ou `fixed_amount`); outro valor retorna `PAYMENT_LINK_TYPE_MISMATCH`.
 </ParamField>
 
 <ParamField body="subscriptionData" type="object">
-  `trial` (`{ interval, intervalCount }` ou `null` para remover) e/ou `trialSettings.endBehavior.missingPaymentMethod` (`create_invoice` ou `cancel`). Campos omitidos mantêm o valor atual.
+  `trial` (`{ interval, intervalCount }` ou `null` para remover), `trialSettings.endBehavior.missingPaymentMethod` (`create_invoice` ou `cancel`) e/ou `maxCycles` (inteiro ≥ 1, ou `null` para remover o limite). Campos omitidos mantêm o valor atual. Vale para as compras iniciadas depois da alteração.
 </ParamField>
 
 <ParamField body="paymentMethodCollection" type="string">
@@ -97,6 +107,7 @@ const link = await upag.paymentLinks.update('d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f7
 ```json Response
 {
   "id": "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70",
+  "type": "product",
   "name": "Plano Pro com trial",
   "description": null,
   "checkoutLayout": null,
@@ -110,7 +121,8 @@ const link = await upag.paymentLinks.update('d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f7
   "cancelUrl": null,
   "subscriptionData": {
     "trial": { "interval": "day", "intervalCount": 14 },
-    "trialSettings": { "endBehavior": { "missingPaymentMethod": "cancel" } }
+    "trialSettings": { "endBehavior": { "missingPaymentMethod": "cancel" } },
+    "maxCycles": null
   },
   "paymentMethodCollection": "always",
   "items": [
@@ -128,5 +140,11 @@ const link = await upag.paymentLinks.update('d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f7
 }
 ```
 
+## Erros
+
 - `404` — `PAYMENT_LINK_NOT_FOUND` ou `CHECKOUT_LAYOUT_NOT_FOUND`.
+- `400` — `PAYMENT_LINK_TYPE_MISMATCH`: mudança de `type`, `amount` num link `product`, ou `couponEnabled: true`, `trial` ou `maxCycles` num link `fixed_amount`.
 - `400` — alterações de trial ou métodos que violem as [regras de consistência](./reference).
+- `400` — `ACCOUNT_PAYMENT_METHOD_DISABLED`: num link `fixed_amount`, uma das `paymentMethods` está desativada na conta.
+- `422` — `PAYMENT_METHOD_AMOUNT_TOO_LOW` ou `PAYMENT_METHOD_AMOUNT_TOO_HIGH`: num link `fixed_amount`, o `amount` fica fora dos limites de valor de uma das `paymentMethods`.
+- `422` — validação do corpo.

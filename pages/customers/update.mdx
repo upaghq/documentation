@@ -64,6 +64,10 @@ const customer = await upag.customers.update('8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f
   Campos do endereço a alterar (`street`, `number`, `complement`, `neighborhood`, `city`, `state`, `country`, `zip`), mesclados campo a campo; ou `null` para limpar todo o endereço.
 </ParamField>
 
+<ParamField body="defaultCard" type="string | null">
+  UUID de um cartão ativo deste cliente, que passa a ser o padrão; ou `null` para limpar. Omitido, fica como está. Um cartão inexistente, removido ou de outro cliente retorna `404 CARD_NOT_FOUND` e nada é alterado.
+</ParamField>
+
 ## Resposta
 
 `200 OK` com o cliente atualizado.
@@ -85,6 +89,7 @@ const customer = await upag.customers.update('8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f
     "country": "BR",
     "zip": "01310200"
   },
+  "defaultCard": null,
   "createdAt": "2026-07-27T18:04:11.482Z",
   "updatedAt": "2026-07-27T18:30:00.000Z"
 }
@@ -95,5 +100,6 @@ const customer = await upag.customers.update('8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f
 | Status | Mensagem | Causa |
 | ------ | -------- | ----- |
 | `404` | `Customer not found` | Cliente inexistente, excluído ou de outra conta |
+| `404` | `CARD_NOT_FOUND` | `defaultCard` inexistente, removido ou de outro cliente |
 | `409` | `CUSTOMER_DOCUMENT_ALREADY_SET` | `document` enviado para um cliente que já tem documento |
 | `422` | `VALIDATION_FAILED` | Corpo inválido |

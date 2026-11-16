@@ -1,0 +1,73 @@
+---
+title: 'Referência'
+description: 'Objeto Transação de saldo do cliente (customer balance transaction)'
+sidebarTitle: 'Visão geral'
+---
+
+Cada mudança no [saldo do cliente](../balance) gera uma transação de saldo: um ajuste que você faz pela API, ou a aplicação do saldo numa fatura. As transações não podem ser editadas nem removidas; para corrigir um ajuste, crie outro com o valor oposto.
+
+Todos os endpoints exigem **chave secreta** (`sk_…`). Valores sempre em **centavos**.
+
+| Método | Path | Permissão |
+| ------ | ---- | --------- |
+| `GET` | `/v1/customers/{customerId}/balance` | `customer.read` |
+| `POST` | `/v1/customers/{customerId}/balance-transactions` | `customer.write` |
+| `GET` | `/v1/customers/{customerId}/balance-transactions` | `customer.read` |
+| `GET` | `/v1/customers/{customerId}/balance-transactions/{transactionId}` | `customer.read` |
+
+<Note>
+  Sandbox: `https://api.upag.dev/v1` com `sk_test_…`. Produção: `https://api.upag.io/v1` com `sk_live_…`.
+</Note>
+
+## Estrutura
+
+```json
+{
+  "id": "e41b7c09-3d6a-4f25-8b1e-7a0c2d9f5e38",
+  "type": "adjustment",
+  "amount": -5000,
+  "endingBalance": -5000,
+  "invoice": null,
+  "customer": "8c1f0a26-5d3b-4f1e-9c72-1a4e6b9d0f83",
+  "description": "Crédito por indisponibilidade em outubro",
+  "createdAt": "2026-11-13T14:30:00.000Z"
+}
+```
+
+## Atributos
+
+<ParamField body="id" type="string">
+  UUID da transação.
+</ParamField>
+
+<ParamField body="type" type="string">
+  - `adjustment`: ajuste criado por você ([Criar transação](./create)) ou pelo dashboard.
+  - `applied_to_invoice`: saldo aplicado a uma fatura quando ela foi emitida.
+  - `unapplied_from_invoice`: saldo devolvido porque a fatura em que tinha sido aplicado não foi paga (anulada ou abandonada).
+</ParamField>
+
+<ParamField body="amount" type="integer">
+  Quanto o saldo mudou, em centavos. Negativo dá crédito ao cliente; positivo registra débito.
+</ParamField>
+
+<ParamField body="endingBalance" type="integer">
+  Saldo do cliente logo depois desta transação, em centavos.
+</ParamField>
+
+<ParamField body="invoice" type="string | null">
+  UUID da [fatura](../../invoices/reference) em `applied_to_invoice` e `unapplied_from_invoice`. `null` em `adjustment`.
+</ParamField>
+
+<ParamField body="customer" type="string">
+  UUID do cliente.
+</ParamField>
+
+<ParamField body="description" type="string | null">
+  Descrição informada no ajuste.
+</ParamField>
+
+<ParamField body="createdAt" type="string">
+  ISO 8601.
+</ParamField>
+
+Na fatura, o saldo aplicado aparece em `adjustments`, com o `id` da transação em `customerBalanceTransaction`.

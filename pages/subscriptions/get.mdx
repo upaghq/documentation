@@ -19,6 +19,10 @@ Permissão: `subscription.read`. Apenas chave secreta (`sk_…`).
 ```bash cURL
 curl https://api.upag.dev/v1/subscriptions/9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36 \
   -H "Authorization: Bearer sk_test_your_api_key"
+
+# Com o cliente completo
+curl "https://api.upag.dev/v1/subscriptions/9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36?includes=customer" \
+  -H "Authorization: Bearer sk_test_your_api_key"
 ```
 
 ```javascript Node.js SDK
@@ -27,6 +31,11 @@ import { Upag } from 'upag';
 const upag = new Upag('sk_test_your_api_key');
 
 const subscription = await upag.subscriptions.retrieve('9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36');
+
+// Com o cliente completo
+const withCustomer = await upag.subscriptions.retrieve('9a3c6e1f-0d58-4b72-a4e9-7c2f8b5d1e36', {
+  includes: 'customer',
+});
 ```
 </CodeGroup>
 
@@ -34,6 +43,10 @@ const subscription = await upag.subscriptions.retrieve('9a3c6e1f-0d58-4b72-a4e9-
 
 <ParamField path="subscriptionId" type="string (uuid)" required>
   ID da assinatura.
+</ParamField>
+
+<ParamField query="includes" type="string">
+  `customer` troca o UUID em `customer` pelo [objeto cliente](../customers/reference) completo. Um valor desconhecido retorna `422`.
 </ParamField>
 
 ## Resposta
@@ -51,6 +64,8 @@ const subscription = await upag.subscriptions.retrieve('9a3c6e1f-0d58-4b72-a4e9-
   "interval": "month",
   "intervalCount": 1,
   "cancelAtPeriodEnd": false,
+  "maxCycles": null,
+  "currentCycle": 0,
   "startDate": null,
   "endDate": null,
   "trialStartDate": "2026-10-07T19:00:00.000Z",
@@ -78,7 +93,7 @@ const subscription = await upag.subscriptions.retrieve('9a3c6e1f-0d58-4b72-a4e9-
 }
 ```
 
-Durante o teste (`trialing`), `startDate`, `currentPeriodStart` e `currentPeriodEnd` são `null`: o primeiro período só começa quando o teste acaba.
+Durante o teste (`trialing`), `startDate`, `currentPeriodStart` e `currentPeriodEnd` são `null` e `currentCycle` é `0`: o primeiro período só começa quando o teste acaba. Com `includes=customer`, `customer` vem como o objeto cliente, igual em [Listar assinaturas](./list).
 
 ## Erros
 

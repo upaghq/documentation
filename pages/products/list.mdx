@@ -14,7 +14,8 @@ Permissão: `product.read` (chave secreta).
 curl -G https://api.upag.dev/v1/products \
   -H "Authorization: Bearer sk_test_your_api_key" \
   -d "page=1" \
-  -d "limit=15"
+  -d "limit=15" \
+  -d "includes=prices"
 ```
 
 ```javascript Node.js SDK
@@ -22,7 +23,7 @@ import { Upag } from 'upag';
 
 const upag = new Upag('sk_test_your_api_key');
 
-const { data, count } = await upag.products.list({ page: 1, limit: 15 });
+const { data, count } = await upag.products.list({ page: 1, limit: 15, includes: 'prices' });
 ```
 </CodeGroup>
 
@@ -40,9 +41,13 @@ const { data, count } = await upag.products.list({ page: 1, limit: 15 });
   Itens por página (mínimo 1).
 </ParamField>
 
+<ParamField query="includes" type="string">
+  Relações a embutir em cada produto. O único valor aceito é `prices`, que adiciona o array `prices` com os [preços](../prices/reference) do produto, do mais novo para o mais antigo, incluindo os arquivados (`active: false`). Um produto sem preços volta com `prices: []`. Sem `includes`, o campo `prices` não aparece. Um valor desconhecido retorna `422`.
+</ParamField>
+
 ## Resposta
 
-`200 OK` — `count` é o total de produtos da conta.
+`200 OK` — `count` é o total de produtos da conta. O exemplo usa `includes=prices`.
 
 ```json Response
 {
@@ -53,7 +58,22 @@ const { data, count } = await upag.products.list({ page: 1, limit: 15 });
       "description": "Acesso completo à plataforma",
       "image": null,
       "createdAt": "2026-03-18T11:00:00.000Z",
-      "updatedAt": "2026-03-18T11:00:00.000Z"
+      "updatedAt": "2026-03-18T11:00:00.000Z",
+      "prices": [
+        {
+          "id": "5f2d7a90-3b1c-4e8a-8f6d-1c9e4b7a2d33",
+          "name": "Mensal",
+          "billingType": "recurring",
+          "interval": "month",
+          "intervalCount": 1,
+          "currency": "brl",
+          "amount": 4990,
+          "metadata": {},
+          "active": true,
+          "createdAt": "2026-03-18T11:05:00.000Z",
+          "updatedAt": "2026-03-18T11:05:00.000Z"
+        }
+      ]
     }
   ],
   "count": 1

@@ -1,10 +1,10 @@
 ---
 title: 'Referência'
-description: 'Objeto Transferência (transfer): Pix de entrada e saída'
+description: 'Objeto Transferência (transfer): Pix de entrada e saída e TED recebida'
 sidebarTitle: 'Visão geral'
 ---
 
-Transferências Pix (entrada e saída) da conta da chave de API. Com chave secreta, o Pix de saída **não exige PIN**.
+Transferências da conta da chave de API: Pix de entrada e saída, e TED recebida (transferência de outro banco ou liquidação de cartão pela adquirente). Com chave secreta, o Pix de saída **não exige PIN**.
 
 Todos os endpoints exigem **chave secreta** (`sk_…`). Valores sempre em **centavos**.
 
@@ -27,6 +27,7 @@ Todos os endpoints exigem **chave secreta** (`sk_…`). Valores sempre em **cent
   "id": "770e8400-e29b-41d4-a716-446655440000",
   "status": "processing",
   "direction": "out",
+  "method": "pix",
   "type": "key",
   "amount": 10000,
   "pixKey": "55ce1aae-0d2b-4d76-bc77-294d6407349e",
@@ -49,6 +50,29 @@ Todos os endpoints exigem **chave secreta** (`sk_…`). Valores sempre em **cent
 }
 ```
 
+Os campos `pixKey`, `pixKeyType` e `endToEndId` só existem em `method: "pix"`. Uma TED (`method: "ted"`) não os traz:
+
+```json
+{
+  "id": "9a1e8400-e29b-41d4-a716-446655440000",
+  "status": "completed",
+  "direction": "in",
+  "method": "ted",
+  "type": "card_settlement",
+  "amount": 482500,
+  "from": { "name": "Adquirente S.A." },
+  "to": {
+    "name": "Acme LTDA",
+    "taxNumber": "12.345.678/0001-99",
+    "bankName": "Upag"
+  },
+  "providerTransactionId": "7781",
+  "url": null,
+  "createdAt": "2026-03-19T09:00:00.000Z",
+  "updatedAt": "2026-03-19T09:00:00.000Z"
+}
+```
+
 Na criação (`POST /v1/transfers`) a resposta inclui também `transaction`, o lançamento contábil (ver [Criar transferência](./create)).
 
 ## Atributos
@@ -65,8 +89,20 @@ Na criação (`POST /v1/transfers`) a resposta inclui também `transaction`, o l
   `in` (Pix recebido) ou `out` (Pix enviado).
 </ParamField>
 
+<ParamField body="method" type="string">
+  Por onde o dinheiro passou: `pix` ou `ted`.
+</ParamField>
+
 <ParamField body="type" type="string">
-  Como o destino foi resolvido: `key` (chave Pix), `hash` (copia-e-cola) ou `beneficiary` (conta salva). Pela chave de API só é possível criar `key` e `hash`.
+  Origem da transferência:
+
+  - `key`: Pix para uma chave Pix.
+  - `hash`: Pix por copia-e-cola.
+  - `beneficiary`: Pix para um beneficiário salvo.
+  - `bank_transfer`: TED recebida de outro banco.
+  - `card_settlement`: TED de liquidação de cartão, paga pela adquirente.
+
+  Pela chave de API só é possível criar `key` e `hash`.
 </ParamField>
 
 <ParamField body="amount" type="integer">
@@ -74,15 +110,15 @@ Na criação (`POST /v1/transfers`) a resposta inclui também `transaction`, o l
 </ParamField>
 
 <ParamField body="pixKey" type="string | null">
-  Chave Pix do destino.
+  Só em `method: "pix"`. Chave Pix do destino.
 </ParamField>
 
 <ParamField body="pixKeyType" type="string | null">
-  `email`, `phone`, `cpf`, `cnpj` ou `random`.
+  Só em `method: "pix"`. `email`, `phone`, `cpf`, `cnpj` ou `random`.
 </ParamField>
 
 <ParamField body="from" type="object">
-  Quem enviou: `name`, `taxNumber` (somente dígitos) e `bankName`.
+  Quem enviou: `name`, `taxNumber` (somente dígitos, ou `null` quando o banco não informa) e `bankName`. Em `card_settlement`, só `name`: a adquirente não informa documento nem banco.
 </ParamField>
 
 <ParamField body="to" type="object">
@@ -90,7 +126,7 @@ Na criação (`POST /v1/transfers`) a resposta inclui também `transaction`, o l
 </ParamField>
 
 <ParamField body="endToEndId" type="string | null">
-  Identificador fim a fim do Pix, quando disponível.
+  Só em `method: "pix"`. Identificador fim a fim do Pix, quando disponível.
 </ParamField>
 
 <ParamField body="providerTransactionId" type="string | null">

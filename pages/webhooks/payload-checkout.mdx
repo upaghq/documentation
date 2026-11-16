@@ -23,11 +23,14 @@ Eventos: `checkout-session.created`, `checkout-session.completed` e `checkout-se
     "subscriptionData": {
       "trial": null,
       "trialEnd": null,
-      "trialSettings": { "endBehavior": { "missingPaymentMethod": "create_invoice" } }
+      "trialSettings": { "endBehavior": { "missingPaymentMethod": "create_invoice" } },
+      "maxCycles": null
     },
     "paymentMethodCollection": "always",
+    "meta": { "pedido": "A-1042" },
+    "proration": null,
     "status": "complete",
-    "url": "https://checkout.upag.io/cs/1a2e8400-e29b-41d4-a716-446655440000",
+    "url": "https://checkout.upag.io/cs/Hq7Kd2xPzR4tWm9b",
     "expiresAt": "2026-03-19T12:00:00.000Z",
     "createdAt": "2026-03-18T12:00:00.000Z",
     "updatedAt": "2026-03-18T12:40:00.000Z"
@@ -43,13 +46,15 @@ Eventos: `checkout-session.created`, `checkout-session.completed` e `checkout-se
 | `customer` | `string \| null` | Id do cliente |
 | `checkoutLayout` | `string \| null` | Id do layout de checkout |
 | `paymentLink` | `string \| null` | Id do link de pagamento de origem |
-| `paymentMethods` | `string[]` | Métodos aceitos: `pix`, `card` |
-| `subscriptionData` | `object` | `trial` (`interval`, `intervalCount`, ou `null`), `trialEnd` e `trialSettings.endBehavior.missingPaymentMethod` (`create_invoice` ou `cancel`) |
+| `paymentMethods` | `string[]` | Métodos aceitos: `pix`, `card`, `boleto` |
+| `subscriptionData` | `object` | `trial` (`interval`, `intervalCount`, ou `null`), `trialEnd`, `trialSettings.endBehavior.missingPaymentMethod` (`create_invoice` ou `cancel`) e `maxCycles` (inteiro ou `null`) |
 | `paymentMethodCollection` | `string` | `always` ou `if_required` |
+| `meta` | `object` | Seus pares chave-valor enviados na criação; `{}` sem eles |
+| `proration` | `object \| null` | Numa sessão de mudança de assinatura, o cálculo cobrado: `subscription`, `currency`, `calculatedAt`, `period` (`startDate`, `endDate`), `lines[]` (`type` `credit` ou `charge`, `item`, `price`, `description`, `amount`), `amountDue`, `nextAmount` e `items[]` (`item`, `price`, `quantity`, `amount`), com valores em centavos. `null` nas demais |
 | `status` | `string` | `open`, `complete` ou `expired` |
-| `url` | `string \| null` | URL da página de checkout; `null` se o host de checkout não estiver configurado |
+| `url` | `string \| null` | URL da página de checkout (`/cs/<code>`); `null` se o host de checkout não estiver configurado |
 | `expiresAt` | `string \| null` | ISO 8601 |
 | `createdAt` | `string` | ISO 8601 |
 | `updatedAt` | `string` | ISO 8601 |
 
-O evento não traz itens, descontos nem os ids da fatura e da assinatura geradas. Em `checkout-session.completed`, consulte a [sessão](../checkout-sessions/get) para ler `invoice` e `subscription`.
+O evento não traz itens, descontos nem os ids da fatura e da assinatura geradas. Em `checkout-session.completed`, consulte a [sessão](../checkout-sessions/get) para ler `invoice` e `subscription`. Numa sessão com `proration`, a mudança é aplicada à assinatura quando a fatura da sessão é paga.

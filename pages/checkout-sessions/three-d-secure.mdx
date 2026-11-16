@@ -13,7 +13,7 @@ Fluxo no navegador, com o `clientSecret` da sessão de checkout:
 2. Autentique com o `clientSecret` **da sessão 3DS** devolvido aqui: `upag.threeDSecure.authenticate({ clientSecret })`.
 3. [Confirme](./confirm) com `charge.threeDSecureSession` igual ao `id` devolvido.
 
-Enquanto o 3D Secure não estiver habilitado para a conta (`account.threeDSecureEnabled` na [visão do pagador](./retrieve)), a rota responde `404`.
+Para pagar com um [cartão salvo](./confirm) do cliente (listado em `customer.cards` da [visão do pagador](./retrieve)), este passo é obrigatório no navegador: envie o `id` do cartão salvo em `card`.
 
 Permissão: `checkout_session.write`. Aceita a chave secreta ou o `clientSecret` da sessão de checkout. Limite do navegador: 20 por minuto por IP.
 
@@ -107,7 +107,7 @@ const threeDS = await upag.checkoutSessions.createThreeDSecureSession(
   UUIDs dos bumps da sessão que o pagador aceitou. Ignorados quando a sessão já tem fatura.
 </ParamField>
 
-O corpo não aceita outros campos.
+O corpo não aceita outros campos (`forceChallenge` também é recusado).
 
 ## Resposta
 
@@ -128,9 +128,8 @@ O corpo não aceita outros campos.
 
 | Status | Código | Quando |
 | ------ | ------ | ------ |
-| `404` | `THREEDS_DISABLED` | O 3D Secure não está habilitado |
 | `404` | `CHECKOUT_SESSION_NOT_FOUND` | Do servidor: a sessão não existe ou é de outra conta |
-| `404` | `THREEDS_CARD_NOT_FOUND` | O cartão não existe na conta |
+| `404` | `THREEDS_CARD_NOT_FOUND` | O cartão não existe na conta, ou, do navegador, é de um cliente que não é o da sessão |
 | `409` | `CHECKOUT_SESSION_NOT_OPEN` | A sessão já está `complete` ou `expired` |
 | `410` | `CHECKOUT_SESSION_EXPIRED` | A sessão passou do `expiresAt` |
 | `400` | `CHECKOUT_SESSION_PAYMENT_METHOD_NOT_ALLOWED` | A sessão não aceita `card` |

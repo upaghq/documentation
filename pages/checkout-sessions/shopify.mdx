@@ -5,7 +5,7 @@ sidebarTitle: 'Checkout Shopify'
 api: 'POST https://api.upag.io/v1/checkout/shopify/sessions'
 ---
 
-Usado pelo snippet da loja Shopify: recebe a chave publicável e o carrinho (variantes e quantidades) e devolve a URL do checkout hospedado, que já embute o `clientSecret` da sessão criada. Não há cabeçalho de autenticação: a conta é a da chave publicável enviada no corpo.
+Usado pelo snippet da loja Shopify: recebe a chave publicável e o carrinho (variantes e quantidades) e devolve a URL do checkout hospedado (`/cs/<code>`). A página lê o código da URL e recebe o `clientSecret` em [Obter sessão por código](./retrieve-by-code). Não há cabeçalho de autenticação: a conta é a da chave publicável enviada no corpo.
 
 A Upag consulta a Shopify (app ativo da conta) para calcular os valores do carrinho e cria, para cada variante, um produto e um preço `one_time` (reaproveitados nas próximas vezes, com o valor atualizado). A sessão aceita `pix` e `card`, não tem cupom e vence em 24 horas.
 
@@ -63,11 +63,11 @@ O `upag-js` já envia a chave publicável com a qual foi inicializado.
 
 ```json Response
 {
-  "url": "https://checkout.upag.io/cs/4f9d2b71-6c03-4e58-9a1d-8b3e7c0f5a26/Zk3v0pQ8xJ2mR7cYt1LwN5dHs9uAeB4gXo6iFqVjT0E"
+  "url": "https://checkout.upag.io/cs/Hq7Kd2xPzR4tWm9b"
 }
 ```
 
-O final da URL é o `clientSecret`: trate a URL como credencial e não a registre em logs.
+O código no final da URL dá acesso à sessão a quem o tiver: trate a URL como um link de pagamento e não a registre em logs.
 
 ## Erros
 

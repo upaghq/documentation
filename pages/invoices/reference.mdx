@@ -53,6 +53,7 @@ Todos os endpoints exigem **chave secreta** (`sk_…`).
     }
   ],
   "discounts": [],
+  "adjustments": [],
   "payments": [],
   "createdAt": "2026-10-07T19:00:00.000Z",
   "updatedAt": "2026-10-07T19:00:00.000Z"
@@ -65,8 +66,8 @@ Todos os endpoints exigem **chave secreta** (`sk_…`).
   UUID da fatura.
 </ParamField>
 
-<ParamField body="customer" type="string">
-  UUID do [cliente](../customers/reference).
+<ParamField body="customer" type="string | object">
+  UUID do [cliente](../customers/reference). Com `?includes=customer` em [Listar](./list) ou [Obter](./get), vem o [objeto cliente](../customers/reference) completo.
 </ParamField>
 
 <ParamField body="paymentMethod" type="string | null">
@@ -90,7 +91,7 @@ Todos os endpoints exigem **chave secreta** (`sk_…`).
 </ParamField>
 
 <ParamField body="amountDue" type="integer">
-  Valor a pagar em **centavos**: soma dos itens menos os descontos. Recalculado a cada mudança nos itens.
+  Valor a pagar em **centavos**: soma dos itens − descontos + `adjustments`, nunca abaixo de `0`. Recalculado a cada mudança nos itens.
 </ParamField>
 
 <ParamField body="amountPaid" type="integer">
@@ -113,9 +114,9 @@ Todos os endpoints exigem **chave secreta** (`sk_…`).
   Linhas da fatura.
 
   - `id`: UUID do item.
-  - `product`: UUID do produto.
-  - `price`: UUID do preço.
-  - `name`: nome do preço, copiado na hora em que o item entrou.
+  - `product`: UUID do produto, ou `null` num item sem preço de catálogo (por exemplo, o valor fixo de um [link de pagamento](../payment-links/reference) `fixed_amount`).
+  - `price`: UUID do preço, ou `null` junto com `product`.
+  - `name`: nome do preço (ou do item), copiado na hora em que o item entrou.
   - `amount`: valor unitário em centavos, copiado do preço na hora em que o item entrou.
   - `quantity`: quantidade.
   - `totalAmount`: `amount × quantity`, em centavos.
@@ -131,11 +132,21 @@ Todos os endpoints exigem **chave secreta** (`sk_…`).
   - `amount`: desconto em centavos.
 </ParamField>
 
+<ParamField body="adjustments" type="array">
+  Saldo do cliente aplicado à fatura. O saldo é aplicado uma vez, quando a fatura é aberta: crédito abate até todo o valor (o que sobra fica no saldo) e débito é somado inteiro. Vazio quando o saldo era `0`.
+
+  - `id`: UUID do ajuste.
+  - `amount`: valor em centavos, com sinal. Negativo abate de `amountDue` (crédito); positivo soma (débito).
+  - `customerBalanceTransaction`: UUID da transação de saldo do cliente que registrou a aplicação.
+
+  Se o crédito cobre a fatura inteira, ela já abre como `paid`, sem cobrança. Se a fatura for anulada ou ficar `uncollectible`, o saldo aplicado volta para o cliente; o ajuste continua na fatura como histórico.
+</ParamField>
+
 <ParamField body="payments" type="array">
   Tentativas de pagamento, uma por [cobrança](../charges/reference) criada para a fatura. Só vem em respostas da API; nos [webhooks de fatura](../webhooks/payload-invoice) não aparece.
 
   - `charge`: UUID da cobrança.
-  - `type`: `pix` ou `card`.
+  - `type`: `pix`, `card` ou `boleto`.
   - `status`: status da cobrança (`pending`, `paid`, `expired`, `failed`, `in_review`, `refunded`, `partially_refunded` ou `chargeback`).
   - `settledAt`: ISO 8601 do momento em que o resultado foi aplicado à fatura. `null` enquanto a cobrança está pendente.
   - `createdAt`: ISO 8601.
@@ -157,7 +168,7 @@ Todos os endpoints exigem **chave secreta** (`sk_…`).
 | `open` | Aguardando pagamento. Os itens ficam travados. |
 | `paid` | Paga. Final. |
 | `void` | Anulada antes do pagamento. Final. |
-| `uncollectible` | Cobrança abandonada; ocorre quando o Pix da fatura vence sem pagamento. Final. |
+| `uncollectible` | Cobrança abandonada; ocorre quando o Pix da fatura vence sem pagamento. Se o pagador pagar o Pix vencido mesmo assim, a fatura vira `paid` e o saldo do cliente que tinha voltado é aplicado de novo. |
 
 Não há endpoint para anular uma fatura nem para marcá-la como `uncollectible`.
 
